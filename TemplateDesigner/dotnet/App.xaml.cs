@@ -128,21 +128,9 @@ public partial class App : Application
         };
 
         // Registr agend - Caché auto-discovery z BaseAgenda subclasses.
-        // Sync wait do 3s - pokud propadne, MainWindow startuje jen s GENERAL agendou
-        // (fallback v CacheAgendaRegistry). Cold-start Caché HTTP je dominantní, warm calls 50ms.
-        IReadOnlyList<TemplateDesigner.Serialization.AgendaRegistryEntry> agendas = [];
-        if (mlRest is not null)
-        {
-            var agendaRegistry = new TemplateDesigner.Serialization.CacheAgendaRegistry(new MLRestAdapter(mlRest));
-            var listTask = agendaRegistry.ListAsync();
-            if (listTask.Wait(TimeSpan.FromSeconds(3)))
-                agendas = listTask.Result;
-        }
-        else
-        {
-            // Standalone bez Caché - pouze GENERAL (synthetic injection v registru, ale registr není volaný)
-            agendas = [new TemplateDesigner.Serialization.AgendaRegistryEntry("GENERAL", "Obecná (bez dat)", "")];
-        }
+        var agendaLoad = mlRest is not null
+            ? new TemplateDesigner.Serialization.CacheAgendaRegistry(new MLRestAdapter(mlRest)).ListAsync()
+            : null;
 
         // inputParam kontraktu "Agenda=<kód>" → startovní agenda šablony. Uzel stromu legacy
         // shellu nese kód v atributu input (JŘ vs MHD místo), MHD2 tlačítko ho posílá natvrdo;
@@ -151,14 +139,29 @@ public partial class App : Application
 
         // PDF bez hlavního okna: po zavření okna průběhu aplikace končí. Seed systémových šablon
         // se tu nespouští - běží na pozadí a konec aplikace by ho přerušil uprostřed zápisu.
-        if (launchInput.WantsPdf && mlRest is not null)
+        // Na registr agend čeká okno průběhu bez limitu: bez agendy PDF nevznikne a uživatel má slyšet proč.
+        if (launchInput.WantsPdf && mlRest is not null && agendaLoad is not null)
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
-            var pdf = new LaunchPdfWindow(new LaunchPdfWindowViewModel(launchInput,
-                () => new TemplateDesignerViewModel(mlRest, prefs, agendas, launchInput.AgendaCode)));
+            var pdf = new LaunchPdfWindow(new LaunchPdfWindowViewModel(launchInput, agendaLoad,
+                agendas => new TemplateDesignerViewModel(mlRest, prefs, agendas, launchInput.AgendaCode)));
             pdf.Closed += (_, _) => Shutdown();
             pdf.Show();
             return;
+        }
+
+        // Sync wait do 3s - pokud propadne, MainWindow startuje jen s GENERAL agendou
+        // (fallback v CacheAgendaRegistry). Cold-start Caché HTTP je dominantní, warm calls 50ms.
+        IReadOnlyList<TemplateDesigner.Serialization.AgendaRegistryEntry> agendas = [];
+        if (agendaLoad is not null)
+        {
+            if (agendaLoad.Wait(TimeSpan.FromSeconds(3)))
+                agendas = agendaLoad.Result.Agendas;
+        }
+        else
+        {
+            // Standalone bez Caché - pouze GENERAL (synthetic injection v registru, ale registr není volaný)
+            agendas = [new TemplateDesigner.Serialization.AgendaRegistryEntry("GENERAL", "Obecná (bez dat)", "")];
         }
 
         // Seed systémových (M-line) šablon z embedded JSON → MLINE větev (governance krok 4).
@@ -197,6 +200,8 @@ public partial class App : Application
     private static void OnAnyWindowLoaded(object sender, RoutedEventArgs e)
     {
         if (sender is not Window window) return;
+        // Synonyma hledání (písmo → Font) jen pro formuláře návrháře; okno je zdědí do všech formulářů v něm.
+        EDControls.EDInputForm.EDInputForm.SetSearchSynonyms(window, Designer.SlovnikHledani.Slovnik);
         if (window.Icon is not null) return;   // explicit Icon (např. MainWindow) ponechán
         if (Application.Current.TryFindResource("EDIcons.Molecule") is System.Windows.Media.ImageSource icon)
             window.Icon = icon;

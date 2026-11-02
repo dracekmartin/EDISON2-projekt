@@ -12,6 +12,8 @@ public class DuvodPrazdnehoVystupuTests
 {
     private const string Duvod = "Spoje linky nemají spočítané časy, nejspíš chybí jízdní doby. Doplňte jízdní doby linky v modulu MHD.";
 
+    private static readonly NazevInstance Linka = NazevInstance.Z("linka,linky,linku,linky,linek", "F");
+
     [Fact]
     public void DuvodSePrecte_AStrankouNeni()
     {
@@ -34,9 +36,9 @@ public class DuvodPrazdnehoVystupuTests
     public void ZadnaLinkaNemaData_StavJmenujeLinky()
     {
         Assert.Equal("Žádná vybraná linka nemá data: linka 20, linka 21",
-            PrintDialogViewModel.ZadnaData([("linka 20", Duvod), ("linka 21", null)], "obecná hláška"));
-        Assert.Equal("obecná hláška", PrintDialogViewModel.ZadnaData([], "obecná hláška"));
-        Assert.Equal("obecná hláška", PrintDialogViewModel.ZadnaData(null, "obecná hláška"));
+            PrintDialogViewModel.ZadnaData([("linka 20", Duvod), ("linka 21", null)], "obecná hláška", Linka));
+        Assert.Equal("obecná hláška", PrintDialogViewModel.ZadnaData([], "obecná hláška", Linka));
+        Assert.Equal("obecná hláška", PrintDialogViewModel.ZadnaData(null, "obecná hláška", Linka));
     }
 
     [Fact]
@@ -52,14 +54,14 @@ public class DuvodPrazdnehoVystupuTests
     [Fact]
     public void LinkaBezDat_JeProblemSDuvodemJakoRadou()
     {
-        var h = KontrolaVystupu.LinkaBezDat("linka 20", Duvod);
+        var h = KontrolaVystupu.LinkaBezDat("linka 20", Duvod, Linka);
 
         Assert.Equal(ZavaznostHlaseni.Chyba, h.Zavaznost);
         Assert.Equal("linka 20", h.Kde);
         Assert.Equal("nemá data, nevytiskne se", h.Co);
         Assert.Equal(Duvod, h.Rada);
         Assert.Equal("linka 20", h.Linka);
-        Assert.False(string.IsNullOrWhiteSpace(KontrolaVystupu.LinkaBezDat("linka 21", null).Rada));
+        Assert.False(string.IsNullOrWhiteSpace(KontrolaVystupu.LinkaBezDat("linka 21", null, Linka).Rada));
     }
 
     [Fact]
@@ -67,11 +69,11 @@ public class DuvodPrazdnehoVystupuTests
     {
         var ostatni = new Hlaseni(ZavaznostHlaseni.Upozorneni, "Kód (QR, čárový)", "je malý");
 
-        var vse = KontrolaVystupu.SBezDat([("linka 20", Duvod)], [ostatni]);
+        var vse = KontrolaVystupu.SBezDat([("linka 20", Duvod)], [ostatni], Linka);
 
         Assert.Equal(2, vse.Count);
         Assert.Equal("linka 20", vse[0].Linka);
         Assert.Same(ostatni, vse[1]);
-        Assert.Single(KontrolaVystupu.SBezDat(null, [ostatni]));
+        Assert.Single(KontrolaVystupu.SBezDat(null, [ostatni], Linka));
     }
 }

@@ -17,7 +17,7 @@ public partial class DepartureGroupEditorDialog : Window
     /// ho jen otevření vlastností prvku z plátna - jinde se filtr nepamatuje.</summary>
     public string SearchMemoryKey { get => GeneralForm.SearchMemoryKey; set => GeneralForm.SearchMemoryKey = value; }
 
-    private const string GeneralSchemaClass = "ALVA.TemplateDesigner.EDInputForm.DepartureGridElementEdit";
+    private static readonly string GeneralSchemaClass = Models.ElementCatalog.FormClass(Models.ElementTypes.DepartureGrid);
 
     private readonly DepartureGroupEditorDialogViewModel _vm;
     private readonly DepartureGridElement _element;
@@ -42,11 +42,12 @@ public partial class DepartureGroupEditorDialog : Window
         ColumnVisualStyle? hourColumnStyle,
         List<DepartureColumnDefinition>? customColumns = null,
         string? presetsJson = null,
-        bool ukazatVlastniSloupce = true)
+        bool ukazatVlastniSloupce = true,
+        IReadOnlyList<DepartureColumnPresets.Preset>? presetOffer = null)
     {
         _element = element;
         _vm = new DepartureGroupEditorDialogViewModel(element, availableGroups, currentStyles, hourColumnStyle,
-            customColumns, presetsJson, ukazatVlastniSloupce);
+            customColumns, presetsJson, ukazatVlastniSloupce, presetOffer);
         DataContext = _vm;
         InitializeComponent();
         Title = ElementNames.TitulekVlastnosti(element);

@@ -70,7 +70,9 @@ Method TestGold0330510()
 	// bez zvýraznění prázdný). Mění se jen md5, počty jsou shodné.
 	// Re-baseline 2026-10-27 (`B194c` D4): do hodnot přibyly údaje prvního dopravce po polích
 	// (NAZEV/ADRESA/TELEFON/EMAIL/ICO_DOPRAVCE) jako u vývěsky AD. Jen md5, počty shodné.
-	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=D0X/SBGZcqp3XPfLFdvzhA==")
+	// Re-baseline 2026-10-30 (`B56` S7): hlavičku linky skládá `Jr.DataAd.AddHlavickaLinky`, takže se v ní
+	// změnilo pořadí položek. Jen md5, počty shodné; snímek výstupu agend porovnaný podle obsahu jiný rozdíl nemá.
+	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=izrpkHuiIlLJZqyD8ow/RQ==")
 }
 
 /// Druhý tvar: bez skupin dnů, zdvojené řádky příjezd/odjezd, šest km sloupců.
@@ -109,7 +111,8 @@ Method TestGold0330511()
 	// Re-baseline 2026-10-26 (`B194` T3b): čárka s mezerou mezi daty omezení (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-27 (`B194` D1): název aktuální zastávky v hlavičce (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích - viz gold 0330510. Jen md5.
-	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=Q+CZ9LmPQy6Z92g0mFUHfw==")
+	// Re-baseline 2026-10-30 (`B56` S7): pořadí položek hlavičky - viz gold 0330510. Jen md5.
+	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=uEgxDGOUkdU5wYvlvzDqHg==")
 }
 
 /// Třetí tvar, jiná firma: největší linka jádra (99 spojů, 53 na stránku, osm km sloupců).
@@ -145,7 +148,8 @@ Method TestGold0410107()
 	// Re-baseline 2026-10-26 (`B194` T3b): čárka s mezerou mezi daty omezení (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-27 (`B194` D1): název aktuální zastávky v hlavičce (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích - viz gold 0330510. Jen md5.
-	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=UKn0LYnZ2HXmhS5a2rVywg==")
+	// Re-baseline 2026-10-30 (`B56` S7): pořadí položek hlavičky - viz gold 0330510. Jen md5.
+	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=5ebQxxRAna8L6c83a7RpUw==")
 }
 
 /// Čtvrtý tvar: 109 spojů na **jediné** stránce (jeden směr), bez zón a bez sloupce MHD.
@@ -183,7 +187,8 @@ Method TestGold0945001()
 	// Re-baseline 2026-10-23 (#13606): barvy linky v hlavičce (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-27 (`B194` D1): název aktuální zastávky v hlavičce (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích - viz gold 0330510. Jen md5.
-	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=exdnjFKVlep8FCMZC/TlLQ==")
+	// Re-baseline 2026-10-30 (`B56` S7): pořadí položek hlavičky - viz gold 0330510. Jen md5.
+	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=OVJlSKdSlpzwuWCU7axZag==")
 }
 
 /// Ověří digest jedné linky proti očekávané hodnotě. Rozlišuje:
@@ -193,7 +198,7 @@ Method TestGold0945001()
 Method AssertLinka(db As %String, sku As %String, lin As %String, ocekavano As %String)
 {
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - gold "_lin_" přeskočen")
+		do $$$AssertSkipped("firma "_db_" není na tomto serveru - gold "_lin_" přeskočen")
 		quit
 	}
 	if '$data(^[db]JRL(sku, lin, "I")) {

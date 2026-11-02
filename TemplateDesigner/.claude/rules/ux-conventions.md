@@ -36,16 +36,19 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 ## 2. Tooltipy
 
 - **Každý ikonový button** v toolbaru / paletě **musí mít** `ToolTip` - bez textu je tlačítko slepé.
-- Tooltip format: `"Akce - klávesa"` (např. `"Duplikovat - Ctrl+D"`).
+- Tooltip format: `"Akce - klávesa"` (např. `"Duplikovat - Ctrl+D"`). Tlačítko se zkratkou ho bere
+  z tabulky zkratek: `ToolTip="{td:Tip Undo}"`, v menu `InputGestureText="{td:Gesture Undo}"`.
 - Pokud akce nemá keyboard shortcut, jen `"Akce"`.
 
 ---
 
-## 3. Keyboardové zkratky - autoritativní tabulka
+## 3. Keyboardové zkratky
 
-> Autoritativní = odpovídá `MainWindow.xaml.cs` KeyDown handleru (ověřeno 2026-07-03). Při změně
-> zkratky v kódu aktualizuj i tuto tabulku. Save As **nemá** zkratku (jen menu/příkaz) - dřívější
-> „Ctrl+Shift+S" byl drift, neexistuje.
+> **Zdroj je `dotnet/Designer/KeyboardShortcuts.cs`** (od 30. 10.): obsluha kláves s ním porovnává, menu,
+> bubliny, nápověda F1 a asistent z něj berou text. Do té doby byly zkratky opsané na sedmi místech a rozcházely se.
+> Tabulky níž jsou přehled s důvody rozhodnutí; `KlavesoveZkratkyTests` hlídá, že ony, příručka i texty
+> v kódu neznají zkratku, kterou tabulka nemá. Shoda je **přesná** (Ctrl+Shift+Z není Ctrl+Z, AltGr nespustí
+> zkratku s Ctrl). Save As **nemá** zkratku (jen menu/příkaz) - dřívější „Ctrl+Shift+S" byl drift, neexistuje.
 
 ### Edit operace
 
@@ -54,18 +57,19 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 | Ctrl+Z / Ctrl+Y | Undo / Redo |
 | Ctrl+X / Ctrl+C / Ctrl+V | Cut / Copy / Paste |
 | Ctrl+D | Duplikovat (plain duplikát +5mm offset) |
-| Ctrl+D + šipka | Směrové duplikování (kopie vedle s 4mm mezerou) |
+| Ctrl+D + šipka | Směrové duplikování (kopie vedle s mezerou pro přichytávání, výchozí 2 mm) |
 | Ctrl+Shift+C / Ctrl+Shift+V | Copy / Paste **stylu** (TextStyle + Border + Background) |
 | Delete | Smazat výběr |
 | Ctrl+A | Vybrat vše (v aktivní sekci) |
 | Enter | Vlastnosti výběru (1 element = dialog; víc = dialog společných vlastností) |
 | F2 | Inline editace textu (jen TextElement, 1 vybraný) |
 | Dvojklik | Vlastnosti prvku (dvojklik do prázdna = zrušit výběr) |
+| Ctrl+klik | Přidat prvek do výběru, nebo ho z výběru odebrat (u skupiny celou skupinu) |
 
 ### Uvnitř pevné tabulky (editace buněk na plátně)
 
 ⚠️ **Dvojklik zůstává na nastavení i tady** (rozhodnutí Jan 12. 8.). První návrh na něj věsil vstup
-do buňky, jenže uživatel má z ostatních tabulek (zastávky, odjezdy, tabulka z dat) naučené, že
+do buňky, jenže uživatel má z ostatních tabulek (zastávky, odjezdy, tabulka s řádky z dat) naučené, že
 dvojklik otevře nastavení - tabulka by byla jediná výjimka **uvnitř naší aplikace**, a ta shoda váží
 víc než zvyk z Wordu. Do obsahu se proto vchází **F2** (u textového prvku znamená totéž: „uprav
 obsah na místě"), **Alt+klikem** rovnou do zvolené buňky, nebo položkou **„Vyplnit tabulku"**
@@ -133,7 +137,8 @@ zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan
 
 - panel u buňky ukazuje **týž formulář jako okno Alt+Enter** (jedno schéma, dva hostitelé - jako
   u prvků; dvě různá by se rozešla) a začíná skupinou **„Vybraná buňka"** s tlačítkem
-  **„Nastavení celé tabulky"** (= odchod z buňky, táž cesta jako Esc, jen pojmenovaná),
+  **„Nastavení celé tabulky"** (= odchod z buňky, táž cesta jako Esc, jen pojmenovaná). Okno Alt+Enter
+  ho neukazuje - okno vlastností skryje každé tlačítko, pro které nemá akci (do 30. 10. tam bylo mrtvé),
 - formulář prvku má skupinu **„Styl všech buněk"** - z popisku je vidět, že je to výchozí pro celou
   tabulku, ne pro tu jednu,
 - pole ukazují **vyřešenou** hodnotu (i tu zděděnou - formulář ji dostane z kaskády, ne ze schématu),
@@ -151,7 +156,7 @@ zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan
 | Šipky | Posun vybraného elementu o **1 mm** |
 | Ctrl+šipky | Posun o **velikost mřížky** (lišta Mřížka plátna: 0,2 / 0,5 / 1 / 2 / 5 / 10 mm) |
 | **Shift+šipky** | **Změna velikosti** o 1 mm - mění se pravá a dolní hrana, levý horní roh drží |
-| Ctrl+PageUp / Ctrl+PageDown | Z-order dopředu / dozadu (+Shift = do krajní pozice) |
+| Ctrl+PageUp / Ctrl+PageDown | Přenést dopředu / Odeslat dozadu (+Shift = zcela) |
 | Ctrl+Shift+↑/↓ (aktivní sekce) | Přesun sekce nahoru / dolů |
 | **tažení za hranu sekce** | **výška sekce**: sekce pod se posunou a podrží svou výšku, mřížka platí a Ctrl ji vypne, Esc zruší. Sekci nejde zmenšit pod její obsah (jinak by se prvek v návrháři oříznul, ale vytiskl se celý). ⚠️ **Patička se tahá za HORNÍ hranu** - je kotvená ke spodku papíru, takže roste nahoru; tažením zdola by rostla proti pohybu myši. Horní hrana sekce v toku se nechytá zvlášť, je to táž linka jako spodní hrana sekce nad ní. ⚠️ **Úchyt prvku má přednost**, jinak by prvek u hrany nešel roztáhnout - hrana se proto chytá i v levém modrém štítku sekce. Sekce s prázdnou výškou se netahá (počítá ji engine z obsahu) |
 
@@ -196,19 +201,20 @@ podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbij�
 | Ctrl+Shift+P | Vlastnosti stránky |
 | Ctrl+Shift+A | Změnit agendu |
 | Ctrl+Shift+I | Výběr instancí (linek) - **I jako instance**, doménové písmeno by platilo jen pro JŘ |
+| Ctrl+kolečko | Zoom ke kurzoru (bod pod myší zůstane pod myší) |
 | Ctrl+0 | Přizpůsobit stránce (Fit) - == tlačítko „Fit" |
 | Ctrl+1 | Skutečná velikost 100 % (1:1) - == tlačítko „1:1" |
 | Ctrl+B | Sbalit / rozbalit levý panel |
 | F5 | Obnovit data - refetch GetData aktuální instance + invalidace cache (== tlačítko ↻ u instance chipu) |
 | F1 | Nápověda |
-| Escape | Zrušit přidávání elementu / probíhající operaci |
+| Escape | Zrušit přidávání elementu / probíhající operaci; zavřít úvodní obrazovku |
 
 ### Pravidla pro nové zkratky
 
 - **Nepřebíjet** standardní Windows zkratky (Ctrl+S, Ctrl+Z, Ctrl+C, Alt+F4, F1, Esc).
 - **Ctrl+Shift+X** prostor je pro „advanced" varianty (Copy Style, Normalize).
 - **Alt+X** prostor je pro alternativní výběr (Alt+klik).
-- **Tlačítko a jeho zkratka musí dělat totéž** (Fit ↔ Ctrl+0, 1:1 ↔ Ctrl+1). Při přidání nové zkratky - **doplnit ji do této tabulky**.
+- **Tlačítko a jeho zkratka musí dělat totéž** (Fit ↔ Ctrl+0, 1:1 ↔ Ctrl+1). Nová zkratka se přidává **do `KeyboardShortcuts`** (menu, bubliny, F1 a asistent ji převezmou) a sem do přehledu.
 
 ---
 
@@ -256,6 +262,8 @@ podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbij�
   Mřížka plátna a přichytávání / Zoom / Panely / Data / Tisk). Oddělovač, za kterým nic nezůstane (prvky JŘ
   v obecné agendě), se schová s tím, co odděluje.
 - Drag-from-palette: `PreviewMouseLeftButtonDown` → ghost preview na canvasu → drop = `AddElementCommand`.
+- **Paleta prvků i nabídka „Přidat prvek" se staví z katalogu prvků** (`Models/ElementCatalog.cs`, od 30. 10.):
+  bublina „Jméno - co prvek dělá", pořadí podle katalogu, prvky JŘ podle druhu agendy. Do okna je nepiš napevno.
 
 ---
 
@@ -274,8 +282,10 @@ Stejná vlastnost = **stejný label** ve všech elementech, dialozích i EDInput
 je zdvojený (PropertyDescriptor v `.cs` **i** EDInputForm `.cls`) → při změně/přidání uprav **obě**
 místa. **Před vymýšlením nového popisku grepni, jak se to jmenuje jinde**, a použij zavedený termín.
 
-**Jak se popisek tvoří** (rozhodnutí Jan 28. 10. na Seznamu zastávek; hledání ve formuláři porovnává celý
-zadaný text s popiskem nebo názvem skupiny, nápovědu ne - `EDInputForm.xaml.cs` `ComputeSearchMatches`):
+**Jak se popisek tvoří** (rozhodnutí Jan 28. 10. na Seznamu zastávek; hledání ve formuláři porovnává zadaná
+slova s popiskem a názvem skupiny, nápovědu ne - `EDInputForm.xaml.cs` `ComputeSearchMatches`; v oknech návrháře
+navíc se synonymy z `Designer/SlovnikHledani.cs`, „písmo" najde Font - nový zavedený termín, který uživatel hledá
+jiným slovem, dopiš tam):
 
 - **Popisek odpovídá typu pole a tomu, co uživatel udělá.** Číslo = jméno veličiny nebo **„Počet …"**
   (~~Rozdělit na více oddílů~~ → Počet oddílů), zaškrtávátko = věc, kterou zapíná (~~Odsazení~~ → Odsazení
@@ -313,6 +323,7 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Objekt na plátně (TextElement, LineTableElement…) | **prvek** - v UI textech, nápovědách i příručce; třídy v kódu zůstávají `*Element` (rozhodnutí Jan 26. 10.) | ~~element~~ |
 | Uzamčení prvku (IsLocked) | **Uzamčeno** | ~~Zamčeno~~ |
 | Pořadí překrytí (ZIndex) | **Vrstva** („Vyšší vrstva leží nad nižší") - rozhodnutí Jan 26. 10. | ~~ZIndex~~, ~~Pořadí vrstvy~~ |
+| Příkazy vrstvy (menu, místní nabídka, bubliny, historie kroků) | **Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu** - texty bere z `KeyboardShortcuts` (rozhodnutí Jan 30. 10.) | ~~Dopředu~~ samotné, ~~Úplně dopředu~~, ~~Úplně dozadu~~ |
 | Výška, kterou sazba dopočte | **výška podle obsahu** („výška se počítá podle obsahu") | ~~počítá engine~~, ~~dynamická výška~~ |
 | Plocha návrháře | **plátno** | ~~canvas~~ |
 | Výraz podmíněné viditelnosti (VisibilityExpression) | **Podmínka viditelnosti**, u řádku **Podmínka viditelnosti řádku** (je to podmínka, ne zaškrtávátko - rozhodnutí Jan 28. 10.) | ~~Viditelnost~~, ~~Viditelnost řádku~~ |
@@ -322,6 +333,8 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Přestupy u zastávky | **Přestupy (vlak/autobus)** | ~~(vlak/bus)~~ |
 | Prvek s vysvětlivkami pod vývěskou | **Poznámky** | ~~Legenda poznámek~~ (třída `NotesLegendElement` se nepřejmenovává - visí na ní `type` v šablonách) |
 | Prvek s časy odjezdů po hodinách | **Minuty odjezdů** | ~~Mřížka odjezdů~~ („mřížka" je implementační pojem; třída `DepartureGridElement` zůstává) |
+| Tabulka, jejíž řádky se berou z kolekce dat | **Tabulka s řádky z dat** - jméno říká, odkud jsou řádky; data (pole `{…}`) může mít i pevná tabulka (rozhodnutí Jan 30. 10.; třída `DynamicTableElement` zůstává) | ~~Tabulka (z dat)~~, ~~dynamická tabulka~~, ~~Datová tabulka~~, ~~Výpis z dat~~ |
+| Tabulka, kterou vyplňuje uživatel | **Pevná tabulka** - řádky i obsah zadává uživatel (třída `TableElement` zůstává) | ~~Tabulka (pevná)~~, ~~fixní tabulka~~ |
 | Prvek s tabulkou zastávky × spoje | **Tabulka spojů** | ~~Linkový JŘ~~, ~~Tabulka linky~~ (tak se jmenuje **agenda**, prvek by se s ní pletl; třída `LineTableElement` zůstává) |
 | Zóna, km, Tč, zastávka a MHD v Tabulce spojů | **popisné sloupce** (rozhodnutí Jan 26. 10.) | ~~popisové sloupce~~, ~~sloupce popisu~~ |
 | Prvek s QR / čárovým kódem | **Kód (QR, čárový)** | ~~Kód~~ samotné (neřekne, co prvek umí), ~~Kód (QR / čárový)~~ |
@@ -334,6 +347,11 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 vědomé kontextové rozdíly labelu téhož klíče patří do `exempt` v testu s komentářem. Týž ban list
 hlídá pole agend (`AgendaSchemaDriftTests`) a parametry sestavy (`AgendaParameterDriftTests`: popisek,
 skupina = „Obecné" nebo název prvku, stejný parametr = stejný popisek napříč agendami).
+Ban list má dvě části: **názvosloví** (`BannedTerms`: nástupiště, element, cílová, Mřížka odjezdů…) platí
+ve všech textech pro uživatele, tedy i v nápovědách, hláškách agend a textech oken (`NazvosloviTextuTests`);
+**tvary popisku** (`BannedLabelForms`: zkratky, „projetých", „Tučně") jen v popiscích - ve větě nápovědy
+je „tisk projetých zastávek" správně. Nový zakázaný termín zařaď podle toho, kde vadí. Každý přeškrtnutý
+tvar v tabulkách níž musí být v některém seznamu, nebo mít výjimku s důvodem - hlídá `KanonNazvosloviTests`.
 
 Kanonické termíny (doména JŘ):
 
@@ -374,8 +392,9 @@ při každé změně instance a souboj s uloženou volbou uživatele (v panelu j
 
 **⚠️ Labely enum parametrů sestavy jsou ZAMČENÉ** - hodnota volby se persistuje i porovnává na
 serveru jako zobrazovaný text (`RAZENI_VARIANT`, `ROZDELENI_SLOUPCU`, `SCHOVAT_V_ROZSAHU`…);
-přejmenování labelu by tiše zahodilo uloženou volbu uživatelů na default. Budoucí přejmenování jen
-se stabilním kódem vedle labelu (aditivní wire změna).
+přejmenování labelu by tiše zahodilo uloženou volbu uživatelů na default. Přejmenovat jde jen to, co se
+ukazuje: text volby zůstane a nový popisek se pošle vedle v poli `optionLabels` (`cache-api.md` §R3; dnes
+„Rozdělení sloupců", tatáž volba se ve vývěsce i linkovém JŘ jmenuje stejně).
 
 Výjimka: složené popisky s jasnou sémantikou (`Výchozí font` = font dokumentu) jsou OK, dokud
 obsahují kanonický kořen. Nový termín, který v tabulce není, přidej sem, až ho poprvé zavedeš.

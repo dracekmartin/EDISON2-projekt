@@ -43,3 +43,6 @@ skutečnou odpovědí.
     bez jména a smyčky přes uživatele v `ALVA.SYS.Login` na něm padají. Jen MLP testovacího účtu (`SessionDataTests`),
   - `ChangePassword` s platným starým heslem testovacího účtu - změní heslo, ze kterého testy berou přihlášení.
 - Server má nasazený stav pracovního stromu (compile hook při editaci `.cls`), ne pushovaný commit.
+- **Kontrakt dat agend návrháře** (`KontraktDatAgendTests`): `KontraktDat.cs` a `StopFields.cs` z TemplateDesigner
+  jsou přilinkované (bez závislostí), ne celá aplikace. Linky a volání agend bere ze sondy `ALVA.TemplateDesigner.Tests.SnimekAgendProbe`,
+  musí tedy být na serveru nasazená.

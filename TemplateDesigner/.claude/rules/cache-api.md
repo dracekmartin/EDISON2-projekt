@@ -8,10 +8,11 @@
 - **Nikdy neupravuj `.cls` skriptem.** Ani „mechanicky" (mazání řádků, přidání dvou polí) - právě tam
   se to stalo dvakrát 4. 8. **Když se to stane, vrať soubor (`git checkout --`) a zapiš změnu znovu
   editačním nástrojem** - jen tak hook spustí harness a nasazení proběhne.
-- ⚠️ **Ruční poslání cesty hooku NENASADÍ** (ověřeno 8. 9.). Volání
-  `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`
-  skončí s kódem 0, bez chyby na stderr - a server dál vrací starou třídu. Do 8. 9. tady stálo jako
-  doporučená záchrana; je to tedy **stejná past jako `cache_compile`** níž, jen tiší.
+- ⚠️ **Ruční poslání cesty hooku nasadí jen s obyčejnými lomítky** v cestě
+  (`C:/Users/.../X.cls`; ověřeno 30. 10. voláním serveru). Se zpětnými lomítky hook nenajde `/CACHE/`
+  a skončí s kódem 0 bez chyby - server dál vrací starou třídu (tak to vypadalo 8. 9.). Potřeba je
+  hlavně v session spuštěné ze složky `TemplateDesigner/`: hook na Edit/Write je nastavený jen
+  v kořenovém `.claude/settings.json`. Chybu překladu hook vypíše; úspěch je tichý, proto vždy ověřit voláním.
 - ⚠️ **Skript může soubor rozbít tak, že se od té chvíle nenasadí NIC** (10. 9.). Python zápis
   s `encoding='utf-8-sig'` přidá souboru **BOM**, který v žádném `.cls` není; upload pak posílá
   soubor, jehož první řádek začíná neviditelným znakem, **překlad spadne a server drží poslední
@@ -53,7 +54,10 @@ Kontrola má dvě části, protože chyba má dvě podoby:
 `ALVA.TemplateDesigner.*` se dělí **podle role třídy** do folder/namespace:
 
 - **`ALVA.TemplateDesigner.API.*`** - obecná business logika TD projektu (cross-cutting). Příklady: `Sablony` (CRUD šablon), v budoucnu `UserPreferences`, `SectionTemplates`.
-- **`ALVA.TemplateDesigner.Agendy.*`** - agenda implementations (data sources). Příklady: `BaseAgenda` (abstract base), `ZastavkoveJrMhd`, `Faktury`.
+- **`ALVA.TemplateDesigner.Agendy.*`** - agenda implementations (data sources). Příklady: `BaseAgenda` (abstract base), `ZastavkoveJrMhd`, `LinkovyJrAd`.
+- **`ALVA.TemplateDesigner.Agendy.Jr.*`** - pomocné třídy sdílené agendami JŘ podle zdroje dat a druhu výstupu (`B56`, R8),
+  jméno podle role (`DataAd`, `DataMhd`). Nejsou potomky `BaseAgenda`, registr je nenabízí; testy je čtou jako kód agend (`ZdrojeAgend`).
+  **Agenda nevolá jinou agendu** - co potřebují dvě, patří sem (výjimka: rozdílový JŘ nad linkovým AD); hlídá `DataPodleZdrojeTests`.
 - **`ALVA.TemplateDesigner.EDList.*`** - dispatch třídy pro EDList komponentu (UI contract). Příklady: `Sablony` (backing pro CacheTemplatePickerDialog), `Instance` (backing pro InstancePickerDialog).
 - **`ALVA.TemplateDesigner.EDInputForm.*`** - dispatch třídy pro EDInputForm komponentu (hlavní editační cesta elementů).
 - **`ALVA.TemplateDesigner.EDInputGrid.*`** - dispatch třídy pro EDInputGrid (až bude potřeba).
@@ -64,103 +68,45 @@ Folder = namespace prefix; class name musí odpovídat file path (InterSystems c
 
 ---
 
-## Caché BaseAgenda architektura (implementováno)
+## Caché agendy - kontrakt `BaseAgenda`
 
-Každá agenda (JR, FAKTURY, ...) má jednu Caché třídu dědící z abstraktního základu.
-Třída slouží jako **kompletní API rozhraní** pro TemplateDesigner - design-time i print-time.
+Každá agenda je jedna Caché třída, **přímý potomek** `ALVA.TemplateDesigner.Agendy.BaseAgenda` - registr
+hledá jen přímé potomky, sdílený kód patří do pomocných tříd mimo hierarchii (`architektonicka-rozhodnuti-agendy.md` R8).
+Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`; čti je tam, sem se kód neopisuje
+(opsaný vzor tu do 30. 10. učil klíče, které návrhář nečte).
 
-### Abstraktní základ - vynucuje kontrakt
-
-```objectscript
-Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [ Abstract ]
-{
-    /// Vrátí DataSchema: skalární pole + skupiny tabulek (scope=table)
-    ClassMethod GetSchema(ByRef sys As %String) As %Status [ Abstract ] {}
-
-    /// Vrátí seznam dostupných Fixed šablon tabulek pro tuto agendu
-    ClassMethod GetTableTemplates(ByRef sys As %String) As %Status [ Abstract ] {}
-
-    /// Vrátí definici konkrétní šablony (sloupce + řádky)
-    /// IN: key = klíč šablony (např. "JR_ZAHLAVI")
-    ClassMethod GetTableTemplate(ByRef sys As %String) As %Status [ Abstract ] {}
-
-    /// Vrátí data pro tisk: skaláry + kolekce řádků
-    /// IN: parametry tisku (závisí na agendě)
-    ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ] {}
-
-    /// Vrátí vzorová data pro live preview v designeru
-    /// OUT[1] = { "values": {...}, "rows": { "ZASTAVKY": [...] } }
-    ClassMethod GetMockData(ByRef sys As %String) As %Status [ Abstract ] {}
-}
-```
-
-Každá nová agenda **musí** implementovat všech pět metod - Caché kompilátor to ohlídá.
-
----
-
-### Implementace per agenda
-
-```objectscript
-Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
-{
-    ClassMethod GetSchema(ByRef sys As %String) As %Status
-    {
-        s def = ##class(%DynamicObject).%New()
-
-        // Skalární pole
-        s fields = ##class(%DynamicArray).%New()
-        s f = ##class(%DynamicObject).%New()
-        s f.name = "CISLO_LINKY"  s f.label = "Číslo linky"  s f.type = "number"
-        d fields.%Push(f)
-        // ... další pole ...
-        s def.fields = fields
-
-        // Skupiny tabulek (scope=table)
-        s groups = ##class(%DynamicArray).%New()
-        s g = ##class(%DynamicObject).%New()
-        s g.name = "Zastávky"  s g.scope = "table"  s g.collectionKey = "ZASTAVKY"
-        s gFields = ##class(%DynamicArray).%New()
-        s gf = ##class(%DynamicObject).%New()
-        s gf.name = "POPIS"  s gf.label = "Název zastávky"  s gf.type = "text"
-        d gFields.%Push(gf)
-        s g.fields = gFields
-        d groups.%Push(g)
-        s def.groups = groups
-
-        s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
-        q 1
-    }
-
-    ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
-    {
-        s arr = ##class(%DynamicArray).%New()
-        s t = ##class(%DynamicObject).%New()
-        s t.key = "JR_ZAHLAVI"  s t.label = "Záhlaví JR"
-        d arr.%Push(t)
-        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-        q 1
-    }
-
-    ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
-    {
-        s key = $g(^||ML("IN", "key"))
-        if key = "JR_ZAHLAVI" {
-            // Sestaví a vrátí { "columns": [...], "rows": [...] }
-            // viz wire formát níže
-        }
-        q 1
-    }
-
-    ClassMethod GetData(ByRef sys As %String) As %Status
-    {
-        // Načte parametry z IN, vrátí skaláry + kolekce
-        // viz wire formát níže
-        q 1
-    }
-}
-```
-
----
+- **Povinné:** `GetSchema` (nabídka dat), `GetData` (stránky pro tisk), `GetMockData` (ukázka pro náhled bez instance;
+  agendy JŘ posílají prázdnou stránku s výzvou vybrat linku).
+- **Volitelné**, výchozí prázdný výsledek: `GetParameters`, `GetAvailableSkupiny`, `GetAvailableInstances`.
+  Předpřipravené tabulky (`GetTableTemplates` / `GetTableTemplate`) jsou od 30. 10. zrušené - návrhář je nikde nenabízel
+  (`B56` S10). Hotové bloky do šablony se nedělají (`B66` zrušené 31. 10.), výchozím bodem jsou dodané šablony.
+- **Parametry třídy** - `AgendaVariantCode` (stabilní persistovaný klíč), `Agenda` / `Variant` s labely, `ElementKind`,
+  `InstanceParamName`, `CustomColumns`, `VariantyTras`, `RozdilyVerzi`, `Released` (bez něj se agenda uživatelům nenabízí),
+  `InstanceTvary` + `InstanceRod` (jak se jmenuje to, co agenda tiskne - tvary pádů a rod; návrhář z nich skládá
+  texty oken a hlášek, obecný text „linku" napevno nepíše, hlídá `NazevInstanceTests`).
+- **Každá metoda s `ByRef sys`** dodržuje pravidla 14-15 níž, nebo jen přesměruje na metodu jiné agendy
+  (`q ##class(…).X(.sys)`); hlídá `OsetreniChybAgendTests`.
+- **Vzorem jsou agendy JŘ** (`ZastavkoveJrAd`, `LinkovyJrAd`). Ukázková agenda Faktury bez zdroje dat je od 30. 10. smazaná
+  (rozhodnutí Jan); agenda bez linek přijde s převodem Report generátoru.
+- **Nabídka dat agendy JŘ:** pole, které nabízejí aspoň dvě agendy, bere agenda ze slovníku `Jr/NabidkaDat.cls`
+  (`AddPole`, `AddKolekce`, `AddPoleKolekce`) a sama určuje jen výběr a pořadí; pole jen své agendy přidá přes `AddField`.
+  Popisek ze slovníku přepíše jen u vědomého rozdílu. Hlídá `AgendaSchemaDriftTests` (pole je ve slovníku, slovník
+  drží jen pole aspoň dvou agend, agenda nepíše pole slovníku znovu přes `AddField`).
+- **`BaseAgenda` je jen kontrakt a obecné věci** pro všechny agendy (pomocníci nabídky a parametrů, hlášky bez dat
+  a chyby dat, formát data) - data nečte, hlídá `DataPodleZdrojeTests.ZakladAgendNectaData` (R8, `B56` S13).
+- **Společné parametry JŘ** jsou v `Jr/Parametry.cls` (i čtení volby barev spojů); agenda si je skládá v `GetParameters` a drží jejich pořadí.
+- **Stavba výstupu vývěsky** (řádek zastávky, odjezd, skupina dnů, poznámka, barva, speciální znak) je v `Jr/VystupZastavkovy.cls`,
+  linkového JŘ (poznámka, skupina dnů, čas) v `Jr/VystupLinkovy.cls`, **vlastní sloupce spojů** ze šablony
+  (rozbor `DEFINICE_SLOUPCU`, zařazení spoje podle dnů a značek) pro oba druhy výstupu v `Jr/VlastniSloupce.cls`,
+  **varianty tras** vývěsky (sled zastávek, zástupce varianty, slití, řazení, ořez, písmena) v `Jr/VariantyTras.cls` -
+  agenda do ní dá spoje a průběh zástupce každého sloupce, data sama nečte.
+- **Čtení dat AD** společné agendám nad `^JRL`/`^JRZ`/`^JRSET` (název, číslo a první linka, spoje směru, barva linky a spoje,
+  hodnota času, dny spoje, záznam zastávky k datu a tvar jejího názvu, nadpisy skupin dnů, upřesnění „na objednání",
+  platnost jízdního řádu, text datumových omezení spoje s předložkami a formátem dat) je v `Jr/DataAd.cls`,
+  **čtení dat MHD** (seznam linek, dopravce, typ JŘ) v `Jr/DataMhd.cls`.
+  Hlavičku linky, kterou posílají všechny agendy nad týmž zdrojem stejně, zapíše `AddHlavickaLinky` třídy zdroje; agenda za ni přidá jen své vědomé rozdíly.
+  Výběr skupin linek a linek (`GetAvailableSkupiny`, `GetAvailableInstances`) agenda jen přesměruje do třídy svého zdroje,
+  aby se okno výběru linek chovalo ve všech stejně; hlídá `DataPodleZdrojeTests`.
 
 ### Wire formáty
 
@@ -183,32 +129,7 @@ Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd Extends ALVA.TemplateDesigner
 }
 ```
 
-#### GetTableTemplates - OUT[1]
-```json
-[
-  { "key": "ZAHLAVI_LINKY",    "label": "Záhlaví linky" },
-  { "key": "PLATNOST_DOPRAVCE","label": "Platnost a dopravce" }
-]
-```
-
-#### GetTableTemplate - IN + OUT[1]
-```
-IN: key = "ZAHLAVI_LINKY"
-```
-```json
-{
-  "columns": [
-    { "header": "Položka", "width": 80, "widthMode": "Mm", "alignment": "Left" },
-    { "header": "Hodnota", "width": 60, "widthMode": "Mm", "alignment": "Right" }
-  ],
-  "rows": [
-    { "cells": [{ "content": "Linka" },       { "content": "{CISLO_LINKY}" }] },
-    { "cells": [{ "content": "Platnost od" }, { "content": "{DATUM_OD}", "format": "dd.MM.yyyy" }] }
-  ]
-}
-```
-
-#### GetMockData - OUT[1] (design-time preview)
+#### GetMockData - OUT[1] (náhled bez vybrané instance)
 ```json
 {
   "values": {
@@ -275,18 +196,29 @@ argument) - jinak jeho změna v UI nespustí načtení dat a klik je no-op. Klie
 takových parametrů nedrží (od 21. 9.), ptá se definice parametru. Bool parametry se na wire
 posílají jako `"true"/"false"` a server je čte tolerantně přes `$zcvt(...,"L")` (starší klienti
 posílali `"True"`). Labely enum parametrů jsou ZAMČENÉ - persistuje se zobrazovaný text
-(viz `ux-conventions §8`).
+(viz `ux-conventions §8`). Jména parametrů a popisky voleb, které klient čte nebo porovnává, jsou v jedné třídě
+`Models/ParametrySestavy`; `ParametrySestavyTests` hlídá, že je agendy posílají a kód je jinde nepíše napevno. Stabilní kód k volbě nese aditivní pole **`optionKeys`** (stejné pořadí
+jako `options`, prázdný = volba bez kódu; `TemplateParameter.OptionKeys`). Dnes klíč vzoru sloupců
+u „Rozdělení sloupců": volby, klíče i převod volby na rozložení staví agenda z jednoho seznamu
+(`VzorySloupcu` / `VzorySloupcuLinky`) a klient z nich bere popisky vzorů (`DepartureColumnPresets.FromParameter`).
+Shodu s `PRESETY_SLOUPCU` hlídá `VzorySloupcuTest`. ⚠️ Nasazuje se server dřív než klient: nový
+klient se starým serverem vzory nenabídne.
+Zobrazovaný popisek, který se liší od uloženého textu volby, nese aditivní pole **`optionLabels`** (stejné pořadí,
+`TemplateParameter.OptionLabel`, formulář `AgendaParams` ho dá do položky seznamu). Dnes u „Rozdělení sloupců":
+tatáž volba má ve vývěsce i linkovém JŘ AD stejný popisek z `Jr.Parametry.PopisekVzoruSloupcu`, uložený text zůstal
+(`P2`, hlídá `VzorySloupcuTest`). Popisek jde přejmenovat volně, text volby ne.
 
 **Volba, která patří k prvku, ale server ji musí znát** (dnes `DEFINICE_SLOUPCU`, `JAZYK`,
 `TURNUSY_KE_SPOJUM`) **není parametr sestavy**: skládá se do IN vždy **čerstvě ze šablony**
-v `ComposeGetDataParams` (nikdy z persistovaných hodnot - třída chyb `B24`), příznak `serverSide`
-nedostane (patří do `InfrastructureKeys` v `ServerSideParamsDriftTests`) a **re-fetch při její změně drží
-`CurrentWireSnapshot`** - do něj se nová volba musí přidat, jinak zaškrtnutí nic neudělá, dokud
-uživatel nezmáčkne obnovení dat. Poznávací znak: „odpověď na tuhle otázku dává šablona, ne uživatel
-před tiskem."
+(nikdy z persistovaných hodnot - třída chyb `B24`) a příznak `serverSide` nedostane. Žije v jednom typu
+**`Models/TemplateDataInputs`** (od 30. 10.): nová volba = vlastnost tam, v `From` a ve `Values`. Vstup
+`GetData` i ukázkových dat, klíč jejich cache, nové načtení dat po změně (rovnost záznamu) i výjimky
+`ServerSideParamsDriftTests` ji převezmou samy; do té doby se musela dopsat na čtyři místa a zapomenuté
+místo znamenalo zaškrtnutí, které nic neudělá, dokud uživatel nezmáčkne obnovení dat. Poznávací znak:
+„odpověď na tuhle otázku dává šablona, ne uživatel před tiskem."
 
 **Parametr, který má účinek jen s určitým sloupcem prvku**, nese `visibleWhenColumn` = klíč sloupce
-(dnes parametry variant tras → `CAS_JIZDY_VARIANTY`) a návrhář ho schová, když sloupec žádný prvek
+(dnes parametry variant tras → `CAS_JIZDY_VARIANTY`, Čas jízdy podle nastavení linky → `CAS_JIZDY`) a návrhář ho schová, když sloupec žádný prvek
 šablony neukazuje - uživatel má vidět jen nastavení pro to, s čím v šabloně pracuje (rozhodnutí Jan
 5. 10.). ⚠️ **Samostatný klíč, ne nový tvar `visibleWhen`**: starší klient by neznámou podmínku
 vyhodnotil jako nesplněnou a parametr schoval natrvalo, `visibleWhenColumn` jen ignoruje. Klíč sloupce
@@ -299,6 +231,21 @@ kterou `GetData` posílá jako pole názvů parametrů týkajících se načten�
 Bez dat, bez té hodnoty a v tiskovém dialogu (tiskne víc instancí) se nic neschovává.
 
 ---
+
+### Data, ne hotové věty (rozhodnutí Jan 30. 10.)
+
+Agenda posílá hodnoty z dat, ne věty z nich poskládané ani náhradní text za prázdnou hodnotu.
+Větu („Platí od … do …", „Linka č. …") si složí šablona z polí, protože jen ona ví, jak ji chce mít.
+Hotová věta z agendy se v šabloně změnit nedá a každá agenda ji měla jinak (čtyři tvary popisu platnosti, `B193f`).
+Prázdná hodnota zůstane prázdná: náhradní titulek „Městská hromadná doprava..." ze starého tisku by dostalo 97 % linek AD včetně regionálních (`B56` S7).
+Číslo jde jako číslo (číslo linky podle licence), označení, které smí obsahovat písmena, jako text (veřejné označení linky); hlídá `KontraktAgendTest.TestTypyCislaLinky`.
+
+Vědomé výjimky:
+
+- `POPIS_PLATNOSTI` - jen kvůli starším šablonám, v nabídce dat není od 23. 10.
+- `POPIS_DOPRAVCE` - tvar podle starého tisku každé agendy (rozhodnutí Jan 30. 10.); po položkách jsou pole `*_DOPRAVCE`.
+- `TYP_JR` („VÝLUKOVÝ", „NÁVRH") - ze dvou kódů by si šablona text složila jen dvěma prvky s podmínkou viditelnosti.
+- Texty poznámek a legendy - počet i znění dávají data a číselník firmy, šablona je sama složit neumí.
 
 ### Prezentační nápovědy (R3) - kolik vzhledu smějí nést data
 
@@ -346,65 +293,43 @@ Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující š
 
 | Anglický název v kódu | Český ekvivalent | Business význam | Příklad |
 |---|---|---|---|
-| `GetSchema` | GetSchema | Vrátí **definici dostupných dat** agendy - co existuje jako pole, ne konkrétní hodnoty | `{ fields: [{name:"CISLO_LINKY",...}], groups: [...] }` |
-| `GetTableTemplates` | GetTableTemplates | Vrátí **seznam předdefinovaných layoutů** Fixed tabulek uložených v Caché | `[{key:"ZAHLAVI_LINKY", label:"Záhlaví linky"}]` |
-| `GetTableTemplate` | GetTableTemplate | Vrátí **konkrétní předdefinovaný layout** - sloupce + předvyplněné řádky | `{ columns:[...], rows:[{cells:[{content:"{CISLO_LINKY}"}]}] }` |
+| `GetSchema` | GetSchema | Vrátí **definici dostupných dat** agendy - co existuje jako pole, ne konkrétní hodnoty | `{ fields: [{name:"CISLO_LINKY",...}], fieldCollections: [...] }` |
 | `GetData` | GetData | Vrátí **reálná data z DB** pro tisk; volaná print enginem za běhu | `{ CISLO_LINKY:"42", NAZEV:"Praha–Brno" }` + kolekce řádků |
-| `GetMockData` | GetMockData | Vrátí **vzorová data** pro live preview v designeru; volaná design-time | stejná struktura jako GetData, ale s pevnými testovacími hodnotami |
+| `GetMockData` | GetMockData | Vrátí **ukázku pro náhled** bez vybrané instance | stejná struktura jako GetData; agendy JŘ posílají prázdnou stránku s výzvou vybrat linku |
 | `fields` | skalární pole | Pole agendy kde každá hodnota existuje **právě jednou** na celou sestavu | `CISLO_LINKY`, `POPIS_DOPRAVCE`, `DATUM_PLATNOSTI_OD` |
 | `fieldCollections` | tabulkové kolekce | Kolekce sad polí kde každá kolekce tvoří **seznam řádků** - zdroj dat pro Dynamic tabulku | kolekce `Zastávky` obsahuje pole `POPIS_ZASTAVKA`, `CAS_ODJEZDU`… |
 | `collectionKey` | klíč kolekce | Identifikátor kolekce řádků v `fieldCollections`; designer ho zobrazuje jako volbu DataSource Dynamic tabulky | `"ZASTAVKY"`, `"SPOJE"` |
-| `key` (v GetTableTemplates) | klíč šablony | Interní identifikátor Fixed šablony; předává se jako parametr do `GetTableTemplate` | `"ZAHLAVI_LINKY"`, `"PLATNOST_DOPRAVCE"` |
-
-**Konvence klíčů šablon tabulek:** česky, velkými písmeny, podtržítko jako oddělovač, bez prefixu třídy/agendy. Příklady: `ZAHLAVI_LINKY`, `PLATNOST_DOPRAVCE`.
 
 **Konvence collectionKey:** česky, velkými písmeny, množné číslo, podtržítko jako oddělovač. Příklady: `ZASTAVKY`, `SPOJE`, `POLOZKY_FAKTURY`.
 
 ---
 
-### C# strana - konfigurace a provider
+### C# strana - registr a provider
 
-**templatedesigner.appsettings.json** (vlastní název kvůli sdílené složce `C:\Edison\`):
-```json
-{
-  "agendas": [
-    { "code": "MHD",     "label": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" },
-    { "code": "FAKTURY", "label": "Faktury",            "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury" }
-  ]
-}
-```
-
-**CacheAgendaProvider** - jeden provider pokrývá obě rozhraní:
-```csharp
-// Implementuje IDataSchemaProvider + ITableTemplateProvider
-class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
-{
-    string _cacheClass;   // "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
-    MLRest _mlRest;
-
-    // IDataSchemaProvider
-    DataSchema? GetSchema(string agendaCode)     // volá GetSchema
-    IReadOnlyList<AgendaInfo> GetAvailableAgendas()
-
-    // ITableTemplateProvider
-    IReadOnlyList<TableTemplateInfo> GetAvailableTemplates()    // volá GetTableTemplates
-    TableTemplateDefinition GetTemplate(string key)             // volá GetTableTemplate
-}
-```
-
-**Wiring** (`Config/CacheSchemaWiring.cs`):
-- Agendy zjistí **auto-discovery** ze serveru (`AgendyRegistr.ListAgendy` → `CacheAgendaRegistry`); pro každou vytvoří `CacheAgendaProvider(cacheClass, mlRest)`. `templatedesigner.appsettings.json` agendy nedefinuje.
-- Fallback: `CompositeDataSchemaProvider` (Caché primary + JSON fallback ze `schemas/*.schema.json`)
+- Agendy najde **registr na serveru** (`AgendyRegistr.ListAgendy` → `CacheAgendaRegistry`); konfigurace aplikace
+  (`templatedesigner.appsettings.json`) je nedefinuje. `CacheSchemaWiring.TryCreate` nad nimi vytvoří `CacheAgendaProvider`,
+  který volá metody agend přes MLRest a čte jejich JSON.
+- Bez serveru je nabídka dat prázdná (`EmptyDataSchemaProvider`); offline záloha ze souborů je od 30. 10. smazaná.
+- **Návrhář se o agendě rozhoduje podle registru, ne podle kódu agendy** (`B194g` R4, 30. 10.). Co návrhář
+  potřebuje vědět, ohlásí agenda parametrem třídy, `ListAgendy` ho pošle (aditivně, s výchozí hodnotou pro starší
+  server) a C# ho čte z `AgendaRegistryEntry`. Kód agendy v kódu návrháře zastaví `KodyAgendVKoduTests`;
+  výjimky (převody starých šablon, výchozí agenda nové šablony) jsou v testu s důvodem.
 
 ---
 
 ### Přidání nové agendy - checklist
 
-1. Vytvořit Caché třídu `ALVA.TemplateDesigner.Agendy.<Agenda> Extends ALVA.TemplateDesigner.Agendy.BaseAgenda`
-2. Implementovat `GetSchema`, `GetTableTemplates`, `GetTableTemplate`, `GetData`, `GetMockData`
+1. Vytvořit Caché třídu `ALVA.TemplateDesigner.Agendy.<Agenda> Extends ALVA.TemplateDesigner.Agendy.BaseAgenda` (přímý potomek)
+   a nastavit parametry třídy (viz kontrakt výš); `AgendaVariantCode` se už nikdy nemění.
+2. Implementovat `GetSchema`, `GetData`, `GetMockData`, volitelné podle potřeby; každou metodu podle pravidel 14-15.
+   Agenda JŘ bere společná pole nabídky ze slovníku `Jr/NabidkaDat.cls` a společné parametry z `Jr/Parametry.cls`;
+   pole nebo parametr, který dosud měla jen jedna agenda, se tam přesune, když ho potřebuje druhá (R8).
 3. Nic neregistrovat ručně - agendu najde auto-discovery (`AgendyRegistr.ListAgendy`); v UI se nabízí až s `Released = 1`
-4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback
-   - `GetMockData` vrací JSON: `{ "values": { "POLE": "hodnota", ... }, "rows": { "KLIC": [ {...}, ... ] } }`
+4. Linku s daty doplnit do `KontraktAgendTest.LinkyAgend` - test kontraktu na ní ověří, že data posílají
+   každé nabízené pole. Položku dat mimo nabídku (čte ji prvek, ne uživatel) zapsat do `PolozkyMimoNabidku`
+   s druhem; jinak test spadne, protože nevíme, kdo ji čte.
+5. Agenda s prvky JŘ (`ElementKind` STOP / LINE) posílá položky, které prvky čtou, ve tvaru z `KontraktDat.cs`
+   (integrační `KontraktDatAgendTests`, pre-push). Co agenda vědomě nemá, patří do výjimek testu s důvodem.
 
 ---
 
@@ -417,8 +342,23 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 ### Pojmenování
 3. **Čitelné názvy - čím globálnější, tím důležitější.** Parametry metod, properties tříd, klíče globálů: vždy celá slova (`AutoPoznamkyRozdilTrasyAlgoritmus` místo `AutoPoznRozdTrsSpAlg`). Lokální temp proměnná použitá na jednom místě může být rozumná zkratka.
 4. **Žádné `_` v názvech proměnných** - `_` je v ObjectScript operátor spojení stringů. Použít camelCase nebo celá slova.
-5. **Jazyk: "czechglish"** - business logika česky (`pocetZastavek`, `aktualniSmer`, `casOdjezdu`), obecné programátorské vzory anglicky (`GetData`, `SetTrasa`, `BuildOdjezdy`). Ne `ZiskatData` ani `NastavitTrasu`.
+5. **Jazyk: "czechglish"** - business logika česky (`pocetZastavek`, `aktualniSmer`, `casOdjezdu`), obecné programátorské vzory anglicky (`GetData`, `SetTrasa`, `BuildOdjezdy`). Ne `ZiskatData` ani `NastavitTrasu`. Upřesněno 30. 10. (`B194g` R7):
+   - **Metoda, která něco dělá:** anglické sloveso + česká věc. Zavedená slovesa: `Get` (vrátí), `Build` (sestaví objekt
+     pro výstup), `Add` (přidá do pole nebo objektu), `Load` (načte z globálu), `Write` (zapíše do OUT nebo globálu),
+     `Format` (hodnota na text), `Parse`, `Convert`. Ne `PridatX`, `NactiX`, `SestavitX`, ani rozkazovací `SestavX`.
+   - **Funkce pojmenovaná tím, co vrací:** česky bez slovesa (`NazevLinky`, `TextAtributu`, `PocetZastaveni`).
+   - **Otázka ano/ne:** `Je…` / `Ma…` (zavedené, `JeAktualni`), ne `Is…`.
+   - Platí pro **nové názvy**. Asi 74 stávajících metod s českým slovesem (30. 10.) se přejmenuje, až se jejich kód v `B56`
+     stěhuje do pomocných tříd, ne samostatnými commity jen kvůli názvu. Hlídá `NazvyMetodAgendTests`: nový název
+     s českým slovesem neprojde a seznam stávajících se smí jen zmenšovat.
+   - **Nikdy se nepřejmenovávají** třídy agend, `AgendaVariantCode`, klíče v datech a názvy parametrů sestavy - visí na nich
+     uložené šablony a volby uživatelů.
 6. **Žádné tajemné číselné indexy** v globálech - pojmenované klíče (`^||TiskMHD("trasa",SmerID,BodID)` místo `^||wg(1,2,3)`)
+   - **Pracovní globál** má každá agenda svůj: `^||TiskAd` (zastávkový AD), `^||TiskMHD` (zastávkový MHD), `^||TiskKnizni`
+     (linkový AD), `^||TiskKnizniMhd` (linkový MHD); stávající se nepřejmenovávají. Nová agenda: `^||Tisk` + jméno třídy
+     agendy (`^||TiskFaktury`).
+   - **Pomocná třída sdílená agendami** (`B56`, R8) do pracovního globálu agendy napřímo nesahá - každá agenda ho má jinak
+     klíčovaný (`WMapa`, `legacy-nahrada.md §4`); data nebo jméno globálu dostane parametrem.
 
 ### Struktura kódu
 7. **Žádná `@` indirection** - přímé reference (`^||TiskMHD(...)` místo `@wg@(...)`)

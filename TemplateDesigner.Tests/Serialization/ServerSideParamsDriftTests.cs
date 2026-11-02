@@ -1,6 +1,6 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using TemplateDesigner.Models;
 
 namespace TemplateDesigner.Tests.Serialization;
 
@@ -28,19 +28,10 @@ public class ServerSideParamsDriftTests
         "LINKA_ID",           // klíč instance (posílá Instance Picker, ne parametr)
         "INSTANCE_ID",        // alias téhož
         "SKUPINA_LINEK_ID",   // skupina linek - session stav pickeru
-        "key",                // GetTableTemplate: klíč šablony tabulky
         "search",             // GetAvailableInstances: filtr pickeru
         "limit",              // GetAvailableInstances: strop počtu
-        "DEFINICE_SLOUPCU",   // vlastní sloupce vývěsky - obsah šablony, ne parametr sestavy;
-                              // posílá se vždy čerstvě ze šablony (ComposeGetDataParams) a re-fetch
-                              // při změně řeší vlastní snapshot (RefetchIfColumnsDefinitionChanged)
-        "JAZYK",              // jazyk textů značek = kultura šablony, ne volba v parametrech sestavy;
-                              // re-fetch při přepnutí kultury drží tentýž snapshot (CurrentWireSnapshot)
-        "TURNUSY_KE_SPOJUM",  // volba prvku (turnus je provozní věc dopravce, ne informace pro
-                              // cestujícího) - posílá se ze šablony jako DEFINICE_SLOUPCU a re-fetch
-                              // při přepnutí drží týž snapshot (CurrentWireSnapshot)
         "BARVY_SPOJU",        // třístav, který posílá starší návrhář místo checkboxu
-                              // TISKNOUT_BARVY_SPOJU (BaseAgenda.VolbaBarevSpoju) - jen zpětná
+                              // TISKNOUT_BARVY_SPOJU (Jr.Parametry.VolbaBarevSpoju) - jen zpětná
                               // kompatibilita, nový návrhář ho nezná
     };
 
@@ -77,7 +68,9 @@ public class ServerSideParamsDriftTests
         {
             foreach (var key in StaticInKeys(file))
             {
-                if (InfrastructureKeys.Contains(key) || flagged.Contains(key)) continue;
+                // Údaje ze šablony (sloupce, turnusy, jazyk) nejsou parametry sestavy: posílají se vždy
+                // čerstvě ze šablony a data se při jejich změně načtou znovu podle TemplateDataInputs.
+                if (InfrastructureKeys.Contains(key) || TemplateDataInputs.Keys.Contains(key) || flagged.Contains(key)) continue;
                 found.Add($"{Path.GetFileName(file)}: \"{key}\"");
             }
         }
@@ -112,11 +105,12 @@ public class ServerSideParamsDriftTests
     {
         // Pojistka druhého parseru: kdyby zrezivěl, testy výše by prošly na prázdném vstupu.
         var flagged = ServerSideParams(AgendaFile("ZastavkoveJrAd.cls"));
+        var sdilene = ServerSideParams(AgendaFile(Path.Combine("Jr", "Parametry.cls")));
 
         Assert.Contains("ROZDELENI_SLOUPCU", flagged);   // vlastní objekt
         Assert.Contains("SOUHRN_NA_ZNAMENI", flagged);   // přes AddBoolParam
-        Assert.Contains("MAX_SLOUPCU_VARIANT", flagged); // přes AddNumberParam
-        Assert.DoesNotContain("CASOVA_OSA", flagged);    // klientský parametr
+        Assert.Contains("MAX_SLOUPCU_VARIANT", sdilene); // přes AddNumberParam ve sdílených parametrech
+        Assert.DoesNotContain("CASOVA_OSA", sdilene);    // klientský parametr
     }
 
     [Fact]
@@ -125,7 +119,7 @@ public class ServerSideParamsDriftTests
         // Pojistka regexu: kdyby zrezivěl, oba testy výše by prošly na prázdném vstupu.
         var keys = StaticInKeys(AgendaFile("ZastavkoveJrAd.cls"));
 
-        Assert.Contains("PRVNI_BEZ_PISMENE", keys);
+        Assert.Contains("ROZDELENI_SLOUPCU", keys);
         Assert.Contains("LINKA_ID", keys);
         Assert.True(keys.Count >= 10, $"Naparsováno jen {keys.Count} klíčů - regex nesedí na .cls?");
     }
@@ -184,25 +178,7 @@ public class ServerSideParamsDriftTests
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
-    private static string[] AgendaFiles() => Directory.GetFiles(AgendyDir(), "*.cls");
+    private static string[] AgendaFiles() => ZdrojeAgend.KodAgend();
 
-    private static string AgendaFile(string name) => Path.Combine(AgendyDir(), name);
-
-    private static string AgendyDir()
-    {
-        // Od bin/Debug/... nahoru k rootu repa (kde leží EDISON2.sln)
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-
-        // Běh z izolovaného výstupu (dotnet test -o mimo repo) → root odvodit z cesty tohoto zdrojáku
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-
-        Assert.True(File.Exists(Path.Combine(dir!.FullName, "EDISON2.sln")),
-            "Nenalezen root repa (EDISON2.sln) - drift test potřebuje zdrojáky .cls");
-        return Path.Combine(dir.FullName,
-            "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
+    private static string AgendaFile(string name) => Path.Combine(ZdrojeAgend.Slozka, name);
 }

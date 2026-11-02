@@ -147,7 +147,7 @@ varianta platná k datu (horolog = dny od 31.12.1840). Analogie MHD `ZastavkyFce
 
 AD agendy (zastávkový i linkový JŘ) čtou **každý údaj zastávky z registru** - název, název pro MHD,
 okres, CIS název a číslo, atributy, zóny registru i popis sloupku - přes
-`BaseAgenda.ZaznamZastavkyKDatu` k **„platí od" linky** (`HorologPlatnostiOdLinky`, `PATCH,"Plati"`;
+`Jr.DataAd.ZaznamZastavkyKDatu` k **„platí od" linky** (`Jr.DataAd.HorologPlatnostiLinky`, `PATCH,"Plati"`;
 rozhodnutí Jan s kolegou 7. 10.). Datum nastaví `BuildStrankaZastavky` / `BuildStrankaLinky`
 (`^||TiskAd` / `^||TiskKnizni("zastavky","hrl")`); mimo sestavení stránky platí dnešek.
 
@@ -253,7 +253,7 @@ trasy, ale tady přes časové průběhy, ne bitmapy obsluhy.)
 konkrétní zastávky. Rozdíl trasy PŘED tou zastávkou variantu zakládat nesmí: časy jsou rozdíl proti
 ní, takže zajezdka v první polovině linky by ve druhé polovině dala dva sloupce s identickými čísly.
 My jsme to do 12. 8. srovnávali přes celý směr (na gold 0365001 to bylo 56 duplicitních sloupců
-ze 116); dnes to drží `JeVUsekuVariant` + invariantní test `TestZadneDuplicitniVariantniSloupce`.
+ze 116); dnes to drží `Jr.VariantyTras.JeVUsekuVariant` + invariantní test `TestZadneDuplicitniVariantniSloupce`.
 
 ⚠️ **Sloupec „Časy" ve starém modulu NENÍ „výchozí spoj".** Přepínač u linky
 `^JRL(sku,lin,"PATCH","mhd","par",1)` (legacy `arrprtlin("dta",73)`, popisek „mhd odjezdník -
@@ -275,10 +275,15 @@ paušální „Nitra má zapnuto"): linka `0000001` = zapnuto, linka `0000002` =
 vyplněné (`J`-věta segment 8 = `0:34`) → **na téhle lince starý modul tiskne její ruční minuty, ne
 spočítané**. České firmy naopak mají vypnuto s **prázdnými** minutami (vzorek `CB_CSADAD`, `ZL_KOVED`
 0822995, `CB_GWBUS` 0320113 - segment 8 = `:`) → ve starém tiskne prázdno, náš spočítaný sloupec je
-tam tedy featura, ne odchylka. **My přepínač ignorujeme a vždy počítáme**; trasu vybíráme podle
-pokrytí seznamu (`VyberZaklTrasu`), což je legacy záměr měřený přesněji. Ručně zadané minuty
-**nečteme vůbec** - u linek v ručním režimu s vyplněnými minutami (Nitra) proto tiskneme **jiná
-čísla** než jejich starý výtisk. Vzorek jsou 4 linky, ne plošné měření.
+tam tedy featura, ne odchylka. **Výchozí je přepínač ignorovat a vždy počítat**; trasu vybíráme podle
+pokrytí seznamu (`VyberZaklTrasu`), což je legacy záměr měřený přesněji. Vzorek jsou 4 linky, ne plošné měření.
+
+**Ruční minuty na přání (`B144`, 1. 11.):** zaškrtávátko „Čas jízdy podle nastavení linky" (`CAS_JIZDY_PODLE_LINKY`, výchozí vypnuto) přepínač u linky respektuje.
+Linka v ručním režimu pak dostane do sloupce Čas minuty u trasy přepočtené jako starý `GetMin` (`ZastavkoveJrAd.RucniCasyJizdy`): rozdíl proti vývěskové zastávce, prázdno u projetých, u vývěskové, u nuly a u záporného rozdílu.
+Výchozí vypnuto proto, že by se českým firmám (vypnuto, minuty prázdné) sloupec vyprázdnil.
+Oracle `ZastavkoveJrAdLegacyTest.TestRucniCasJizdyVsLegacyNitra`: Nitra `0000002` sedí se starým tiskem na všech 55 vývěskách.
+Navíc proti starému tisku máme 23 řádků se zastávkami Priemyselný park, kam zajíždí jen část spojů; starý tisk bere seznam ze vzoru trasy, my ze zastávek obsloužených spoji (s volbou to nesouvisí).
+Vývěsková zastávka bez minut se počítá od nejbližší předchozí s minutami - na datech Nitry to není, drží to jednotkový test `TestRucniCasyJizdy`.
 
 ✅ **Obsah sloupce už míchaný není** (`B67`, 13. 8.): variantní sloupec nese **průběh jedné vybrané
 trasy** - v rámci varianty vyhrává delší jízda (`DelkaProfilu`), při shodě nižší číslo trasy. Totéž
@@ -289,14 +294,10 @@ odpovídá; pod mutací +1 minuta padne na 60 z 60 sloupců). Legacy dělá tot�
 (`necham prubeh s delsim casem`).
 
 **Co od legacy zbývá jinak:** (a) kritérium pro jediný sloupec „Časy" měříme jako **dosah** (počet
-obsloužených zastávek), legacy ho aproximuje **délkou textu průběhu** - koreluje to, totožné to není
-a oraclem to ověřené nemáme; (b) legacy v automatickém režimu plní **až čtyři** sloupce Času, my jeden
-(zbytek na vyžádání); (c) ruční minuty nečteme (viz výše)
-
-**Návrh volby zdroje sloupce „Čas" (`B144`, odloženo Janem 11. 9.):** spočítané z jízdních dob (dnes), ruční „MHD čas tam/zpět" z trasy linky, nebo „Automaticky (dle linky)" podle přepínače u linky.
-Výchozí musí zůstat spočítané, jinak se českým firmám sloupec vyprázdní (ruční minuty mají prázdné).
-Parametr zpracuje server, takže v `GetParameters` potřebuje příznak `serverSide` (`cache-api.md`).
-⚠️ Odloženo, protože si o to zákazník neřekl: vyšlo to najevo při hovoru jako rozdíl proti starému výtisku na Nitře, ale on sám řekl, že bude radši používat varianty tras.
+obsloužených zastávek), legacy ho aproximuje **délkou textu průběhu** - koreluje to, totožné to není;
+(b) legacy v automatickém režimu plní **až čtyři** sloupce Času, my jeden (zbytek na vyžádání).
+Oracle z `B144` (sonda `ZastavkoveJrAdLegacyTest.RucniCasyProbe`) to 1. 11. změřil na Nitře `0000001` (automatický režim): na řadě vývěsek se náš Čas liší od starého tisku o 1-2 minuty, místy máme číslo tam, kde starý tisk tiskne „<".
+Je to rozdíl ve výběru základní trasy (a), ne chyba výpočtu; neřešeno, nikdo si nestěžoval.
 
 ⚠️ **Sloupec „Čas jízdy" nese tři stavy** (`B67`): číslo, „<" (základní trasa zastávkou projíždí bez
 stání) nebo prázdno (mimo základní trasu). Dřív bylo prázdno v obou případech. Na wire je to od té
@@ -523,7 +524,7 @@ Reimplementace legacy `ALVA.TISKMHD.Data` větve `VolanoZ=JRMAIN`. **Pozn.: TD b
 je per-namespace, bez IdFa).**
 
 ### ✅ Hotovo a ověřeno (proti gold oracle `ALVA.TISKMHD.Data`)
-- **GetSchema/GetMockData/GetParameters/GetTableTemplates** - schema sdílené s MHD; default LINKA_ID
+- **GetSchema/GetMockData/GetParameters** - schema sdílené s MHD; default LINKA_ID
   = první linka firmy (dynamicky). GetMockData = živý náhled první linky firmy (DEV - viz dev tweaky).
 - **GetData fázový engine** čte `^JRL`/`^JRZ`:
   - Hlavička (CISLO_LINKY, POPIS_LINKY z "I", platnost z PATCH, aktuální zastávka/směr).
@@ -531,7 +532,7 @@ je per-namespace, bez IdFa).**
     jen zastávky kde staví ≥1 spoj, přes `ObsluhovanePoradi`). Ověřeno: 0410101 → 17 zastávek (=legacy).
   - **Odjezdy** = Odjezd spoje + offset z trasy spoje "W"; **multi-group** (`SkupinyZPlk` - spoj může
     být ve více skupinách dnů, Plk "6+" → soboty i neděle). Ověřeno proti legacy SMO1/2/3.
-  - **Poznámky** = legenda z datumových omezení (omzId 11-15,22; `SestavTextOmezeni`+`PrefixOmezeni`
+  - **Poznámky** = legenda z datumových omezení (omzId 11-15,22; `Jr.DataAd.TextOmezeni`+`PredlozkaOmezeni`
     +`FormatDatumyOmezeni`, 1:1 s `txtNZ`/`TODDO^JRapiNZUtl`) + na-znamení.
   - **Multi-page**: stránka per zastávka × směr (Tam vzestupně / Zpět sestupně k pořadí 1);
     prázdné konečné se skipnou. Ověřeno 0410101: 17 Tam + 20 Zpět.
@@ -542,17 +543,18 @@ je per-namespace, bez IdFa).**
 1. **Názvy zastávek** - `NazevZastavky` bere `^JRZ` `$7` (odbav/MHD název s obcí, "Cheb,aut.nádraží",
    "Fr. Lázně,Krapice,Lužná"), fallback `$2`. Zahozeno `FormatNazev`/`FormatNazevPlny` (drop-obec).
    `NazevLinky` join `–`→`-` (legacy pomlčka).
-2. **Datumy v poznámkách** - `FormatDatumyOmezeni` + `UpravDatum` = 1:1 formát zastávkového JŘ
+2. **Datumy v poznámkách** - `FormatDatumyOmezeni` + `FormatDatumOmezeni` (dřív `UpravDatum`) = 1:1 formát zastávkového JŘ
    (`JRapiLinPrtPS3`/`UprDat`): **2místný rok** (`25.12.22`, ne `25.12.2022`), strip nul ze dne/měsíce,
    rozsah `:`→`od D1 do D2`, položky spojené `, `, `k@`/`L@` prefix se stripuje. **POZOR:** NE `TODDO`
    (to dělá `D1-D2` + verbatim rok) - zastávkový JŘ používá PS3 formát; ověřeno gold 0340303/0365001.
-3. **"jede" omezení** - `SestavTextOmezeni` projde omzId 11,12,13,14,15,22, spojí do jedné poznámky;
-   `PrefixOmezeni` = mapování (11 "jede jen ", 12 "jede také ", 13 "jede ", 14/15 su/li, 22 "nejede ").
+3. **"jede" omezení** - `Jr.DataAd.TextOmezeni` (dřív `SestavTextOmezeni`) projde omzId 13,12,11,14,15,22, spojí do jedné poznámky;
+   `PredlozkaOmezeni` = mapování (11 "jede jen", 12 "jede také", 13 "jede", 14/15 sudé/liché týdny, 22 "nejede").
 4. **POPIS_DOPRAVCE** - `PopisDopravce` (distinct `fa:pr` z `#`-pole 2 spojů obou směrů, dedup názvů,
    "Zajišťuje: …") + `NazevDopravce` chain z `^JRSET("DOP")`: per-provoz `$6` → firma `$14` → `$7` → `$1`.
 5. **LOKALNI_OZNACENI_LINKY + TITULEK + INFORMACE** - všechny z `^JRL(...,"MhD","SeT_MhD")` (delim `~`,
-   1:1 `sTIT^JRapiLinPrtMhd1`): `$1` lokální označení (fallback `$E(Lin,5,7)`="101"), `$2` titulek
-   (fallback "Městská hromadná doprava..."), `$5` informace (`<br>`→newline). Inline v hlavičce, `LokalniOznaceni` helper zrušen.
+   1:1 `sTIT^JRapiLinPrtMhd1`): `$1` lokální označení (fallback `$E(Lin,5,7)`="101", `Jr.DataAd.LokalniOznaceniLinky`),
+   `$2` titulek, `$5` informace (`<br>`→newline). Náhradní titulek starého tisku „Městská hromadná doprava..."
+   od 30. 10. neposíláme (`B56` S7, rozhodnutí Jan): dostalo by ho 97 % linek včetně regionálních.
 7. **Číslování poznámek** - pro KV_DP (TYPPOZ=0 = `^JRSET("Definice","MHDnewOM")` prázdné) legacy používá
    sekvenční čísla = moje 1/2/3 (schéma shodné, hodnoty 39/70/32 byly artefakt jiného seedu). Bez změny.
    TYPPOZ=1 (písmenka a/b/c) / NZ-symbol režim = firm-config feature, deferred. **KOREKCE 2026-06-23:
@@ -595,7 +597,7 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
 
 ### ✅ Rozdíly tras - HOTOVO (2026-06-11), ověřeno 1:1
 1:1 reimplementace `OmTrasa^JRapiLinPrtMhd` (AD) - metody `RozdilyTras` + helpery `SpojBitmapa`,
-`TrasaBitmapaZPole`, `NazZPoradi`, `GetZnk` v `ZastavkoveJrAd.cls`. Gated `AutoPozn` (`PATCH,"mhd","not"`).
+`TrasaBitmapaZPole`, `NazZPoradi` v `ZastavkoveJrAd.cls`, písmena přes `Jr.VariantyTras.ZnakZeSady` (legacy `GetZnk`). Gated `AutoPozn` (`PATCH,"mhd","not"`).
 - Vzorová trasa = základní trasa (J-věta `#10` dta12), fallback tištěná (`#7`), fallback union obsluhy.
 - Per spoj porovná jeho bitmapu trasy se vzorovou → text **„neobsluhuje zast. X" / „jede přes…" /
   „jede jen do…" / „pokračuje přes…"** (1:1 legacy).
@@ -634,7 +636,7 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   trasa) je jednosloupcová verze 1:1; u variantních linek se ukáže jen jedna varianta.
 - ✅ **Číslování omezení = číslo NZ (`cnz`) invertovaně** (HOTOVO 2026-06-23). Marker omezení je
   **`cnz` spoje** (`$p(spoj,"#",7)`, dta29) renderovaný jako typ `nz` (invertovaný box), text z per-spoj
-  `^JRL(…,sp,omzId)` (`SestavTextOmezeni`). **Žádný firemní gate, žádné čtení InPlatDef** - ověřeno gold
+  `^JRL(…,sp,omzId)` (`Jr.DataAd.TextOmezeni`). **Žádný firemní gate, žádné čtení InPlatDef** - ověřeno gold
   oracle (`ALVA.TISKMHD.Data`) na **obou** firmách: legenda `2#<cnz>#<text>`, anotace `2$<cnz>`.
   - **Korekce dřívějších domněnek:** (1) `MHDnewOM` (= údajný TYPPOZ gate) je prázdný u GWBUS i CSADAD →
     není to gate; chování je **univerzální**. (2) KV_DP spoje mají `cnz` taky (28/30/31/40) a legacy je
@@ -661,7 +663,6 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   WMapa guarduje `cisloTrasy=""` (spoj bez trasy) + prázdné mapy necachuje (merge z undef = `<UNDEFINED>`).
 
 ### 🔧 DEV tweaky k odstranění před produkcí (označené TODO v kódu)
-- `MainWindow.xaml.cs` `#if DEBUG` Loaded handler → auto-otevře `kv_ad_test.json` (hardcoded cesta).
 - `GetMockData` čte živě z ^JRL (první linka firmy) - zvážit lehký statický vzorek.
 
 ### 🛠️ Debug nástroj
@@ -938,18 +939,21 @@ poznámka nad linku, typ JR, skrytí agregátu bezbariér (#7161 D6), skrytí le
 
 Relevantní pro zastávkový JŘ (zbytek = ➖ Win tisk/kniha/HTML/odbavení):
 
+Stav sloupce „Máme" opravený 29. 10. podle kódu; přehled za všechny agendy a části nastavení je
+v [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
+
 | dta | Význam | PATCH | Máme |
 |---|---|---|---|
-| 18 | Tisk ručních názvů zastávek | `nazMHD` | ✅ |
-| 20 | Tisk zóny IDS / km (0-3) | `linIDS` | 🟡 zóny ✅, km ➖ (linkové) |
+| 18 | Tisk ručních názvů zastávek | `nazMHD` | ➖ vývěska nečte, název pro MHD bere vždy (Jan 23. 10., `B193i`); linkový AD ano |
+| 20 | Tisk zóny IDS / km (0-3) | `linIDS` | ❌ vývěska nečte, zóny podle šablony; linkový AD ano |
 | 26 | Uspořádat poznámky dle délky | `Trid_delK` | ✅ AD-N3 (`NotesLegend.Razeni`) |
 | 27 | NZ na nový řádek | `NegZnNR` | ✅ AD-N4 (poznámka per řádek) |
 | 28 | Cizojazyčné poznámky | `prtCzjPzn` | ⬜ AD-N11 |
 | 30 | Gate auto-poznámek odchylek | `mhd,"not"` | ✅ |
 | 32 | Sada písmen markerů | `mhd,"notchar"` | ✅ |
-| 35 | Tisk bezbariér (0/1/2) | `TZPA,"BBP"` | ✅ |
+| 35 | Tisk bezbariér (0/1/2) | `TZPA,"BBP"` | ❌ vývěska nečte (bere firemní `PS,LIMES`); linkový AD ano |
 | 36 | Rok v omezeních (0-4) | `TiskDtm` | ✅ |
-| 73 | Auto generovat časové průběhy | `mhd,"par",1` | ✅ (multi-varianta L1) |
+| 73 | Auto generovat časové průběhy | `mhd,"par",1` | ➖ nečte se, varianty se počítají vždy (multi-varianta L1) |
 | 74 | Volné značky pro minutové trasy | `mhd,"par",2` | ✅ AD-N13 (multi-varianta L1) |
 | 78 | Způsob výpisu návazností | `NavaznostiZpusobVypisu` | ➖ linkové JŘ |
 

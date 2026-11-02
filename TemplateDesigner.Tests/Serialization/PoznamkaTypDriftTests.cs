@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using TemplateDesigner.Models.Elements;
 
@@ -111,21 +110,5 @@ public class PoznamkaTypDriftTests
     private static IEnumerable<string> TypyZTextu(string text) =>
         TypRx.Matches(text).Select(m => m.Groups[1].Value);
 
-    private static string[] AgendaFiles() => Directory.GetFiles(AgendyDir(), "*.cls");
-
-    private static string AgendyDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-
-        Assert.True(File.Exists(Path.Combine(dir!.FullName, "EDISON2.sln")),
-            "Nenalezen root repa (EDISON2.sln) - drift test potřebuje zdrojáky .cls");
-        return Path.Combine(dir.FullName,
-            "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
+    private static string[] AgendaFiles() => ZdrojeAgend.KodAgend();
 }

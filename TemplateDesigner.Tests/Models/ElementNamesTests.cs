@@ -32,24 +32,18 @@ public class ElementNamesTests
             Assert.NotEqual("prvek", ElementNames.ForUser(el));
     }
 
-    [Theory]
-    [InlineData("Minuty odjezdů")]
-    [InlineData("Poznámky")]
-    [InlineData("Seznam zastávek")]
-    [InlineData("Tabulka (pevná)")]
-    [InlineData("Tabulka (z dat)")]
-    [InlineData("Obdélník")]
-    [InlineData("Obrázek")]
-    [InlineData("Kód (QR, čárový)")]
-    [InlineData("Tabulka spojů")]
-    public void JmenoSedisPaletou(string jmeno)
+    /// <summary>Paleta a nabídka vkládání jsou to, co uživatel vidí, a hláška se musí trefit do stejného
+    /// slova. Od 30. 10. se obě staví z katalogu prvků, ze kterého bere jména i <see cref="ElementNames"/> -
+    /// tlačítko prvku vrácené do okna napevno by mělo jméno vlastní a mohlo by se rozejít.</summary>
+    [Fact]
+    public void PaletaANabidka_SeStaviZKatalogu()
     {
-        // Paleta a nabídka vkládání jsou to, co uživatel vidí; hláška se musí trefit do stejného
-        // slova. ⚠️ Přejmenovat prvek znamená změnit obojí - jinak spadne tady.
-        var paleta = File.ReadAllText(Cesta("dotnet/Windows/MainWindow/MainWindow.xaml.cs"))
-                   + File.ReadAllText(Cesta("dotnet/Windows/MainWindow/MainWindow.xaml"));
+        var okno = Cesta("dotnet/Windows/MainWindow");
+        var xaml = File.ReadAllText(Path.Combine(okno, "MainWindow.xaml"));
 
-        Assert.Contains(jmeno, paleta);
+        Assert.All(ElementCatalog.All, prvek => Assert.DoesNotContain($"Tag=\"{prvek.Type}\"", xaml));
+        Assert.Contains("ElementCatalog.All", File.ReadAllText(Path.Combine(okno, "MainWindow.Menus.cs")));
+        Assert.Contains("ElementCatalog.All", File.ReadAllText(Path.Combine(okno, "MainWindow.Palette.cs")));
     }
 
     [Fact]
@@ -59,6 +53,17 @@ public class ElementNamesTests
         // Do 21. 9. měl vlastní seznam a po přejmenování 1. 9. v něm zbyla tři stará jména.
         foreach (var typ in TypyPrvku())
             Assert.StartsWith(ElementNames.ForType(typ), CapabilityCatalog.FriendlyName(typ));
+    }
+
+    /// <summary>Do kterého JŘ prvek patří, říká asistentovi seznam prvků agend - vlastní výčet tvrdil,
+    /// že Poznámky jsou jen zastávkové, i když je od 3. 9. má i linkový JŘ (do 30. 10.).</summary>
+    [Fact]
+    public void KatalogProAsistenta_RikaDoKterehoJrPrvekPatri()
+    {
+        Assert.EndsWith("(zastávkový i linkový JŘ)", CapabilityCatalog.FriendlyName(ElementTypes.NotesLegend));
+        Assert.EndsWith("(zastávkový JŘ)", CapabilityCatalog.FriendlyName(ElementTypes.StopList));
+        Assert.EndsWith("(linkový JŘ)", CapabilityCatalog.FriendlyName(ElementTypes.LineTable));
+        Assert.Equal(ElementNames.ForType(ElementTypes.Text), CapabilityCatalog.FriendlyName(ElementTypes.Text));
     }
 
     [Fact]

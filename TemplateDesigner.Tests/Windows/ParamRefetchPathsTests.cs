@@ -27,7 +27,7 @@ public class ParamRefetchPathsTests
     [Fact]
     public void KazdaCestaZmenyParametru_SePtaJednohoMista()
     {
-        var source = File.ReadAllText(ViewModelFile());
+        var source = ViewModelSource();
         var chybi = ParamChangePaths.Where(m => !MethodBody(source, m).Contains(Decider)).ToList();
 
         Assert.True(chybi.Count == 0,
@@ -41,7 +41,7 @@ public class ParamRefetchPathsTests
     {
         // Druhý směr: kdyby si re-fetch volala některá cesta sama, obejde tím podmínku
         // „změnil se server-side parametr" a data se tahají i při změně čistě klientské volby.
-        var source = File.ReadAllText(ViewModelFile());
+        var source = ViewModelSource();
         var vinici = ParamChangePaths
             .Where(m => MethodBody(source, m).Contains("RefreshDataForCurrentInstanceAsync"))
             .ToList();
@@ -54,7 +54,7 @@ public class ParamRefetchPathsTests
     public void RozhodujiciMisto_VeZdrojiExistuje()
     {
         // Pojistka: kdyby se metoda přejmenovala, oba testy výše by prošly na prázdném vstupu.
-        var source = File.ReadAllText(ViewModelFile());
+        var source = ViewModelSource();
 
         Assert.Contains($"private void {Decider}()", source);
         foreach (var m in ParamChangePaths)
@@ -77,13 +77,16 @@ public class ParamRefetchPathsTests
         return "";
     }
 
-    private static string ViewModelFile()
+    /// <summary>Zdroják ViewModelu ze všech jeho částí (<c>TemplateDesignerViewModel*.cs</c>, partial od 30. 10.).</summary>
+    private static string ViewModelSource()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
             dir = dir.Parent;
         Assert.NotNull(dir);
-        return Path.Combine(dir!.FullName, "TemplateDesigner", "dotnet", "Windows", "MainWindow",
-            "TemplateDesignerViewModel.cs");
+        var soubory = Directory.GetFiles(Path.Combine(dir!.FullName, "TemplateDesigner", "dotnet", "Windows", "MainWindow"),
+            "TemplateDesignerViewModel*.cs");
+        Assert.True(soubory.Length > 1, "ViewModel se nenašel");
+        return string.Join("\n", soubory.Order(StringComparer.Ordinal).Select(File.ReadAllText));
     }
 }

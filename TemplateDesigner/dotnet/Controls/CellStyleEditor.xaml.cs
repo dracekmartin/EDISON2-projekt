@@ -34,18 +34,10 @@ public partial class CellStyleEditor : UserControl
     // a overlay TextBlock v XAMLu zobrazí zděděnou hodnotu jako placeholder. Reset zpět na „dědit"
     // dělá samostatné „×" tlačítko (přes CellStyleVM.ResetFieldCommand).
     public static readonly HAlignOption[] HAlignOptionsDefault =
-    [
-        new("Vlevo",            TextHorizontalAlignment.Left),
-        new("Na střed",         TextHorizontalAlignment.Center),
-        new("Vpravo",           TextHorizontalAlignment.Right),
-    ];
+        [.. AlignmentLabels.Horizontal.Select(o => new HAlignOption(o.Label, o.Value))];
 
     public static readonly VAlignOption[] VAlignOptionsDefault =
-    [
-        new("Nahoře",           TextVerticalAlignment.Top),
-        new("Na střed",         TextVerticalAlignment.Middle),
-        new("Dole",             TextVerticalAlignment.Bottom),
-    ];
+        [.. AlignmentLabels.Vertical.Select(o => new VAlignOption(o.Label, o.Value))];
 
     public HAlignOption[] HAlignOptions
     {

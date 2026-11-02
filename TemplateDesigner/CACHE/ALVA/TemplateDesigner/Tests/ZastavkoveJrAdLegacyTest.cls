@@ -12,7 +12,9 @@ Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdLegacyTest Extends ALVA.EDTestin
 
 Method TestZonyVsLegacyGwbus()
 {
-	do ..AssertZony("CB_GWBUS", 1, 320113, 1)
+	// 320113 z dat zmizela (30. 10.). Na první stránce 320150 je dosažitelná celá trasa, takže seznam
+	// zastávek odpovídá starému modulu; vývěska nedosažitelné zastávky vynechává (#7959).
+	do ..AssertZony("CB_GWBUS", 1, 320150, 1)
 }
 
 Method TestZonyVsLegacyKvdp()
@@ -28,12 +30,12 @@ Method TestZaskokZonyNaRegistrZastavek()
 {
 	set db = "CB_GWBUS", czst = 4842
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - záskok zón přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - záskok zón přeskočen")
 		quit
 	}
 	set zonaRegistru = $piece($piece($get(^[db]JRZ(czst)),"$",11),"~",1)
 	if zonaRegistru = "" {
-		do $$$AssertTrue(1, "zastávka "_czst_" nemá v registru zónu - záskok nelze ověřit na těchto datech")
+		do $$$AssertSkipped("zastávka "_czst_" nemá v registru zónu - záskok nelze ověřit na těchto datech")
 		quit
 	}
 	// J-věta bez zóny (9. #-segment prázdný) → hodnota musí přijít z registru zastávek.
@@ -58,14 +60,14 @@ Method TestZaskokZonyNaRegistrZastavek()
 /// omylem tatáž. Kdyby se pořadí ignorovalo, obě pole by nesla stejnou barvu a nikdo by si nevšiml.
 Method TestBarvaLinkyDlePoradi()
 {
-	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set cls = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
 	set db = "CB_CSADAD", sku = 1, lin = "0365001"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - barva linky přeskočena")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - barva linky přeskočena")
 		quit
 	}
 	if $get(^[db]JRL(sku, lin, "PATCH", "BARVA")) = "" {
-		do $$$AssertTrue(1, "linka "_lin_" nemá nastavenou barvu - test přeskočen")
+		do $$$AssertSkipped("linka "_lin_" nemá nastavenou barvu - test přeskočen")
 		quit
 	}
 
@@ -85,11 +87,11 @@ Method TestCisloZastavkyCisJe9Pole()
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
 	set db = "ZL_KOVED", czst = 41994
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - CIS číslo přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - CIS číslo přeskočeno")
 		quit
 	}
 	if '$data(^[db]JRZ(czst)) {
-		do $$$AssertTrue(1, "zastávka "_czst_" v "_db_" chybí - CIS číslo přeskočeno")
+		do $$$AssertSkipped("zastávka "_czst_" v "_db_" chybí - CIS číslo přeskočeno")
 		quit
 	}
 
@@ -109,11 +111,11 @@ Method TestPopisSloupkuZCiselniku()
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
 	set db = "ZL_KOVED", czst = 41994
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - popis sloupku přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - popis sloupku přeskočen")
 		quit
 	}
 	if '$data(^[db]JRZ(czst, "Sloupek", 2)) {
-		do $$$AssertTrue(1, "zastávka "_czst_" nemá číselník sloupků - popis sloupku přeskočen")
+		do $$$AssertSkipped("zastávka "_czst_" nemá číselník sloupků - popis sloupku přeskočen")
 		quit
 	}
 
@@ -132,11 +134,11 @@ Method TestTvarNazvuVDatech()
 {
 	set db = "ZL_KOVED", sku = 1, lin = "0822995"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - tvar názvu přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - tvar názvu přeskočen")
 		quit
 	}
 	if '$data(^[db]JRL(sku, lin, "I")) {
-		do $$$AssertTrue(1, "linka "_lin_" v "_db_" chybí - tvar názvu přeskočen")
+		do $$$AssertSkipped("linka "_lin_" v "_db_" chybí - tvar názvu přeskočen")
 		quit
 	}
 
@@ -179,7 +181,7 @@ Method TestPrestupyEmit()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přestupy přeskočeny")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přestupy přeskočeny")
 		quit
 	}
 	set pocetA = ..PrestupovyPocet(db, 1, "0330510", "A")
@@ -192,7 +194,7 @@ Method TestSplitPerOznacnik()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSysFor(.sys, db)
@@ -207,7 +209,7 @@ Method TestNastupisteVariantEmit()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	set pocet = ..PocetDownstreamMultiStanovist(db, 1, "0330510")
@@ -220,7 +222,7 @@ Method TestPismenaVariant()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSysFor(.sys, db)
@@ -252,7 +254,7 @@ Method TestSplitTitulekARadek()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSysFor(.sys, db)
@@ -279,7 +281,7 @@ Method TestOdjezdyVsLegacyGwbus()
 {
 	set db = "CB_GWBUS"
 	if '##class(%SYS.Namespace).Exists(db) || '##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") {
-		do $$$AssertTrue(1, "namespace "_db_" nebo legacy ALVA.TISKMHD.Data není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" nebo legacy ALVA.TISKMHD.Data není na serveru - přeskočeno")
 		quit
 	}
 	kill ^||ML("IN"), ^||ML("OUT")
@@ -295,16 +297,16 @@ Method TestOdjezdyVsLegacyGwbus()
 Method AssertZony(db As %String, sku As %String, lin As %String, page As %Integer)
 {
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - zóny "_lin_" přeskočeny")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - zóny "_lin_" přeskočeny")
 		quit
 	}
 	if '##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") {
-		do $$$AssertTrue(1, "legacy ALVA.TISKMHD.Data není na serveru - zóny "_lin_" přeskočeny")
+		do $$$AssertSkipped("legacy ALVA.TISKMHD.Data není na serveru - zóny "_lin_" přeskočeny")
 		quit
 	}
 	set leg = ..LegacyZony(db, sku, lin, page)
 	if leg = "" {
-		do $$$AssertTrue(1, "legacy zóny prázdné pro "_lin_" (firma zóny nemá) - přeskočeno")
+		do $$$AssertSkipped("legacy zóny prázdné pro "_lin_" (firma zóny nemá) - přeskočeno")
 		quit
 	}
 	set our = ..OurZony(db, sku, lin, page)
@@ -826,7 +828,7 @@ Method TestTextyOmezeniProtiLegacy()
 		if 'pocet set nalezy = nalezy_" | "_db_" "_lin_": starý tisk nemá žádné omezení - fixture vyhnila?"
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "starý zastávkový tisk nebo firmy tu nejsou - přeskočeno")
+		do $$$AssertSkipped("starý zastávkový tisk nebo firmy tu nejsou - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(nalezy, "", "text omezení se liší od starého zastávkového tisku:"_nalezy)
@@ -1009,6 +1011,184 @@ ClassMethod SeznamMinut(ByRef minuty) As %String
 	set s = "", m = ""
 	for { set m = $order(minuty(m)) quit:m=""  set s = s_m_"×"_minuty(m)_" " }
 	quit s
+}
+
+/// Sloupec Čas z ručně zadaných minut shodný se starým tiskem (`B144`, oracle `ALVA.TISKMHD.Data.LoadData`).
+/// Nitra má linky v obou režimech: `0000002` má automatické generování průběhů vypnuté a minuty
+/// vyplněné, takže starý tisk do sloupce Čas dává je. Porovnává se každá vývěska starého tisku od
+/// aktuální zastávky do konce, zastávka po zastávce podle jména. Řádky, které starý tisk nemá
+/// (u téhle linky zastávka, kam zajíždí jen část spojů), se jen vypíšou - jde o výběr řádků, ne o Čas.
+Method TestRucniCasJizdyVsLegacyNitra()
+{
+	set db = "SKNI_MHDNITRA", sku = 1, lin = "0000002"
+	if '##class(%SYS.Namespace).Exists(db) || '##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") {
+		do $$$AssertSkipped("namespace "_db_" nebo legacy ALVA.TISKMHD.Data není na serveru - přeskočeno")
+		quit
+	}
+	if '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertSkipped("linka "_lin_" v "_db_" není - přeskočeno")
+		quit
+	}
+	do $$$AssertTrue('##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).MaAutomatickeCasyJizdy(db, sku, lin), "linka "_lin_" je v ručním režimu (jinak test nic neověřuje)")
+	set rozdily = ..RozdilyRucnichCasu(db, sku, lin, .pocet, .ruzneOdSpocitanych, .navic)
+	do ..LogMessage("řádky navíc proti starému tisku: "_navic)
+	do $$$AssertTrue(pocet > 10, "porovnáno vývěsek: "_pocet)
+	do $$$AssertTrue(ruzneOdSpocitanych > 0, "ruční minuty se aspoň na jedné vývěsce liší od spočítaných: "_ruzneOdSpocitanych)
+	do $$$AssertEquals(rozdily, "", "sloupec Čas linky "_lin_" shodný se starým tiskem")
+}
+
+/// Zastávky, u kterých se sloupec Čas liší od starého tisku (prázdný text = shoda). Pořadí stránek se může
+/// lišit, proto se ke každé vývěsce starého tisku hledá naše se stejnou aktuální zastávkou, ve které jdou
+/// všechny její zastávky ve stejném pořadí. `pocet` = kolik vývěsek starý tisk vydal, `ruzneOdSpocitanych`
+/// = na kolika našich dává volba jiné hodnoty než výchozí výpočet, `navic` = kolik řádků od aktuální
+/// zastávky máme navíc proti starému tisku.
+ClassMethod RozdilyRucnichCasu(db As %String, sku As %String, lin As %String, ByRef pocet As %Integer, ByRef ruzneOdSpocitanych As %Integer, ByRef navic As %Integer) As %String
+{
+	do ..SetupSysFor(.sys, db)
+	set pocet = 0, maxStran = 0, pp = ""
+	for { set pp = $order(^[db]JRL(sku, lin, "J", pp)) quit:pp=""  set maxStran = maxStran + 2 }
+	for page=1:1:maxStran {
+		kill ^||ML("IN"), ^||ML("OUT")
+		set ^||ML("IN","1") = "VOLANO_Z~JRMAIN"
+		set ^||ML("IN","2") = "SESTAVA~1"
+		set ^||ML("IN","3") = "VALUE~"_sku_"#"_lin_"#"_page_"#3#0-23#0##"
+		do ##class(ALVA.TISKMHD.Data).LoadData(.sys)
+		set i = "", idx = "", nazvy = "", casy = ""
+		for {
+			set i = $order(^||ML("OUT",i)) quit:i=""
+			set radek = $get(^||ML("OUT",i)), klic = $piece(radek,"~",1)
+			if klic = "SeznamZastavekIndexAktualniZastavky" set idx = +$piece(radek,"~",2)
+			if klic = "SeznamZastavekDataSloupecNazevZastavky" set nazvy = $piece(radek,"~",2,999)
+			if klic = "SeznamZastavekDataSloupecCasy" set casy = $piece(radek,"~",2,999)
+		}
+		continue:idx=""
+		kill radky
+		for j=idx:1:$length(nazvy,"#") set radky($i(radky)) = $lb($piece($piece(nazvy,"#",j),"^",1), $piece($piece(casy,"#",j),"&&",1))
+		set pocet = pocet + 1
+		merge leg(pocet) = radky
+	}
+	set ruzneOdSpocitanych = 0
+	for volba = "true", "false" {
+		kill ^||ML("IN"), ^||ML("OUT")
+		set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+		set ^||ML("IN","LINKA_ID") = lin
+		set ^||ML("IN","CAS_JIZDY_PODLE_LINKY") = volba
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+		set p = ""
+		for {
+			set p = $order(^||ML("OUT",p)) quit:p=""
+			continue:'$isvalidnum(p)
+			set stranka = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT",p)))
+			set zastavky = stranka.rows.%Get("ZASTAVKY")
+			kill radky
+			for j=0:1:zastavky.%Size()-1 {
+				set z = zastavky.%Get(j)
+				continue:'$data(radky)&&(z.%Get("AKTUALNI_ZASTAVKA")'="true")
+				set radky($i(radky)) = $lb(z.%Get("NAZEV_ZASTAVKY"), z.%Get("CAS_JIZDY"))
+			}
+			continue:'$data(radky)
+			if volba = "true" { merge nase(p) = radky  continue }
+			for j=1:1:radky { if $list(radky(j),2) '= $list($get(nase(p,j),$lb("","")),2) { set ruzneOdSpocitanych = ruzneOdSpocitanych + 1  quit } }
+		}
+	}
+	set rozdily = "", navic = 0
+	for n=1:1:pocet {
+		kill stary
+		merge stary = leg(n)
+		set nalezena = 0, p = ""
+		for {
+			set p = $order(nase(p)) quit:p=""
+			continue:$list(nase(p,1),1)'=$list(stary(1),1)
+			kill nas
+			merge nas = nase(p)
+			// Spárovaná vývěska se vyřadí, aby ji nedostaly dvě vývěsky starého tisku.
+			if ..PorovnatVyvesky(.stary, .nas, .preskoceno, .rozdilyVyvesky) { set nalezena = 1  kill nase(p)  quit }
+		}
+		if 'nalezena { set rozdily = rozdily_"vývěska "_$list(stary(1),1)_" ("_stary_" zastávek) u nás chybí; "  continue }
+		set navic = navic + preskoceno, rozdily = rozdily_rozdilyVyvesky
+	}
+	quit rozdily
+}
+
+/// Je naše vývěska `nas` ta ze starého tisku `stary`? Ano, když v ní jdou všechny zastávky starého tisku
+/// ve stejném pořadí (`radky(n)` = `$lb(jméno, čas)` od aktuální zastávky). Pak vrátí rozdíly v Čase
+/// a počet našich řádků, které starý tisk nemá.
+ClassMethod PorovnatVyvesky(ByRef stary, ByRef nas, ByRef preskoceno As %Integer, ByRef rozdily As %String) As %Boolean
+{
+	set preskoceno = 0, rozdily = "", o = 1, vsechny = 1
+	for j=1:1:stary {
+		set jmeno = $list(stary(j),1)
+		while (o '> nas) && ($list(nas(o),1) '= jmeno) { set preskoceno = preskoceno + 1, o = o + 1 }
+		if o > nas { set vsechny = 0  quit }
+		set:$list(nas(o),2)'=$list(stary(j),2) rozdily = rozdily_$list(stary(1),1)_": "_jmeno_" starý """_$list(stary(j),2)_""" náš """_$list(nas(o),2)_"""; "
+		set o = o + 1
+	}
+	quit:'vsechny 0
+	set preskoceno = preskoceno + nas - o + 1
+	quit 1
+}
+
+/// Diagnostika (cache_query): `RozdilyRucnichCasu` pro linku. IN jako u `ZonyProbe` (`DB`, `SKU`, `LIN`).
+ClassMethod RucniCasyProbe(ByRef sys As %String) As %Status
+{
+	set k = ""
+	for {
+		set k = $order(^||ML("IN",k)) quit:k=""
+		set v = $get(^||ML("IN",k))
+		set inp($piece(v,"~",1)) = $piece(v,"~",2,999)
+	}
+	set db = $get(inp("DB")), sku = $get(inp("SKU"),1), lin = $get(inp("LIN"))
+	set rozdily = ..RozdilyRucnichCasu(db, sku, lin, .pocet, .ruzne, .navic)
+	kill ^||ML("OUT")
+	set ^||ML("OUT","AUTO") = "AUTO="_##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).MaAutomatickeCasyJizdy(db, sku, lin)
+	set ^||ML("OUT","POCET") = "POCET="_pocet
+	set ^||ML("OUT","RUZNE") = "RUZNE="_ruzne
+	set ^||ML("OUT","NAVIC") = "NAVIC="_navic
+	set ^||ML("OUT","ROZDILY") = $extract(rozdily, 1, 3000)
+	quit $$$OK
+}
+
+/// Diagnostika (cache_query): seznam zastávek vývěsky `PAGE` ze starého tisku (`LEG`, jméno a Čas)
+/// a stránky `PAGE` našeho `GetData` s volbou Čas jízdy podle nastavení linky (`OUR`, jméno, pořadí, Čas).
+ClassMethod SeznamZastavekProbe(ByRef sys As %String) As %Status
+{
+	set k = ""
+	for {
+		set k = $order(^||ML("IN",k)) quit:k=""
+		set v = $get(^||ML("IN",k))
+		set inp($piece(v,"~",1)) = $piece(v,"~",2,999)
+	}
+	set db = $get(inp("DB")), sku = $get(inp("SKU"),1), lin = $get(inp("LIN")), page = +$get(inp("PAGE"),1)
+	do ..SetupSysFor(.sys, db)
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","1") = "VOLANO_Z~JRMAIN"
+	set ^||ML("IN","2") = "SESTAVA~1"
+	set ^||ML("IN","3") = "VALUE~"_sku_"#"_lin_"#"_page_"#3#0-23#0##"
+	do ##class(ALVA.TISKMHD.Data).LoadData(.sys)
+	set i = "", nazvy = "", casy = "", idx = ""
+	for {
+		set i = $order(^||ML("OUT",i)) quit:i=""
+		set radek = $get(^||ML("OUT",i)), klic = $piece(radek,"~",1)
+		if klic = "SeznamZastavekIndexAktualniZastavky" set idx = $piece(radek,"~",2)
+		if klic = "SeznamZastavekDataSloupecNazevZastavky" set nazvy = $piece(radek,"~",2,999)
+		if klic = "SeznamZastavekDataSloupecCasy" set casy = $piece(radek,"~",2,999)
+	}
+	for j=1:1:$length(nazvy,"#") set vystup("LEG"_$justify(j,3)) = $piece($piece(nazvy,"#",j),"^",1)_" | "_$piece($piece(casy,"#",j),"&&",1)_$select(j=idx:" | aktuální", 1:"")
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+	set ^||ML("IN","LINKA_ID") = lin
+	set ^||ML("IN","CAS_JIZDY_PODLE_LINKY") = "true"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	set stranka = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT",page)))
+	set zastavky = stranka.rows.%Get("ZASTAVKY")
+	for j=0:1:zastavky.%Size()-1 {
+		set z = zastavky.%Get(j)
+		set vystup("OUR"_$justify(j+1,3)) = z.%Get("NAZEV_ZASTAVKY")_" | "_z.%Get("PORADI")_" | "_z.%Get("CAS_JIZDY")_$select(z.%Get("AKTUALNI_ZASTAVKA")="true":" | aktuální", 1:"")
+	}
+	kill ^||ML("OUT")
+	set klic = ""
+	for { set klic = $order(vystup(klic)) quit:klic=""  set ^||ML("OUT",klic) = klic_": "_vystup(klic) }
+	quit $$$OK
 }
 
 }

@@ -11,8 +11,11 @@ Hlavní editační cestou je **Caché formulář** (`*Edit.cls`): u elementu se 
 živé ve třech konkrétních rolích a proto je nelze odstranit:
 
 1. **Formátovací lišta** (`FormatToolbar`) je potřebuje **vždy**, i když se zobrazuje Caché formulář.
+   Najde je podle `ToolbarSlot` (tlačítko, které vlastnost ovládá), ne podle popisku a skupiny.
 2. **Úprava více prvků naráz** jde jen přes ně (Caché formulář edituje jeden cíl) - okno společných
-   vlastností nabízí jen pevnou sadu (rámeček, vrstva, uzamčení), ne všechny deskriptory prvků.
+   vlastností nabízí jen pevnou sadu `TemplateElement.MultiEditDescriptors()` (rámeček, vrstva, uzamčení),
+   tytéž deskriptory jako panel prvku. Zápis je jeden vratný krok složený z kroku každého prvku, takže
+   Ctrl+Z vrátí každému jeho hodnotu (do 30. 10. dostaly všechny hodnotu prvního).
 3. **Fallback** pro element bez `*Edit.cls` schématu (dnes pevná tabulka).
 
 **Nejsou tedy druhý zdroj pravdy pro schéma** - u base polí je autoritou sdílený
@@ -21,7 +24,9 @@ Hlavní editační cestou je **Caché formulář** (`*Edit.cls`): u elementu se 
 `BorderGroup`/`ConditionsGroup`); hlídá to `EDInputFormSchemaDriftTests`. Nové base pole se přidává
 **na obou stranách v jednom commitu**, jinak test spadne. Popisek každého deskriptoru prvku musí
 existovat i ve formuláři prvku (protokol importu z PDF a asistent mluví popisky deskriptorů) -
-hlídá to `DescriptorLabelsMatchFormTests`, vědomé výjimky jsou v něm s důvodem.
+hlídá to `DescriptorLabelsMatchFormTests`, vědomé výjimky jsou v něm s důvodem. **Skupinu, meze, jednotku, druh
+a volby** spárovaného pole hlídá `PanelProtiFormulariTests` (čte formuláře včetně `StyleFields` a `BaseElementFields`,
+`FormularePrvku`): nová vlastnost musí mít v deskriptoru tutéž skupinu i meze jako ve formuláři.
 
 **Dostupné typy deskriptorů:**
 - `StringPropertyDescriptor` - textové pole (s volitelným `MultiLine = true`)
@@ -162,7 +167,7 @@ public class MyScheduleElement : ScheduleElementBase
 
 ## TableElement - architektura
 
-### Pevná × dynamická tabulka jsou dva PRVKY, ne dva režimy
+### Pevná tabulka × tabulka s řádky z dat jsou dva PRVKY, ne dva režimy
 
 `TableElement` = pevná tabulka: uživatel vyplní sloupce i řádky v buňkách na plátně, sázecí
 engine v buňkách dosadí `{PLACEHOLDER}` ze skalárů DataContextu. Řádky z kolekce dat kreslí
@@ -208,6 +213,12 @@ column.Style (per-column override)
 
 1. **`Resolve<Zone>Parent(): ResolvedTextStyle`** (public) - vyřešený rodičovský styl pro dialog. Dialogy ho používají jako inherited vrstvu pro `CellStyleVM.Inherited`.
 2. **`Resolve<Zone>Style(col): ResolvedTextStyle`** (private, per element) - kompletní kaskáda včetně per-column overridů. Vrací hotový styl pro `CellRenderer.DrawCell`.
+
+⚠️ **Každá textová část prvku patří do `ResolvedStyleZones()`** (cesta vlastnosti → styl, jak se vytiskne,
+z týchž metod jako kreslení). Odtud berou panel, lišta i formulář hodnotu nenastavené vlastnosti
+(`ElementFormBinder.InheritedValuesFor`). **Deskriptor nikdy nedosazuje vlastní výchozí hodnotu** (`?? 9f`,
+`?? "Arial"`) - do 30. 10. jich tak bylo 44 a ukazovaly jinou hodnotu, než se tiskla.
+Výjimka zůstávají vlastnosti, kde prázdná hodnota znamená „automaticky" (velikost symbolů v Minutách).
 
 ```csharp
 // Public - pro dialog kaskády
@@ -287,7 +298,7 @@ float headerH = ComputeHeaderH(MaxResolvedHeaderFontPt());
 
 ## Sdílená záložka Sloupce (`ColumnsTab`) a `CellStyleEditor`
 
-Okna tabulek se sloupci (Seznam zastávek, Minuty odjezdů, Tabulka spojů, Tabulka z dat) mají záložku
+Okna tabulek se sloupci (Seznam zastávek, Minuty odjezdů, Tabulka spojů, Tabulka s řádky z dat) mají záložku
 Sloupce **jednu společnou**: `Controls/ColumnsTab` + `ColumnsTabViewModel` (výběr, posun, přidání/
 odebrání, součet šířek, Přizpůsobit, reset). Do 28. 10. měla každá tabulka vlastní kopii a texty
 i chování se rozešly (`B194` E13c) - **novou kopii nepsat**.

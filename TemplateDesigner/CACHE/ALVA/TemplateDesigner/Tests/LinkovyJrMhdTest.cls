@@ -29,7 +29,7 @@ Method TestTabulkaJakoStaryModul()
 		do $$$AssertTrue(res("poradi"), idfa_" "_lin_": pořadí spojů se liší "_res("poradi","rozdil"))
 	}
 	if 'porovnano {
-		do $$$AssertTrue(1, "starý tisk MHD nebo firmy na serveru nejsou - přeskočeno")
+		do $$$AssertSkipped("starý tisk MHD nebo firmy na serveru nejsou - přeskočeno")
 		quit
 	}
 	// Shoda nad prázdnými značkami by nic nedokazovala.
@@ -40,7 +40,7 @@ Method TestTabulkaJakoStaryModul()
 Method TestMhdTiskneZvolenySmer()
 {
 	if '##class(%SYS.Namespace).Exists("CB_DP") {
-		do $$$AssertTrue(1, "firma CB_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma CB_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "CB_DP")
@@ -60,7 +60,7 @@ Method TestAdTiskneZvolenySmer()
 		kill parametry
 		set parametry("SMER_TISKU") = volba, parametry("OBOUSMERNY_TISK") = "true"
 		if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, "CB_CSADAD", 1, "0330511", .parametry) {
-			do $$$AssertTrue(1, "linka CB_CSADAD 0330511 není na serveru - přeskočeno")
+			do $$$AssertSkipped("linka CB_CSADAD 0330511 není na serveru - přeskočeno")
 			quit
 		}
 		// Obousměrná stránka nese prázdný SMER (`LinkovyJrAd.cls:777`), proto u „Oba" jedna prázdná.
@@ -74,7 +74,7 @@ Method TestAdTiskneZvolenySmer()
 Method TestParametryTypuProvozu()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -114,7 +114,7 @@ Method TestParametryTypuProvozu()
 Method TestVyberTypuProvozuJakoWeb()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -180,7 +180,7 @@ Method TestVyberTypuProvozuJakoWeb()
 			do $$$AssertTrue(res(kat), "proti starému tisku se liší "_kat_" ("_res(kat,"pocet")_") "_res(kat,"rozdil"))
 		}
 	} else {
-		do $$$AssertTrue(1, "starý tisk MHD na serveru není - porovnání přeskočeno")
+		do $$$AssertSkipped("starý tisk MHD na serveru není - porovnání přeskočeno")
 	}
 }
 
@@ -189,7 +189,7 @@ Method TestVyberTypuProvozuJakoWeb()
 Method TestUkazkaNeseTypyProvozuLinky()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -198,7 +198,7 @@ Method TestUkazkaNeseTypyProvozuLinky()
 	do $$$AssertEquals($get(^||ML("ERR")), "", "GetMockData skončil chybou")
 	set page = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT", 1), "{}"))
 	if '$isobject(page.%Get("rows")) || (page.rows.%Get("SPOJE").%Size() = 0) {
-		do $$$AssertTrue(1, "první linka KV_DP nedala ukázku - přeskočeno")
+		do $$$AssertSkipped("první linka KV_DP nedala ukázku - přeskočeno")
 		quit
 	}
 	set typy = page.values.%Get("TYPY_PROVOZU_LINKY")
@@ -230,7 +230,8 @@ Method TestVyberTypuProvozuJakoStaryModul()
 			do $$$AssertTrue(res(kat), idfa_" "_lin_" bez typu provozu "_vypnout_": liší se "_kat_" ("_res(kat,"pocet")_") "_res(kat,"rozdil"))
 		}
 	}
-	do $$$AssertTrue(1, "porovnáno linek: "_porovnano)
+	if 'porovnano { do $$$AssertSkipped("starý tisk MHD ani linka k porovnání na serveru nejsou - přeskočeno")  quit }
+	do ..LogMessage("porovnáno linek: "_porovnano)
 }
 
 /// Zvýraznit zastávku jako u linkového AD (`B191d`): kus názvu označí řádky zastávky, číslo zastávky
@@ -239,7 +240,7 @@ Method TestVyberTypuProvozuJakoStaryModul()
 Method TestZvyraznitZastavku()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -279,7 +280,7 @@ Method TestZvyraznitZastavku()
 Method TestZastavkyBezZastaveni()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -330,9 +331,9 @@ Method TestZastavkyBezZastaveni()
 /// (linka MHD nastavení nemá) a až 3 strany; AD zůstává, jak bylo. Návrhář čte cíl z čísla na začátku.
 Method TestPocetStran()
 {
-	set mhd = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrPoctuStran(0, 3)
+	set mhd = ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrPoctuStran(0, 3)
 	do $$$AssertEquals(mhd.%Get("defaultValue")_"|"_mhd.options.%ToJSON(), "Bez omezení|[""Bez omezení"",""1 strana"",""2 strany"",""3 strany""]", "MHD")
-	set ad = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrPoctuStran()
+	set ad = ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrPoctuStran()
 	do $$$AssertEquals(ad.%Get("defaultValue")_"|"_ad.options.%ToJSON(), "Automaticky (dle linky)|[""Automaticky (dle linky)"",""1 strana"",""2 strany""]", "AD")
 	do $$$AssertEquals(mhd.%Get("name")_"|"_mhd.%Get("group")_"|"_mhd.%Get("serverSide"), "POCET_STRAN_SESTAVY|Obecné|", "řeší návrhář, ne server")
 }
@@ -391,7 +392,7 @@ Method TestZonyHranicniZastavky()
 Method TestDuvodPrazdnehoVystupu()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -468,10 +469,10 @@ Method TestPoznamkyZTrasy()
 /// Poznámku nad linku linkový MHD nenabízí - modul MHD ji nedává zadat.
 Method TestDopravceJakoVyveska()
 {
-	set vyv = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
-	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", " DP, a.s. ", "Hlavní 1", "123 45 Město", "111 222", 1), "DP, a.s., Hlavní 1, 123 45 Město, tel. 111 222", "jedním řádkem")
-	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", "DP", "", "", "", 1), "DP", "bez adresy jen název")
-	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", "DP", "Hlavní 1", "Město", "111"), "DP"_$c(10)_"Hlavní 1"_$c(10)_"Město"_$c(10)_"tel: 111", "vývěska po řádcích beze změny")
+	set data = "ALVA.TemplateDesigner.Agendy.Jr.DataMhd"
+	do $$$AssertEquals($classmethod(data, "RadkyDopravce", " DP, a.s. ", "Hlavní 1", "123 45 Město", "111 222", 1), "DP, a.s., Hlavní 1, 123 45 Město, tel. 111 222", "jedním řádkem")
+	do $$$AssertEquals($classmethod(data, "RadkyDopravce", "DP", "", "", "", 1), "DP", "bez adresy jen název")
+	do $$$AssertEquals($classmethod(data, "RadkyDopravce", "DP", "Hlavní 1", "Město", "111"), "DP"_$c(10)_"Hlavní 1"_$c(10)_"Město"_$c(10)_"tel: 111", "vývěska po řádcích beze změny")
 
 	do ..SetupSys(.sys)
 	kill ^||ML
@@ -491,8 +492,8 @@ Method TestDopravceJakoVyveska()
 	do $$$AssertTrue('hodnoty.%IsDefined("POZNAMKA_NAD_LINKU"), "poznámka nad linku se neposílá")
 	do $$$AssertTrue('hodnoty.%IsDefined("POPIS_PLATNOSTI"), "hotová věta platnosti se neposílá (agenda nevyšla, Jan 23. 10.)")
 	set dopravce = hodnoty.%Get("POPIS_DOPRAVCE")
-	do $$$AssertEquals(dopravce, ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073, 1), "dopravce ze zdroje vývěsky")
-	set nazev = $piece(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073), $c(10), 1)
+	do $$$AssertEquals(dopravce, ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073, 1), "dopravce ze zdroje vývěsky")
+	set nazev = $piece(##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073), $c(10), 1)
 	if nazev = "" {
 		do $$$AssertSkipped("firemní údaje KV_DP nejsou v systémovém namespace testu")
 		quit
@@ -506,19 +507,19 @@ Method TestDopravceJakoVyveska()
 /// a popis Směru pro tisk bez obousměrného tisku.
 Method TestJakoVyveskaMhd()
 {
-	set vyv = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
+	set vyv = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd", data = "ALVA.TemplateDesigner.Agendy.Jr.DataMhd"
 	set idfa = "TDTEST"_$translate($system.Util.CreateGUID(), "-"), db = $namespace
 	try {
 		set g = $name(^[db]ALVA.MHD.LSO(idfa, 1, "DTA", 7, "DTA", 1))
 		set @g@("Navrh") = 1, @g@("Vyluka") = 1
-		do $$$AssertEquals($classmethod(vyv, "TypJrLinky", idfa, db, 7), "VÝLUKOVÝ", "návrh i výluka")
+		do $$$AssertEquals($classmethod(data, "TypJrLinky", idfa, db, 7), "VÝLUKOVÝ", "návrh i výluka")
 		set @g@("Vyluka") = 0
-		do $$$AssertEquals($classmethod(vyv, "TypJrLinky", idfa, db, 7), "NÁVRH", "jen návrh")
+		do $$$AssertEquals($classmethod(data, "TypJrLinky", idfa, db, 7), "NÁVRH", "jen návrh")
 		set @g@("Navrh") = 0
-		do $$$AssertEquals($classmethod(vyv, "TypJrLinky", idfa, db, 7), "", "bez příznaků")
+		do $$$AssertEquals($classmethod(data, "TypJrLinky", idfa, db, 7), "", "bez příznaků")
 		set ^[db]ALVA.MHD.ENUMS(idfa, "SkupinyLinek", "DTA", 1, "Blocked") = 1
 		set ^[db]ALVA.MHD.ENUMS(idfa, "SkupinyLinek", "DTA", 2, "Blocked") = 0
-		do $$$AssertEquals($classmethod(vyv, "GetDefaultSkupinaLinekID", idfa, db), 2, "zablokovaná skupina se přeskočí")
+		do $$$AssertEquals($classmethod(data, "GetDefaultSkupinaLinekID", idfa, db), 2, "zablokovaná skupina se přeskočí")
 	} catch ex {
 		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
 	}

@@ -40,11 +40,8 @@
   </ItemGroup>
 
 
-  <!-- Kopírovat schema soubory a konfiguraci do výstupní složky -->
+  <!-- Konfigurace do výstupní složky -->
   <ItemGroup>
-    <Content Include="schemas\*.schema.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <!-- Vlastní název kvůli sdílené složce C:\Edison\ - generický appsettings.json
          tam patří jiným Edison aplikacím (např. EdisonCacheMcp) a docházelo by ke konfliktu. -->
     <!-- Hlavní config je embedded resource → .exe je self-contained, žádný sidecar soubor není potřeba.

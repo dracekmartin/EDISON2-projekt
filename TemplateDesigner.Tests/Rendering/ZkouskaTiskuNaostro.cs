@@ -68,17 +68,14 @@ public class ZkouskaTiskuNaostro(ITestOutputHelper output)
             var parametry = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in provider.GetParameters(agenda)) parametry[p.Name] = p.DefaultValue;
             foreach (var (k, v) in sablona.PrintParameters ?? []) parametry[k] = v;
-            string? sloupce = sablona.Sections.SelectMany(x => x.Elements).OfType<IColumnLayoutOwner>()
-                .Select(e => e.BuildColumnsDefinitionWireJson()).FirstOrDefault(j => j is not null);
-            bool turnusy = sablona.Sections.SelectMany(x => x.Elements)
-                .OfType<LineTableElement>().Any(e => e.TurnusyKeSpojum);
+            var udajeZeSablony = TemplateDataInputs.From(sablona);
 
             foreach (var linka in linky)
             {
                 string jmeno = $"{Path.GetFileNameWithoutExtension(cesta)}-{linka}";
                 // bez skupiny bere server první skupinu linek firmy
                 var stranky = provider.GetData(agenda, TemplateDesignerViewModel.ComposeGetDataParams(
-                    parametry, instance, linka, Environment.GetEnvironmentVariable("TD_TISK_SKUPINA"), sloupce, turnusy, "cs"));
+                    parametry, instance, linka, Environment.GetEnvironmentVariable("TD_TISK_SKUPINA"), udajeZeSablony));
                 if (stranky is null || stranky.Count == 0)
                 {
                     output.WriteLine($"{jmeno}: linka nemá data");

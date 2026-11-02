@@ -24,7 +24,7 @@ internal sealed class ShellSession : IDisposable
     private const string E2EMarker = "E2E";
 
     // Kopie EdisonMainViewModel.ExitConfirmMessage.
-    private const string ExitConfirmText = "Opravdu chcete ukončit aplikaci? Zavřou se všechna otevřená agendová okna.";
+    private const string ExitConfirmText = "Zavřít všechna okna?";
 
     // Musí sedět s TestRunOptions.CommonFolder: téma a písmo E2E běhu místo vývojářova %APPDATA%\m-line\common.
     private static readonly string CommonFolder = Path.Combine(Path.GetTempPath(), "EDISON2.E2E", "common");

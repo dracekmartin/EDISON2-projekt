@@ -1,8 +1,8 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Tests.Serialization;
 
 namespace TemplateDesigner.Tests.Models;
 
@@ -74,7 +74,7 @@ public class ParametrySloupcemVariantTests
         var zname = StopListElement.GetDefaultColumns().Concat(LineTableElement.GetDefaultColumns())
             .Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
         var rx = new Regex(@"visibleWhenColumn""?\s*[,=]\s*""([A-Za-z_0-9]+)""");
-        var odkazy = Directory.GetFiles(AgendyDir(), "*.cls")
+        var odkazy = ZdrojeAgend.KodAgend()
             .SelectMany(f => rx.Matches(File.ReadAllText(f)).Select(m => (Soubor: Path.GetFileName(f), Klic: m.Groups[1].Value)))
             .ToList();
 
@@ -82,15 +82,4 @@ public class ParametrySloupcemVariantTests
         var nezname = odkazy.Where(o => !zname.Contains(o.Klic)).Select(o => $"{o.Soubor}: {o.Klic}").ToList();
         Assert.True(nezname.Count == 0, "Parametr závisí na sloupci, který žádný prvek nezná:\n" + string.Join("\n", nezname));
     }
-
-    private static string AgendyDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-        return Path.Combine(dir!.FullName, "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
 }

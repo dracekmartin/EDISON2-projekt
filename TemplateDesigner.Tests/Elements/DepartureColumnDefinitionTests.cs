@@ -15,7 +15,7 @@ public class DepartureColumnDefinitionTests
     private static DepartureColumnDefinition Col(string id, string header, string days) =>
         new() { Id = id, Header = header, Days = days };
 
-    // ── Wire JSON - klíče musí sedět na ParseDefiniceSloupcu v ZastavkoveJrAd.cls ────
+    // ── Wire JSON - klíče musí sedět na ParseDefiniceSloupcu v Jr/VlastniSloupce.cls ────
 
     [Fact]
     public void WireJson_NeseKliceKtereCteServer()
@@ -142,10 +142,10 @@ public class DepartureColumnDefinitionTests
     {
         var baseParams = new Dictionary<string, object?> { ["ROZDELENI_SLOUPCU"] = "x" };
 
-        var withDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, "{\"sloupce\":[]}", false, null);
+        var withDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, new TemplateDataInputs("{\"sloupce\":[]}", false, ""));
         Assert.Equal("{\"sloupce\":[]}", withDef["DEFINICE_SLOUPCU"]);
 
-        var withoutDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, null, false, null);
+        var withoutDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, new TemplateDataInputs(null, false, ""));
         Assert.False(withoutDef.ContainsKey("DEFINICE_SLOUPCU"));
     }
 
@@ -169,7 +169,7 @@ public class DepartureColumnDefinitionTests
         };
 
         var p = TemplateDesignerViewModel.ComposeGetDataParams(
-            persistovane, "LINKA_ID", "42", null, columnsDefinitionJson: null, false, jazyk: null);
+            persistovane, "LINKA_ID", "42", null, new TemplateDataInputs(null, false, ""));
 
         Assert.False(p.ContainsKey("DEFINICE_SLOUPCU"), "persistovaná definice sloupců prošla do serveru");
         Assert.False(p.ContainsKey("JAZYK"), "persistovaný jazyk prošel do serveru");

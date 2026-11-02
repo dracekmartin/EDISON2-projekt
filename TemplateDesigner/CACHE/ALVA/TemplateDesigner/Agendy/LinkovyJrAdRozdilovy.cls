@@ -62,9 +62,9 @@ Parameter InstanceParamName As %String = "LINKA_ID";
 
 Parameter ElementKind As %String = "LINE";
 
-Parameter InstanceLabel As %String = "linka";
+Parameter RozdilyVerzi As %Boolean = 1;
 
-Parameter InstanceLabelPlural As %String = "linky";
+Parameter InstanceTvary As %String = "linka,linky,linku,linky,linek";
 
 /// Schéma linkového JŘ + platnost původní verze, zrušené spoje a verze spoje.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
@@ -96,24 +96,14 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
-{
-    q ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetTableTemplates(.sys)
-}
-
-ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
-{
-    q ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetTableTemplate(.sys)
-}
-
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
 {
-    q ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetAvailableSkupiny(.sys)
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).GetAvailableSkupiny(.sys)
 }
 
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
-    q ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetAvailableInstances(.sys)
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).GetAvailableInstances(.sys)
 }
 
 ClassMethod GetMockData(ByRef sys As %String) As %Status
@@ -189,7 +179,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i (skuPuvodni '= "") || (linPuvodni '= "") {
             i skuPuvodni = "" s skuPuvodni = skuNova
             i linPuvodni = "" s linPuvodni = linNova
-            s linPuvodni = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).NormalizLinku(linPuvodni)
+            s linPuvodni = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky(linPuvodni)
             i $d(^[dataDB]JRL(skuPuvodni, linPuvodni, "I")) {
                 d ..NactiStranky(.sys, .vstup, skuPuvodni, linPuvodni, .puvodni, .duvodPuvodni)
                 i '$g(puvodni) s hlaseni = "Neporovnáno: linka "_(+linPuvodni)_" ve skupině "_skuPuvodni_" nemá data"_$s(duvodPuvodni="":".", 1:" - "_duvodPuvodni)

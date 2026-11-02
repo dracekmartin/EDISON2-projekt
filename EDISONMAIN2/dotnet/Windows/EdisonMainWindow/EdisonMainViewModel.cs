@@ -936,8 +936,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         // Jeden text pro obě cesty ukončení (menu i zavření okna), aby nedriftovaly.
-        private const string ExitConfirmMessage =
-            "Opravdu chcete ukončit aplikaci? Zavřou se všechna otevřená agendová okna.";
+        private const string ExitConfirmMessage = "Zavřít všechna okna?";
 
         private bool _closeConfirmSuppressed;
 

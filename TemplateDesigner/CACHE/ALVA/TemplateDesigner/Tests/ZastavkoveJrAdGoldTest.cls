@@ -104,7 +104,12 @@ Method TestGold0365001()
 	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů (i ve vzorech sloupců) z nastavení firmy
 	// jako starý zastávkový tisk - CB_CSADAD má prázdninové nadpisy malým písmenem. Jen md5, počty shodné.
 	// Re-baseline 2026-10-27 (`B194` D3): každá stránka nese navíc pole VYCHOZI_ZASTAVKA. Jen md5, počty shodné.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=H5xz0Ip6gJQEL6xkNwxSdA==")
+	// Re-baseline 2026-10-30 (zbytky dat): bez kolekce DOPRAVCI a polí NZ_KONFIG, NEVYPISOVAT_ZNACKY_SLOUPCU,
+	// která nic nečetlo. Jen md5, počty shodné; snímek výstupu agend potvrdil, že jiný rozdíl na stránkách není.
+	// Re-baseline 2026-10-30 (`B56` S7): hlavičku linky skládá `Jr.DataAd.AddHlavickaLinky` (jiné pořadí
+	// položek) a titulek je bez náhradního textu „Městská hromadná doprava..." (rozhodnutí Jan). Jen md5,
+	// počty shodné; snímek porovnaný podle obsahu nemá jiný rozdíl než titulek.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=zAcoVnGkUw0/fYgusSmOjA==")
 }
 
 Method TestGold0365005()
@@ -150,7 +155,9 @@ Method TestGold0365005()
 	// Re-baseline 2026-10-26 (`B194` T4d): přestup z číselníku firmy - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů z nastavení firmy - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-27 (`B194` D3): pole VYCHOZI_ZASTAVKA - viz gold 0365001. Jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=Z6ABVci/g+cLf4wcIMPO3A==")
+	// Re-baseline 2026-10-30 (zbytky dat): bez kolekce DOPRAVCI a dvou polí NZ - viz gold 0365001. Jen md5.
+	// Re-baseline 2026-10-30 (`B56` S7): hlavička linky a titulek - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=n6H6lczT+5SUkrw5pYQMqA==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -161,7 +168,7 @@ Method TestZadneDuplicitniVariantniSloupce()
 {
 	set db = ..#GOLDDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSys(.sys)
@@ -240,7 +247,9 @@ Method TestGold0330530()
 	// Re-baseline 2026-10-26 (`B194` T4d): přestup z číselníku firmy - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů z nastavení firmy - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-27 (`B194` D3): pole VYCHOZI_ZASTAVKA - viz gold 0365001. Jen md5.
-	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=KDxfDdJGIlEA3XQEzmcdDA==")
+	// Re-baseline 2026-10-30 (zbytky dat): bez kolekce DOPRAVCI a dvou polí NZ - viz gold 0365001. Jen md5.
+	// Re-baseline 2026-10-30 (`B56` S7): hlavička linky a titulek - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=bYToqTAKWlGC/laGVBD61g==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka
@@ -307,7 +316,7 @@ Method TestZakladniCasNeseJenPovoleneStavy()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z testovací sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z testovací sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	set stavy = "linek "_overeno_" z "_pripady_", čísel "_cisel_", projíždí "_mensitek_", prázdných "_prazdnych_", jiných "_jinych
@@ -316,7 +325,7 @@ Method TestZakladniCasNeseJenPovoleneStavy()
 	// „<" a prázdno umí vyrobit jen část sady, takže na neúplném serveru se ty dva stavy nekontrolují -
 	// jinak by test padal kvůli tomu, kde běží, ne kvůli kódu.
 	if overeno < pripady {
-		do $$$AssertTrue(1, "část sady na serveru chybí, stavy projíždění a prázdno nekontrolovány ("_stavy_")")
+		do $$$AssertSkipped("část sady na serveru chybí, stavy projíždění a prázdno nekontrolovány ("_stavy_")")
 	} else {
 		do $$$AssertEquals(mensitek > 0, 1, "na celé sadě nevznikl stav projíždění, změna je inertní ("_stavy_")")
 		do $$$AssertEquals(prazdnych > 0, 1, "na celé sadě nevzniklo prázdno (zastávka mimo základní trasu) ("_stavy_")")
@@ -395,7 +404,7 @@ Method TestVariantniSloupecJeProbehJedneTrasy()
 					for  {
 						set pp = $order(hodnoty(ci, pp))
 						quit:pp=""
-						if ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota($get(wMap(pp))) = "" { set ok = 0  quit }
+						if ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($get(wMap(pp))) = "" { set ok = 0  quit }
 						if ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasJizdyZMapy(.wMap, aktPoradi, pp) '= hodnoty(ci, pp) { set ok = 0  quit }
 					}
 					set sedi = ok
@@ -408,7 +417,7 @@ Method TestVariantniSloupecJeProbehJedneTrasy()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z testovací sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z testovací sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(sloupcu > 0, 1, "sada nedala žádný variantní sloupec - rozbitý fixture? (linek "_overeno_")")
@@ -423,7 +432,7 @@ Method AssertLine(sku As %String, lin As %String, expected As %String)
 {
 	set db = ..#GOLDDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - gold "_lin_" přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru - gold "_lin_" přeskočen")
 		quit
 	}
 	if '$data(^[db]JRL(sku, lin, "I")) {

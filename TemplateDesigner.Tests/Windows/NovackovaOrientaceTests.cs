@@ -109,15 +109,13 @@ public class NovackovaOrientaceTests
     /// <summary>
     /// Nápověda posílá k písmenům variant do parametrů sestavy („První varianta bez písmene")
     /// a k rozvržení sloupců do parametru „Rozdělení sloupců" - obojí definuje agenda, takže
-    /// přejmenování by z nápovědy udělalo slepou uličku.
+    /// přejmenování by z nápovědy udělalo slepou uličku. Volby variant jsou ve sdílených parametrech JŘ.
     /// </summary>
     [Fact]
     public void Napoveda_ParametryPisemVariantARozvrzeniSloupcuExistuji()
     {
-        var agenda = AgendaText("ZastavkoveJrAd.cls");
-
-        Assert.Contains("\"První varianta bez písmene\"", agenda);
-        Assert.Contains("\"Rozdělení sloupců podle platnosti\"", agenda);
+        Assert.Contains("\"První varianta bez písmene\"", AgendaText(Path.Combine("Jr", "Parametry.cls")));
+        Assert.Contains("\"Rozdělení sloupců podle platnosti\"", AgendaText("ZastavkoveJrAd.cls"));
     }
 
     /// <summary>Zdroják agendy - vedle složky formulářů, tedy stejnou cestou jako `ClsPath`.</summary>

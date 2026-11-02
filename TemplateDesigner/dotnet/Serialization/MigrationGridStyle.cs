@@ -22,7 +22,7 @@ public class MigrationGridStyle : ITemplateMigration
 {
     public string FromVersion => "1.6.0";
 
-    public string Description => "mřížka tabulkových prvků do sdíleného objektu; vnější obrys = rámeček elementu";
+    public string Description => "mřížka tabulkových prvků do sdíleného objektu; vnější obrys = rámeček prvku";
 
     /// <summary>Dřívější zadrátovaný rámec tabulky: 0,7 px při 96 DPI.</summary>
     private const double TableBorderMm = 0.19;

@@ -1,11 +1,12 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace TemplateDesigner.Tests.Serialization;
 
 /// <summary>
-/// Driftová pojistka <b>datového slovníku agend</b> (<c>CACHE/ALVA/TemplateDesigner/Agendy/*.cls</c>).
+/// Driftová pojistka <b>nabídky dat agend</b> (celý kód agend, <see cref="ZdrojeAgend"/>). Pole aspoň dvou
+/// agend JŘ jsou od 30. 10. ve slovníku <c>Jr/NabidkaDat.cls</c> (<c>B56</c> S9); agenda je bere přes
+/// <c>AddPole</c> / <c>AddPoleKolekce</c> a test jim dosadí popisek a typ ze slovníku.
 ///
 /// <para><see cref="EDInputFormSchemaDriftTests"/> hlídá schémata <b>formulářů</b> (vlastnosti prvku).
 /// Slovník polí, který uživatel vidí v nabídce dat a který jde do AI pomocníka, ale žije v agendách
@@ -29,10 +30,26 @@ public class AgendaSchemaDriftTests
     /// </summary>
     /// <remarks>Do 23. 10. tu byla obě čísla linky (AD „Číslo linky" × MHD „… (dle licence)").
     /// Od `B193b` nesou obě čísla všechny agendy JŘ, takže se musí všude jmenovat stejně.</remarks>
-    private static readonly HashSet<string> ExemptLabel = new(StringComparer.Ordinal);
+    private static readonly HashSet<string> ExemptLabel = new(StringComparer.Ordinal)
+    {
+        // Vývěska MHD nese v CISLO_ZASTAVKA číslo i s označníkem („101-A"), AD jen číslo (Jan 30. 10.).
+        "fields|CISLO_ZASTAVKA",
+    };
 
     /// <summary>Vědomé rozdíly typu téhož pole. Prázdné = žádný takový dnes není.</summary>
     private static readonly HashSet<string> ExemptType = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Vědomé případy, kdy stejný popisek nesou různá pole (<c>B194f</c> G3). Klíč = <c>&lt;místo&gt;|&lt;popisek&gt;</c>,
+    /// hodnota = pole, která ho smí nést, a důvod. Výjimka platí jen pro tuhle sadu polí - další pole
+    /// pod týmž popiskem test zase zastaví.
+    /// </summary>
+    private static readonly Dictionary<string, (string[] Keys, string Proc)> ExemptKey = new(StringComparer.Ordinal)
+    {
+        ["fields|Číslo aktuální zastávky"] = (["AKTUALNI_ZASTAVKA_CZST", "CISLO_ZASTAVKA"],
+            "totéž číslo zastávky - vývěska AD ho posílá jako CISLO_ZASTAVKA, linkové JŘ jako " +
+            "AKTUALNI_ZASTAVKA_CZST; sjednotit klíč s převodem šablon případně v B56 (Jan 30. 10.)"),
+    };
 
     /// <summary>Pole vyřazená z nabídky dat. Vydané agendy je dál posílají kvůli šablonám, které je
     /// mají, ale nový autor je nesmí najít - jinak se vyřazení nikdy nedokončí.</summary>
@@ -72,43 +89,122 @@ public class AgendaSchemaDriftTests
         Assert.True(hits.Count == 0, "Vyřazené pole je zpátky v nabídce dat agendy:\n" + string.Join("\n", hits));
     }
 
+    /// <summary>Cíl je proměnná (<c>gf</c>), nebo pole kolekce převzaté z jiné agendy
+    /// (<c>kolekce.%Get("fields")</c> - porovnání verzí tak rozšiřuje kolekce linkového JŘ).</summary>
     private static readonly Regex AddFieldRx = new(
-        """AddField\(\s*\w+\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*[,)]""",
+        """AddField\(\s*(\w+(?:\.%Get\("fields"\))?)\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*[,)]""",
         RegexOptions.Compiled);
 
     private static readonly Regex CollectionKeyRx = new(
         "collectionKey\\s*=\\s*\"([A-Z_0-9]+)\"",
         RegexOptions.Compiled);
 
-    private record Entry(string Scope, string Key, string Label, string Type, string File);
+    /// <summary>Podmínka na kolekci ve smyčce přes převzaté kolekce: <c>d:klic="SPOJE" ..AddField(…)</c>
+    /// platí pro řádek, <c>continue:klic'="ZASTAVKY"</c> pro řádky pod ním.</summary>
+    private static readonly Regex KlicJeRx = new("(?<!')klic\\s*=\\s*\"([A-Z_0-9]+)\"", RegexOptions.Compiled);
+    private static readonly Regex KlicNeniRx = new("klic\\s*'=\\s*\"([A-Z_0-9]+)\"", RegexOptions.Compiled);
+
+    /// <summary>Pole ze slovníku: <c>AddPole(fields, "KLIC")</c>, s nepovinným vlastním popiskem
+    /// u vědomého rozdílu (<c>AddPole(fields, "KLIC", "Popisek")</c>).</summary>
+    private static readonly Regex AddPoleRx = new(
+        """AddPole\(\s*\w+\s*,\s*"([A-Z_0-9]+)"\s*(?:,\s*"([^"]+)"\s*)?\)""", RegexOptions.Compiled);
+
+    private static readonly Regex AddKolekceRx = new(
+        """AddKolekce\(\s*\w+\s*,\s*"([A-Z_0-9]+)"\s*\)""", RegexOptions.Compiled);
+
+    private static readonly Regex AddPoleKolekceRx = new(
+        """AddPoleKolekce\(\s*\w+\s*,\s*"([A-Z_0-9]+)"\s*,\s*"([A-Z_0-9]+)"\s*\)""", RegexOptions.Compiled);
+
+    private static readonly Regex DefinicePoleRx = new(
+        """^\s*s\s+p\("([A-Z_0-9]+)"\)\s*=\s*\$lb\("([^"]+)",\s*"([^"]+)"\)""", RegexOptions.Compiled);
+
+    private static readonly Regex DefinicePoleKolekceRx = new(
+        """^\s*s\s+k\("([A-Z_0-9]+)",\s*"([A-Z_0-9]+)"\)\s*=\s*\$lb\("([^"]+)",\s*"([^"]+)"\)""", RegexOptions.Compiled);
+
+    /// <summary><c>ZeSlovniku</c> = agenda pole bere ze slovníku; popisek a typ jsou odtud
+    /// (prázdné, když ve slovníku chybí).</summary>
+    private record Entry(string Scope, string Key, string Label, string Type, string File, bool ZeSlovniku = false);
+
+    /// <summary>Slovník nabídky dat: <c>&lt;místo&gt;|&lt;pole&gt;</c> → popisek a typ.</summary>
+    private static readonly Lazy<Dictionary<string, (string Label, string Type)>> Slovnik = new(() =>
+    {
+        var d = new Dictionary<string, (string, string)>(StringComparer.Ordinal);
+        foreach (var line in File.ReadAllLines(Path.Combine(ZdrojeAgend.Slozka, "Jr", "NabidkaDat.cls")))
+        {
+            var m = DefinicePoleRx.Match(line);
+            if (m.Success)
+                d[$"fields|{m.Groups[1].Value}"] = (m.Groups[2].Value, m.Groups[3].Value);
+            m = DefinicePoleKolekceRx.Match(line);
+            if (m.Success)
+                d[$"collection:{m.Groups[1].Value}|{m.Groups[2].Value}"] = (m.Groups[3].Value, m.Groups[4].Value);
+        }
+        return d;
+    });
+
+    private static Entry ZeSlovniku(string scope, string key, string? vlastniPopisek, string file)
+    {
+        var def = Slovnik.Value.TryGetValue($"{scope}|{key}", out var d) ? d : ("", "");
+        return new Entry(scope, key, vlastniPopisek ?? def.Item1, def.Item2, file, ZeSlovniku: true);
+    }
+
+    private static List<Entry> ParseAgenda(string path) =>
+        ParseLines(File.ReadAllLines(path), Path.GetFileName(path));
 
     /// <summary>
     /// Vytáhne pole ze schématu jedné agendy. Čte se <b>sekvenčně</b>: dokud nepadne první
     /// <c>collectionKey</c>, jsou pole skalární; každý další <c>collectionKey</c> otevře novou
     /// kolekci. Proměnná držící pole se v agendách recykluje (<c>gf</c>), takže podle názvu
-    /// proměnné to poznat nejde.
+    /// proměnné to poznat nejde. Zakomentovaný řádek se přeskočí - pole, které agenda neposílá,
+    /// by test jinak porovnával s ostatními (`G7`).
     /// </summary>
-    private static List<Entry> ParseAgenda(string path)
+    private static List<Entry> ParseLines(IEnumerable<string> lines, string file)
     {
         var result = new List<Entry>();
         string scope = "fields";
-        string file = Path.GetFileName(path);
+        string? klicNeni = null;
 
-        foreach (var line in File.ReadAllLines(path))
+        foreach (var line in lines)
         {
+            var t = line.TrimStart();
+            if (t.StartsWith("//", StringComparison.Ordinal) || t.StartsWith("#;", StringComparison.Ordinal)
+                || t.StartsWith(';')) continue;
+
             var col = CollectionKeyRx.Match(line);
             if (col.Success) scope = "collection:" + col.Groups[1].Value;
+            var kol = AddKolekceRx.Match(line);
+            if (kol.Success) scope = "collection:" + kol.Groups[1].Value;
+            var neni = KlicNeniRx.Match(line);
+            if (neni.Success) klicNeni = neni.Groups[1].Value;
+
+            foreach (Match m in AddPoleRx.Matches(line))
+                result.Add(ZeSlovniku("fields", m.Groups[1].Value, m.Groups[2].Success ? m.Groups[2].Value : null, file));
+            foreach (Match m in AddPoleKolekceRx.Matches(line))
+                result.Add(ZeSlovniku("collection:" + m.Groups[1].Value, m.Groups[2].Value, null, file));
 
             foreach (Match m in AddFieldRx.Matches(line))
-                result.Add(new Entry(scope, m.Groups[1].Value, m.Groups[2].Value, m.Groups[3].Value, file));
+            {
+                string s = scope;
+                if (m.Groups[1].Value.Contains("%Get", StringComparison.Ordinal))
+                {
+                    var je = KlicJeRx.Match(line);
+                    s = "collection:" + (je.Success ? je.Groups[1].Value : klicNeni ?? "?");
+                }
+                result.Add(new Entry(s, m.Groups[2].Value, m.Groups[3].Value, m.Groups[4].Value, file));
+            }
         }
         return result;
     }
 
     private static List<Entry> AllFields() =>
-        [.. Directory.GetFiles(AgendyDir(), "*.cls")
+        [.. ZdrojeAgend.KodAgend()
             .Where(p => !Path.GetFileName(p).Equals("BaseAgenda.cls", StringComparison.OrdinalIgnoreCase))
             .SelectMany(ParseAgenda)];
+
+    /// <summary>Klíče nabídky dat podle souboru agendy (skaláry i pole kolekcí) - čte je test zástupných polí
+    /// dodávaných šablon (<see cref="ZastupnaPoleSablonTests"/>).</summary>
+    internal static Dictionary<string, HashSet<string>> KliceNabidkyPodleSouboru() =>
+        AllFields().GroupBy(e => e.File)
+            .ToDictionary(g => g.Key, g => g.Select(e => e.Key).ToHashSet(StringComparer.Ordinal), StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Pojistka proti tiše zelenému testu: kdyby se změnil zápis schématu a regulární výraz
@@ -130,6 +226,100 @@ public class AgendaSchemaDriftTests
 
         Assert.Contains(AllFields(),
             e => e.Scope == "collection:ZASTAVKY" && e.Key == "NAZEV_ZASTAVKY");
+        // Porovnání verzí rozšiřuje kolekce linkového JŘ jiným zápisem; do 29. 10. je parser neviděl.
+        Assert.Contains(AllFields(), e => e.Scope == "collection:SPOJE" && e.Key == "VERZE");
+        Assert.Contains(AllFields(), e => e.Scope == "collection:ZASTAVKY" && e.Key == "TC_PUVODNI");
+        Assert.DoesNotContain(AllFields(), e => e.Scope == "collection:?");
+    }
+
+    [Fact]
+    public void Parser_PreskociZakomentovanePole()
+    {
+        string[] radky =
+        [
+            "        d ..AddField(fields, \"CISLO_LINKY\", \"Číslo linky\", \"text\")",
+            "        // d ..AddField(fields, \"STARE_POLE\", \"Staré pole\", \"text\")",
+            "        #; d ..AddField(fields, \"JESTE_STARSI\", \"Ještě starší\", \"text\")",
+        ];
+
+        var pole = ParseLines(radky, "test.cls");
+
+        Assert.Equal(["CISLO_LINKY"], pole.Select(e => e.Key));
+    }
+
+    [Fact]
+    public void Parser_CteSlovnikAPoleZNej()
+    {
+        Assert.True(Slovnik.Value.Count(d => d.Key.StartsWith("fields|", StringComparison.Ordinal)) >= 20,
+            "Ze slovníku Jr/NabidkaDat.cls se nenačetla pole stránky - změnil se zápis definic?");
+        Assert.True(Slovnik.Value.Count(d => d.Key.StartsWith("collection:", StringComparison.Ordinal)) >= 15,
+            "Ze slovníku Jr/NabidkaDat.cls se nenačetla pole kolekcí - změnil se zápis definic?");
+
+        string[] radky =
+        [
+            "    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, \"CISLO_LINKY\")",
+            "    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, \"CISLO_ZASTAVKA\", \"Vlastní popisek\")",
+            "    // d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, \"SMER\")",
+            "    s pole = ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddKolekce(collections, \"ZASTAVKY\")",
+            "    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, \"ZASTAVKY\", \"ZONY\")",
+            "    d ..AddField(pole, \"TC\", \"Tarifní číslo\", \"number\")",
+        ];
+
+        var pole = ParseLines(radky, "test.cls");
+
+        Assert.Equal(
+            [("fields", "CISLO_LINKY", "Číslo linky (dle licence)"), ("fields", "CISLO_ZASTAVKA", "Vlastní popisek"),
+             ("collection:ZASTAVKY", "ZONY", "Zóny"), ("collection:ZASTAVKY", "TC", "Tarifní číslo")],
+            pole.Select(e => (e.Scope, e.Key, e.Label)));
+    }
+
+    /// <summary>Pole, které agenda bere ze slovníku a slovník ho nezná, by na serveru shodilo celou
+    /// nabídku dat (<c>&lt;UNDEFINED&gt;</c>) - tady se to pozná dřív, než se třída nasadí.</summary>
+    [Fact]
+    public void PoleZeSlovniku_JsouVeSlovniku()
+    {
+        var chybi = AllFields()
+            .Where(e => e.ZeSlovniku && !Slovnik.Value.ContainsKey($"{e.Scope}|{e.Key}"))
+            .Select(e => $"{e.File} {e.Scope}|{e.Key}")
+            .Distinct()
+            .ToList();
+
+        Assert.True(chybi.Count == 0, "Agenda bere ze slovníku Jr/NabidkaDat.cls pole, které v něm není:\n" + string.Join("\n", chybi));
+    }
+
+    /// <summary>Pravidlo druhého použití (R8): do slovníku patří pole, které nabízejí aspoň dvě agendy;
+    /// pole jedné agendy si agenda přidá sama. Jinak by se slovník plnil „pro jistotu".</summary>
+    [Fact]
+    public void Slovnik_DrziJenPoleAsponDvouAgend()
+    {
+        var pouziti = AllFields().Where(e => e.ZeSlovniku)
+            .GroupBy(e => $"{e.Scope}|{e.Key}")
+            .ToDictionary(g => g.Key, g => g.Select(e => e.File).Distinct().Count(), StringComparer.Ordinal);
+
+        var malo = Slovnik.Value.Keys
+            .Where(k => pouziti.GetValueOrDefault(k) < 2)
+            .Select(k => $"{k}: {pouziti.GetValueOrDefault(k)}× ")
+            .ToList();
+
+        Assert.True(malo.Count == 0,
+            "Pole ve slovníku nabídky dat nabízí méně než dvě agendy - přesuň ho do agendy (AddField), nebo smaž:\n" +
+            string.Join("\n", malo));
+    }
+
+    /// <summary>Pole, které slovník má, agenda nepíše znovu s vlastním popiskem přes <c>AddField</c> -
+    /// jinak by se popisek psal zase na dvou místech a slovník by nic nehlídal.</summary>
+    [Fact]
+    public void PoleZeSlovniku_AgendaNepiseZnovu()
+    {
+        var znovu = AllFields()
+            .Where(e => !e.ZeSlovniku && Slovnik.Value.ContainsKey($"{e.Scope}|{e.Key}"))
+            .Select(e => $"{e.File} {e.Scope}|{e.Key}")
+            .Distinct()
+            .ToList();
+
+        Assert.True(znovu.Count == 0,
+            "Agenda přidává přes AddField pole, které má slovník Jr/NabidkaDat.cls - použij AddPole / AddPoleKolekce:\n" +
+            string.Join("\n", znovu));
     }
 
     /// <summary>Společné pořadí skalárních polí agend JŘ: linka → dopravce → platnost → zastávka a směr →
@@ -180,6 +370,29 @@ public class AgendaSchemaDriftTests
             string.Join("\n", drift));
     }
 
+    /// <summary>
+    /// Opačný směr k <see cref="StejnePole_MaVeVsechAgendachStejnyPopisek"/>: stejný popisek patří jednomu
+    /// poli. Jinak uživatel vidí v nabídce dvou agend stejný název, ale šablona z jedné agendy ve druhé
+    /// vykreslí prázdno, protože pole se jmenuje jinak (odtud nálezy <c>D1</c> a <c>D3</c>).
+    /// </summary>
+    [Fact]
+    public void StejnyPopisek_PatriJednomuPoli()
+    {
+        var drift = AllFields()
+            .GroupBy(e => $"{e.Scope}|{e.Label}")
+            .Select(g => (Id: g.Key, Keys: g.GroupBy(e => e.Key).ToList()))
+            .Where(x => x.Keys.Count > 1)
+            .Where(x => !(ExemptKey.TryGetValue(x.Id, out var v) && x.Keys.Select(k => k.Key).Order().SequenceEqual(v.Keys.Order())))
+            .Select(x => $"{x.Id}: " + string.Join(" × ", x.Keys.Select(
+                k => $"{k.Key} ({string.Join(",", k.Select(e => e.File).Distinct())})")))
+            .ToList();
+
+        Assert.True(drift.Count == 0,
+            "Stejný popisek nesou v nabídce dat různá pole - uživatel nepozná, že jde o dvě věci, a šablona " +
+            "z jedné agendy ve druhé vykreslí prázdno. Rozliš popisky, nebo doplň výjimku s důvodem:\n" +
+            string.Join("\n", drift));
+    }
+
     [Fact]
     public void StejnePole_MaVeVsechAgendachStejnyTyp()
     {
@@ -215,22 +428,4 @@ public class AgendaSchemaDriftTests
             "Zakázané termíny v popiscích polí agend (kanon ux-conventions §8):\n" +
             string.Join("\n", hits.Distinct()));
     }
-
-    private static string AgendyDir()
-    {
-        // Od bin/Debug/... nahoru k rootu repa (kde leží EDISON2.sln)
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-
-        // Běh z izolovaného výstupu (dotnet test -o mimo repo) → root odvodit z cesty tohoto zdrojáku
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-
-        Assert.True(File.Exists(Path.Combine(dir!.FullName, "EDISON2.sln")),
-            "Nenalezen root repa (EDISON2.sln) - drift testy potřebují zdrojáky .cls");
-        return Path.Combine(dir.FullName,
-            "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
 }

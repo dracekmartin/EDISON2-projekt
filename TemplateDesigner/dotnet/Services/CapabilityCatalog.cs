@@ -1,4 +1,5 @@
 using System.Text;
+using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
 
 namespace TemplateDesigner.Services;
@@ -116,32 +117,15 @@ s daty z agendy → PDF.
   'Uložit jako' je v menu Soubor (bez zkratky).
 - Import/export JSON souboru: menu Soubor → Importovat/Exportovat JSON.
 - Vlastnosti stránky (rozměr, orientace, okraje, kultura): Ctrl+Shift+P.
-  POZOR: změna rozměru/orientace = nová prázdná šablona (s potvrzením).
+  Změna formátu nebo orientace se u šablony s obsahem zeptá: Ano = prvky se přepočítají na novou
+  velikost, Ne = změní se jen stránka a prvky zůstanou, Storno = beze změny.
 
 ### Navigace a zobrazení
-- Zoom: Ctrl+kolečko (k kurzoru), Ctrl+0 = přizpůsobit stránce, Ctrl+1 = 100 %.
+- Zoom: Ctrl+kolečko (ke kurzoru), Ctrl+0 = přizpůsobit stránce, Ctrl+1 = 100 %.
 - Mřížka plátna a přichytávání: toolbar - zobrazit mřížku plátna, snap na mřížku (velikost 0,2–10 mm),
   snap na elementy; Ctrl+Shift+N normalizuje pozice existujících elementů.
-- Levý panel: záložky Sekce / Datová pole / Vlastnosti / Strom / Pomocník; Ctrl+B sbalí.
+- Levý panel: záložky Sekce / Datová pole / Vlastnosti / Strom / Pomocník / Parametry; Ctrl+B sbalí.
 - Strom šablony: záložka 'Strom' - hierarchie sekce → skupiny → elementy.
-
-## Klávesové zkratky (kompletní)
-- Ctrl+Z / Ctrl+Y - zpět / vpřed
-- Ctrl+X / Ctrl+C / Ctrl+V - vyjmout / kopírovat / vložit; Ctrl+A - vybrat vše v sekci
-- Ctrl+D - duplikovat (+šipka = kopie vedle s mezerou)
-- Ctrl+Shift+C / Ctrl+Shift+V - kopírovat / vložit styl
-- Ctrl+G / Ctrl+Shift+G - seskupit / rozeskupit; Alt+klik - jeden prvek ze skupiny
-- Ctrl+Shift+H / Ctrl+Shift+J - rozdělit element vodorovně / svisle
-- Ctrl+Shift+N - normalizovat pozice na mřížku
-- Šipky - posun prvku o 1 mm; Ctrl+šipky = o krok mřížky; Shift+šipky = změna velikosti o 1 mm
-- Ctrl+Shift+↑/↓ - přesun aktivní sekce nahoru / dolů
-- Ctrl+PageUp / Ctrl+PageDown - pořadí ve vrstvě (Z-order); +Shift = úplně dopředu/dozadu
-- Ctrl+N / Ctrl+O / Ctrl+S - nová / otevřít z databáze / uložit ('Uložit jako' zkratku NEMÁ)
-- Ctrl+P - tisk; Ctrl+Shift+P - vlastnosti stránky; Ctrl+Shift+A - změnit agendu;
-  Ctrl+Shift+I - výběr linek
-- Ctrl+0 - přizpůsobit stránce; Ctrl+1 - 100 %; Ctrl+B - sbalit levý panel
-- F2 - inline editace textu; Enter - vlastnosti výběru; Delete - smazat
-- F5 - obnovit data z databáze; F1 - nápověda; Esc - zrušit probíhající akci
 
 ## Menu Nástroje
 Změnit agendu, Šablony v databázi (správce), AI průvodce (tento chat).
@@ -199,9 +183,25 @@ Pravidla obsahu (ZÁVAZNÁ):
         sb.AppendLine();
         sb.AppendLine(GeneralIntro);
         sb.AppendLine();
+        sb.AppendLine(BuildShortcutList());
         sb.AppendLine(BuildCurrentContext(agendaName, selectedElementType, sectionCount, elementKind));
         sb.AppendLine();
         sb.AppendLine(BuildElementCatalog(elementKind));
+        return sb.ToString();
+    }
+
+    /// <summary>Úplný seznam zkratek z <see cref="KeyboardShortcuts"/> - ručně psaný se rozcházel s aplikací.</summary>
+    public static string BuildShortcutList()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("## Klávesové zkratky (kompletní)");
+        foreach (var kategorie in KeyboardShortcuts.All.GroupBy(z => z.Category))
+        {
+            sb.AppendLine($"### {kategorie.Key}");
+            foreach (var zkratka in kategorie)
+                sb.AppendLine($"- {zkratka.Gesture} - {zkratka.Action}");
+        }
+        sb.AppendLine("'Uložit jako' zkratku NEMÁ (jen menu Soubor).");
         return sb.ToString();
     }
 
@@ -233,7 +233,7 @@ Pravidla obsahu (ZÁVAZNÁ):
             sb.AppendLine($"Tahle agenda má specializované prvky: {string.Join(", ", specialni.Select(FriendlyName))}.");
             sb.AppendLine("Dotaz o obsahu jízdního řádu (zastávky, spoje, časy, km, zóny, tarifní čísla,");
             sb.AppendLine("skupiny dnů, poznámky, přípoje) **odpovídej podle nich** - uživatel se ptá na to,");
-            sb.AppendLine("co má v šabloně před sebou. Obecnou dynamickou nebo pevnou tabulku zmiň jen tehdy,");
+            sb.AppendLine("co má v šabloně před sebou. Obecnou tabulku s řádky z dat nebo pevnou tabulku zmiň jen tehdy,");
             sb.AppendLine("když se na ni ptá výslovně, nebo když specializovaný prvek tu vlastnost opravdu nemá.");
             sb.AppendLine("**Nenabízej výběr mezi nimi** a neptej se zpět, o kterou tabulku jde.");
         }
@@ -301,11 +301,7 @@ Pravidla obsahu (ZÁVAZNÁ):
 
     // ─── Mapování typů ────────────────────────────────────────────────────────
 
-    private static readonly string[] GenericTypes =
-    [
-        ElementTypes.Text, ElementTypes.Image, ElementTypes.Rectangle,
-        ElementTypes.Line, ElementTypes.Barcode, ElementTypes.DynamicTable, ElementTypes.Table
-    ];
+    private static readonly string[] GenericTypes = [.. ElementCatalog.All.Where(e => e.IsGeneric).Select(e => e.Type)];
 
     /// <summary>
     /// Které typy elementů poslat modelu. Obecné vždy; JŘ elementy podle druhu agendy
@@ -319,21 +315,24 @@ Pravidla obsahu (ZÁVAZNÁ):
     }
 
     // Jméno prvku drží ElementNames (totéž vidí uživatel v paletě); tady se k němu jen doplní,
-    // do které sestavy prvek patří - asistent jinak neví, kdy ho má vůbec nabízet.
-    internal static string FriendlyName(string type) => ElementNames.ForType(type) + (type switch
-    {
-        ElementTypes.StopList or ElementTypes.DepartureGrid or ElementTypes.NotesLegend
-            => " (zastávkový JŘ)",
-        ElementTypes.LineTable => " (linkový JŘ)",
-        _ => "",
-    });
+    // do které sestavy prvek patří - asistent jinak neví, kdy ho má vůbec nabízet. Bere se
+    // z AgendaCapabilities: vlastní výčet tu tvrdil, že Poznámky jsou jen zastávkové, i když je
+    // od 3. 9. má i linkový JŘ.
+    internal static string FriendlyName(string type) =>
+        ElementNames.ForType(type) + (AgendaCapabilities.Supports("STOP", type), AgendaCapabilities.Supports("LINE", type)) switch
+        {
+            (true, true)  => " (zastávkový i linkový JŘ)",
+            (true, false) => " (zastávkový JŘ)",
+            (false, true) => " (linkový JŘ)",
+            _             => "",
+        };
 
     private static string? ElementNote(string type) => type switch
     {
         ElementTypes.Table =>
             "Mřížka, jejíž obsah vyplňuje uživatel - buňka nese text nebo pole {CISLO_LINKY}. " +
             "Nahrazuje skládání hlaviček a bloků (platební údaje, rekapitulace) z jednotlivých textů: " +
-            "je to jeden prvek, se kterým se hýbe vcelku. Řádky se z dat negenerují - na to je tabulka dynamická.",
+            "je to jeden prvek, se kterým se hýbe vcelku. Řádky se z dat negenerují - na to je tabulka s řádky z dat.",
         ElementTypes.DynamicTable =>
             "Řádky se generují z datové kolekce agendy (DataSource). Dialog tabulky (dvojklik) umí navíc: " +
             "sloupce s mapováním na pole NEBO počítaným výrazem ({CENA}*{POCET}) a formátem; " +

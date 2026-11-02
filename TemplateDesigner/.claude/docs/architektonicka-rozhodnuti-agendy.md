@@ -202,7 +202,39 @@ Uživatel v jízdních řádech (nové okno JŘ) vybere linky a dostane PDF bez 
 Podle doporučení výše začít spuštěním návrháře z EDISONu s parametry (launch kontrakt už je) a render oddělit fasádou; postupovat pilotem podle R7.
 PDF bez okna ze spuštění už je pro jednu linku (`Vystup=PDF`, rozdílový JŘ 23. 10., `Config/LaunchInput`), šablona zatím jen ze `LaunchTemplates/` v exe.
 Zbývá víc linek a volba šablony z databáze.
-**Před začátkem rozhodnout**, odkud se bere výchozí šablona a jak ji uživatel volí.
+
+**Návrh výchozí šablony (1. 11., čeká na rozhodnutí Jan a domluvu s kolegou z JŘ).**
+Starý systém výchozí šablonu neznal: report generátor, TiskJR i TiskMHD tiskly šablonu, kterou jim poslal volající modul.
+Moduly ji určovaly napevno v kódu, nastavením firmy (zpřesněným na provozovnu, pokladnu, dílnu, linku nebo zaměstnance), poslední volbou uživatele v dialogu, nebo u faktur pravidly podle druhu dokladu.
+JŘ měly u linky šablonu pro A4 a A5 (`^JRL(...,"PATCH","prt","win",1|7)`, MHD `"prt","winmhd",1|2`) a ta přebila volbu v dialogu.
+
+- **Agenda** (kód agendy a varianty) je zdroj dat a druh výstupu; výchozí šablona se váže na ni, stejně jako dnes šablony (RG: sada = agenda, modul = varianta, `F7`).
+- **Instance** je jednotka tisku (linka, zaměstnanec, doklad); tisk víc instancí je seznam, `F9` k němu později přidá PDF, heslo a e-mail ke každé.
+- **Volající modul**, který potřebuje pro jednu agendu víc šablon (provozovna, pokladna), si volbu drží ve svém nastavení a pošle číslo šablony; obecný mechanismus pro to nestavíme.
+
+Pravidlo výběru šablony běží na serveru, jedno pro návrhář, okno JŘ i tisk bez uživatele; platí první krok, který šablonu dá:
+
+1. šablona, kterou poslal volající;
+2. šablona přiřazená instanci (linka, zaměstnanec) - jen připravit, nedělat;
+3. výchozí šablona firmy pro agendu;
+4. výchozí šablona M-line pro agendu;
+5. jinak hláška „agenda nemá šablonu pro tisk".
+
+Nahradí dnešní skrytá pravidla: spuštění bere nejnověji upravenou šablonu firmy, úvodní obrazovka první systémovou v pořadí souborů.
+
+Rozsah `B190`:
+
+- výchozí šablona firmy uložená mimo JSON šablony, např. `^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",AgendaCode)` (příznak v JSON by zkopírovalo „Uložit jako"); M-line ji určí při vydání;
+- nastavení v okně Otevřít z databáze: sloupec „Výchozí" a akce „Nastavit jako výchozí pro tisk";
+- serverová metoda pravidla: okno JŘ podle ní ukáže šablonu u tlačítka Tisk a bez šablony tlačítko zakáže;
+- spuštění bez okna rozšířené o víc linek, volitelné číslo šablony (`Sablona=`) a PDF ze šablony z databáze (dnes jen `LaunchTemplates/`).
+
+Otevřené otázky (doporučení v závorce):
+
+- výchozí šablona za firmu, nebo za uživatele (za firmu: tisk na jeden klik dopadne stejně, ať tiskne kdokoli; uživatele jde přidat jako další krok pravidla);
+- šablona u linky teď, nebo později (později: staré údaje ukazují na staré šablony, převzít nejdou, byla by to nová data a nové okno);
+- víc linek: jedno PDF, nebo PDF za linku (výchozí jedno, volající smí chtít PDF za linku přes `__EXPORT_SPLIT`);
+- s kolegou: co okno JŘ ukáže a jak předá seznam linek.
 
 ---
 
@@ -269,6 +301,58 @@ Linkové JŘ i report generátor až po něm - poučené tím, co pilot ukáže.
 
 ---
 
+## R8. Sdílení kódu mezi agendami a cíl sloučení (`B56`) - ROZHODNUTO 29. 10. 2026
+
+**Co tím myslím.** Po čtyřech agendách JŘ (zastávkový a linkový, AD a MHD) je vidět, co mají agendy
+společné. Kód se dnes sdílí třemi způsoby naráz: společný základ `BaseAgenda`, přímá volání mezi
+agendami a opsané kopie. Kopie se už začaly rozcházet (dopravce ve třech verzích, platnost linky
+na sedmi místech, barva `0;0;0` jednou černá, jednou nenastavená).
+
+**Jaký problém to řeší.** Pátá agenda by opsala nejbližšího sourozence a rozjezd by se násobil:
+tatáž oprava na víc místech a nikdo neví, na kterých.
+
+**Rozhodnuto (Jan 29. 10.):**
+
+- Agendy zůstávají **přímými potomky `BaseAgenda`** - registr hledá jen ty a kódy agend se nemění.
+  `BaseAgenda` je kontrakt a obecné věci.
+- Sdílený kód jde do **pomocných tříd mimo hierarchii agend**, rozdělených podle toho, co dělají (čtení
+  dat AD, stavba výstupu zastávkového JŘ, stavba výstupu linkového JŘ, společné parametry). Ne dědičnost:
+  kód se sdílí ve dvou směrech (AD × MHD a zastávkový × linkový) a jedna dědičnost pokryje jen jeden.
+
+**Upřesněno 30. 10. (Jan) - dvě osy a pravidlo druhého použití:**
+
+- **Podle zdroje dat** (AD, MHD): načtení linky, tras, spojů, platnosti, dopravce, poznámek a nastavení linky.
+  Sdílí je zastávkový i linkový JŘ téže varianty, později relace a vozový JŘ.
+  Data nebo jméno pracovního globálu dostane parametrem (`cache-api.md` pravidlo 6), jinak by relace nemohla číst víc linek najednou.
+- **Podle druhu výstupu** (zastávkový, linkový, později relace a vozový): stránky a řádky ve tvaru, který čtou prvky
+  (`KontraktDat.cs`), parametry a nabídka dat druhu. Sdílí je AD i MHD.
+- **Obecný základ** (`BaseAgenda`): kontrakt agendy, hlášky bez dat a chyby dat, formát data, pomocníci nabídky dat a parametrů.
+  Slouží i agendám report generátoru, proto do něj nepatří čtení dat AD ani věci jen pro JŘ (30. 10. jich tam bylo 14 z 28 metod,
+  přesunuly se v `B56` S13; že základ data nečte, hlídá `DataPodleZdrojeTests.ZakladAgendNectaData`).
+- **Věc společná oběma druhům výstupu** (vlastní sloupce spojů ze šablony) má vlastní pomocnou třídu podle role (`Jr.VlastniSloupce`).
+- **Agenda nevolá jinou agendu** - co potřebují dvě, je v pomocné třídě (výjimka: rozdílový JŘ postavený nad linkovým AD);
+  hlídá `DataPodleZdrojeTests.AgendaNevolaJinouAgendu`.
+- **Agenda** vybere zdroj a druh, drží pořadí kroků a vědomé rozdíly svého starého modulu.
+  Pomocné třídy JŘ jsou v balíku `ALVA.TemplateDesigner.Agendy.Jr` (složka `Agendy/Jr/`), jméno podle role (`DataAd`, ne `Helpers`).
+- **Žádný společný tvar dat pro AD i MHD** (jeden výpočet nad daty z obou zdrojů): výpočty pocházejí ze dvou starých
+  modulů a výstup musí zůstat obsahově stejný - byl by to přepis, ne sloučení. Společným tvarem je výstup agendy.
+- **Pravidlo druhého použití:** kód jde do pomocné třídy, až když ho potřebuje druhá agenda; do té doby zůstává v agendě.
+  Žádná předčasná extrakce „pro jistotu" - proto se s `B56` čekalo, až budou hotové čtyři agendy JŘ (Jan 30. 10.).
+- **Proč se to vyplatí** (měření 30. 10., `legacy-nahrada.md §4`): opsaného kódu je jen asi 8 %, ale za pět měsíců
+  se 42× táž změna dělala ve dvou agendách a 56× se změnila jen jedna kopie. Cílem je udržitelnost s dalšími agendami,
+  ne méně řádků.
+- **Cíl `B56` není sjednotit všechno, co jde.** Cíl je ujasnit a zapsat strukturu, projít agendy a dostat
+  je na základ, na kterém se další agenda staví bez opisování. Sjednocuje se tam, kde hrozí rozjezd, který
+  uživatel uvidí, nebo kde se tatáž oprava dělala víckrát. Vědomé rozdíly mezi agendami
+  ([`legacy-nahrada.md §4`](legacy-nahrada.md)) zůstávají.
+- Postup a pojistky: [`legacy-nahrada.md §4`](legacy-nahrada.md) („Postup `B56`") - výstup všech agend musí
+  po každém kroku vyjít obsahově stejně (snímek porovnává stránky jako JSON, pořadí položek jen hlásí).
+  Vědomá změna výstupu jen s rozhodnutím Jana a v samostatném zápisu (titulek a typ čísla linky v S7).
+
+**Kdy nejpozději.** Před další agendou (relace, vozový JŘ, převod Report generátoru).
+
+---
+
 ## Souhrn - tahák
 
 | # | Rozhodnutí jednou větou | Kdy nejpozději |
@@ -280,6 +364,7 @@ Linkové JŘ i report generátor až po něm - poučené tím, co pilot ukáže.
 | R5 | Fonty přibalit do aplikace, nikdy nespoléhat na instalaci ve Windows | start linkových a knižních JŘ |
 | R6 | Systémové šablony jdou se .exe, DB jen pro zákaznické | návrh bloku B |
 | R7 | Jedna agenda k reálnému zákazníkovi dřív, než se migrují další | teď (další velký blok) |
+| R8 | Agendy dědí jen kontrakt, sdílený kód v pomocných třídách podle účelu; sjednotit jen tam, kde hrozí rozjezd | před další agendou |
 
 **Nit, která to spojuje:** engine se má měnit vzácně a vědomě (R1/R2/R4/R5 ho k tomu
 připravují), agendy se mají přidávat levně a bezpečně (R3/R7), a šablony se mají šířit
@@ -485,6 +570,6 @@ z listu udělat složitější hierarchii, až to objem vyžádá.
 ## Navazuje (samostatné, ne součást distribuce)
 
 - **Přiřazení šablony k tisku** (roadmap PC „navazující featury"): „linka X → výchozí šablona Y".
-  O používání, ne o distribuci - řešit zvlášť.
+  O používání, ne o distribuci - řešit zvlášť. Návrh pravidla výběru šablony je u `B190` v R4.
 - **Audit log** (kdo/kdy/co změnil šablonu) + **ECL právo „pouštět designer"** - legacy paralela
   (`^AlvaReportGeneratorLog`, ECL 360080002), mapovat 1:1 až s implementací governance.

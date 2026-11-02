@@ -298,16 +298,13 @@ classDiagram
 flowchart TB
     subgraph "C# (.NET)"
         CSW["CacheSchemaWiring"]
-        CAP["CacheAgendaProvider<br/><small>IDataSchemaProvider +<br/>ITableTemplateProvider</small>"]
-        COMP["CompositeDataSchemaProvider<br/><small>Caché primary + JSON fallback</small>"]
-        JSON["JsonFileDataSchemaProvider<br/><small>schemas/*.schema.json</small>"]
+        CAP["CacheAgendaProvider<br/><small>IDataSchemaProvider</small>"]
         MLR["MLRest / IMLRest<br/><small>HTTP klient → Caché</small>"]
     end
 
     subgraph "Caché (ObjectScript)"
         AA["AgendaAPI<br/><small>abstraktní základ</small>"]
         MHD["ZastavkoveJrMhdAPI<br/><small>6-fázový MHD engine</small>"]
-        FAK["TemplateDesignerFAKTURY<br/><small>fakturační agenda</small>"]
     end
 
     subgraph "Caché DB (globály)"
@@ -319,11 +316,8 @@ flowchart TB
 
     CSW --> CAP
     CAP --> MLR
-    COMP --> CAP
-    COMP --> JSON
     MLR --> |"HTTP CVar"| AA
     AA <|-- MHD
-    AA <|-- FAK
     MHD --> LSO
     MHD --> ZST
     MHD --> CHR
@@ -533,5 +527,4 @@ mindmap
     CACHE/
       AgendaAPI (abstract)
       ZastavkoveJrMhdAPI
-      TemplateDesignerFAKTURY
 ```

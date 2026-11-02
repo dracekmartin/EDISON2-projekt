@@ -244,7 +244,7 @@ ClassMethod RozpisLinky(ByRef sys As %String) As %Status
 		f v=1:1:pocetVar {
 			s vystup("B~varianta~"_$tr($j(v,2)," ","0")) =
 				"pismeno="_$s($g(pism(v))="":"(zadne)", 1:$g(pism(v)))_
-				", zastaveni="_##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PocetZastaveni($g(sig(v)))_
+				", zastaveni="_##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetZastaveni($g(sig(v)))_
 				", prubeh="_$tr($g(sig(v)), "~", "")
 		}
 
@@ -254,7 +254,7 @@ ClassMethod RozpisLinky(ByRef sys As %String) As %Status
 		f v=1:1:pocetSe {
 			s vystup("C~varianta~"_$tr($j(v,2)," ","0")) =
 				"pismeno="_$s($g(pismSe(v))="":"(zadne)", 1:$g(pismSe(v)))_
-				", zastaveni="_##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PocetZastaveni($g(sigSe(v)))_
+				", zastaveni="_##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetZastaveni($g(sigSe(v)))_
 				", prubeh="_$tr($g(sigSe(v)), "~", "")
 		}
 
@@ -284,16 +284,16 @@ ClassMethod RozpisLinky(ByRef sys As %String) As %Status
 ClassMethod CilSlouceni(pocetVar As %Integer, ByRef sig As %String, a As %Integer, stare As %Boolean) As %Integer
 {
 	s cil = 0, cilStaveni = 0
-	s staveniA = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PocetZastaveni($g(sig(a)))
+	s staveniA = ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetZastaveni($g(sig(a)))
 	f b=1:1:pocetVar {
 		continue:b=a
-		s staveniB = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PocetZastaveni($g(sig(b)))
+		s staveniB = ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetZastaveni($g(sig(b)))
 		continue:staveniB'>staveniA
 		i stare {
-			continue:'##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JePodmnozinaProSrovnani($g(sig(a)), $g(sig(b)))
+			continue:'##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JePodmnozinaProSrovnani($g(sig(a)), $g(sig(b)))
 		}
 		else {
-			continue:'##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeUsekemVarianty($g(sig(a)), $g(sig(b)))
+			continue:'##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeUsekemVarianty($g(sig(a)), $g(sig(b)))
 		}
 		i (cil = 0) || (staveniB > cilStaveni) s cil = b, cilStaveni = staveniB
 	}
@@ -346,17 +346,17 @@ ClassMethod PocetSlitych(pocetVar As %Integer, ByRef sig As %String, stare As %B
 {
 	s slito = 0
 	f a=1:1:pocetVar {
-		s staveniA = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PocetZastaveni($g(sig(a)))
+		s staveniA = ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetZastaveni($g(sig(a)))
 		s nalezeno = 0
 		f b=1:1:pocetVar {
 			continue:b=a
-			s staveniB = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PocetZastaveni($g(sig(b)))
+			s staveniB = ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetZastaveni($g(sig(b)))
 			continue:staveniB'>staveniA
 			i stare {
-				continue:'##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JePodmnozinaProSrovnani($g(sig(a)), $g(sig(b)))
+				continue:'##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JePodmnozinaProSrovnani($g(sig(a)), $g(sig(b)))
 			}
 			else {
-				continue:'##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeUsekemVarianty($g(sig(a)), $g(sig(b)))
+				continue:'##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeUsekemVarianty($g(sig(a)), $g(sig(b)))
 			}
 			s nalezeno = 1
 			q

@@ -564,7 +564,7 @@ Výčet je **uzavřený a ověřený**: knižní JŘ si z celého číselníku b
 |---|---|---|
 | `TiskDtm` | tvar datumů v omezeních (0-3) | ✅ včetně per-linka override |
 | `PAtrSp` | které atributy nad spojem se vůbec tisknou (bezbariérově přístupné, kola, samoobslužný, nízkokapacitní) | ✅ hotovo 21. 8., u bezbariérového přebíjí linka (`TZPA,BBP`) |
-| `MistOR` / `MistNOD` | tvar tisku místenkování (odřádkování, dvojtečky) | ❌ |
+| `MistOR` / `MistNOD` | tvar tisku místenkování (odřádkování, dvojtečky) | ✅ od 26. 10. (`PridatPoznamkyMistenkovani`) |
 | `MHDPZ("P")` / `MHDPZ("Z")` | vlastní text místo „IDP-P" / „IDP-Z" ve sloupci MHD + jeho řádek legendy | ❌ máme napevno IDP-P/IDP-Z |
 | `ZonaIdsDelZnk` | odstranit písmena z označení zóny | ✅ doloženo 15. 9. (`ZL_KOVED 1 / 0823955`: `Z420,I201` → `420,201`) |
 | `Print_Dopr_First` / `SDOP` / `PS_PrintSouhrnDoprLinYes` | pořadí a tisk dopravců a provozů, souhrn linek k dopravci | ❌ `PopisDopravce` má vlastní logiku, proti nastavení neověřenou |
@@ -586,15 +586,15 @@ Kompletní seznam toho, co tisková cesta reálně čte (`gPLSetWin` plus přím
 | Klíč | Co dělá | U nás |
 |---|---|---|
 | `PATCH,KmsSmer,T/Z` a `PATCH,KmsSmer,sm,sl` | počet km sloupců per směr a obsah jednotlivého sloupce | ✅ počet; obsah sloupce neověřen |
-| `PATCH,linIDS` | **čtyřstavový přepínač** zóny × km (0 = jen km, 1 = jen zóna, 2 = obojí, 3 = nic) | ⚠️ **částečně a chybně** - čteme jen „je neprázdné → tiskni zónu"; u hodnot `0` a `3` zónu tiskneme, legacy ne, a km sloupce neřídíme vůbec (`LinkovyJrAd.cls:348,453`) |
-| `PATCH,nazMHD` | u MHD linky použít ručně upravený název zastávky | ❌ týž problém jako tvar názvu v `L3` |
-| `PATCH,netisknoutSloupecTC` | schovat sloupec tarifních čísel | ❌ |
-| `PATCH,tisknoutJenTcKdeSpojeZastavuji` | **vyhodit řádky**, kde žádný spoj nestaví (legacy to používá na 5 místech) | ❌ |
+| `PATCH,linIDS` | **čtyřstavový přepínač** zóny × km (0 = jen km, 1 = jen zóna, 2 = obojí, 3 = nic) | ✅ všechny čtyři stavy (`BuildStrankaLinky`) |
+| `PATCH,nazMHD` | u MHD linky použít ručně upravený název zastávky | ✅ s typem linky (`NactiNastaveniNazvu`) |
+| `PATCH,netisknoutSloupecTC` | schovat sloupec tarifních čísel | ✅ parametr `SLOUPEC_TC` s „Automaticky (dle linky)" |
+| `PATCH,tisknoutJenTcKdeSpojeZastavuji` | **vyhodit řádky**, kde žádný spoj nestaví (legacy to používá na 5 místech) | ✅ parametr `ZASTAVKY_BEZ_ZASTAVENI` s „Automaticky (dle linky)" |
 | `PATCH,podtrzeniPaJ` | podtržení u zdvojených řádků příjezd/odjezd (0 obě zastávky nad i pod / 1 první zastávka pod) | ❌ |
-| `PATCH,barevnyTiskSpoju` | vypnout barvy spojů (barva je na spoji) | ❌ barvy spojů neposíláme vůbec, agenda nemá jediné `FORE_COLOR` (zastávková jich má 9) |
+| `PATCH,barevnyTiskSpoju` | vypnout barvy spojů (barva je na spoji) | ✅ barvy spojů se tisknou; nastavení je jen záloha za zaškrtávátkem `TISKNOUT_BARVY_SPOJU` (Jan 26. 10.) |
 | `PATCH,cisIDS` | jak se skládá tištěné číslo linky (3místné, vlastní číslo, tablo) | ❌ |
 | `PATCH,ZLOM` | ruční zlom stránky na zadaném tarifním čísle | ❌ **vědomě odloženo** do `B100` (rozhodnutí Jan 25. 8.) - nastaveno na 3 linkách z ~93 tisíc. Ty se u nás tisknou jinak než ve starém modulu; **není to nedodělek, který by někdo hledal**, je to zapsané rozhodnutí |
-| `PATCH,TZPA("BBP")` | kam s bezbariérovým vozidlem (nad spoj / do poznámek) | ❌ |
+| `PATCH,TZPA("BBP")` | kam s bezbariérovým vozidlem (nad spoj / do poznámek) | ✅ přebíjí firemní `PAtrSp` (`GenerickaVeta`) |
 | `PATCH,ZonaIdsDelZnk` | **přebíjí** globální hodnotu téhož jména (`:1847`) | ✅ doloženo 15. 9. na `ZL_KOVED 1 / 0823955` (globální 1, u linky 2) |
 | `MHD2,netisknoutTC` / `netisknoutCislaSpoju` / `netisknoutSipky` / `netisknoutKladivkaAPodobne` | schová sloupec Tč, čísla spojů, šipky, značky | ❌ |
 | `MHD2,umeleDatDoSekci` / `rozdelitUmeleSekceNaVlastniStranky` | ruční přiřazení spojů do skupin a jejich stránkování | ❌ |
@@ -640,7 +640,7 @@ MHD engine kromě `arr,4`, `arr,11` a `arr,12` čte nastavení ze svých vlastn�
 | `AutomatickyPoznamkovatOdlisnostiVPlatnostechSpoju` | linka | ✅ čteme (`LinkovyJrMhd.cls:574`) |
 | `QRCode`, `CisloVerejne`, `IDSID` | linka | ✅ čteme |
 | `TypLinkyID` | linka | ❌ ověřeno grepem, nula výskytů |
-| `RozsahNegativnichZnacekOd` / `Do` (`^ALVA.MHD.SETTINGS(idfa,"Obecne","DTA",1001,...)`) | firma | ❌ ověřeno grepem, nula výskytů |
+| `RozsahNegativnichZnacekOd` / `Do` (`^ALVA.MHD.SETTINGS(idfa,"Obecne","DTA",1001,...)`) | firma | ✅ jen `Od` (`PriradNegativniZnacky`, od `B191b`); zastávkový MHD čte i `Do` |
 
 ### 13.3 Co z toho plyne pro testy
 
@@ -1215,7 +1215,7 @@ je samo o sobě argument pro náhradu.
 | jeden nadpis **„↓ Směr jízdy ↓"** přes všechny info sloupce | každý info sloupec má vlastní popisek, společný nadpis nejde |
 | **mezery mezi bloky** info × pracovní dny × víkendy | souvislá mřížka bez mezer |
 | km bez vnitřního ohraničení | každý km podsloupec orámovaný zvlášť |
-| jemné vodorovné linky, střídavé podbarvení | plná mřížka všude |
+| tečkované svislé čáry mezi spoji, střídavé podbarvení, vodorovné čáry jen na pár místech (opraveno 1. 11. podle PDF) | plná mřížka všude |
 | legenda ve dvou sloupcích pod tabulkou | (na první straně není) |
 
 ### 15.2 Body ze zadání a stav v návrháři
@@ -1228,7 +1228,7 @@ Ověřeno čtením kódu 19. 8., ne odhadem.
 | 2 | **změnit pořadí info sloupců** (zóny, km, zastávky…) | ✅ **umíme** - sloupce jsou seznam a dialog je umí přesouvat (`ColumnListEditor`, `MoveUpCommand`) |
 | 3 | **odstranit sloupec MHD a sloupec se šipkou** | ✅ **umíme** - obojí má zaškrtávátko viditelnosti; MHD navíc zmizí sám, když je pro celou linku prázdný. ⚠️ **Sloupec se šipkou od 10. 9. existuje a je z výroby ZAPNUTÝ** (`B136` - nese `př`/`od` u rozdvojené zastávky, což je jediné, čím se ty dva řádky liší). Do 10. 9. tu stálo, že v prvku vůbec není; kdo chce vzor IDZK, musí ho teď vypnout |
 | 4 | **odstranit ohraničení jednotlivých km sloupců** | ✅ **umíme** (26. 8., `L9`) - „Popisné sloupce bez vnitřních čar" slije km, zastávku a zóny do jednoho bloku a čáry mezi sloupci spojů nechá. ⚠️ Původní tvrzení „kreslí se buď všude, nebo nikde" **neplatilo**: `Grid.ShowColumnLines` prvek vůbec nečte a mřížku kreslí vždy (ověřeno vykreslením 27. 8., vedeno jako `L10`) |
-| 5 | **jiný styl čar mezi spoji** pro celou sekci | 🟡 **částečně** - `GridStyle` má zvlášť vodorovné a svislé čáry, ale **jednu barvu, tloušťku a styl pro obojí**. Vzor má jemné vodorovné a žádné svislé, což už jde; různá barva pro každý směr ne |
+| 5 | **jiný styl čar mezi spoji** pro celou sekci | 🟡 **částečně** - `GridStyle` má zvlášť vodorovné a svislé čáry, ale **jednu barvu, tloušťku a styl pro obojí**. Vzor má tečkované svislé čáry a vodorovné jen na pár místech (do 1. 11. tu chybně stálo „jemné vodorovné a žádné svislé"), což jedním stylem jde; různá barva pro každý směr ne. Širší návrh `B155` je od 1. 11. mimo roadmapu |
 | 6 | **jeden nadpis přes info sloupce** (jako „Pracovní dny" nad spoji) | ✅ **umíme** (26. 8., `L9`) - „Nadpis popisných sloupců". Pás se přitom musel odvázat od skupin dnů: kreslil se jen při víc než jedné skupině, takže na lince s jedinou by nadpis nebyl |
 | 7 | **mezera mezi bloky** (info × pracovní dny × víkendy) | ✅ **umíme** (27. 8., `L9`) - „Mezera mezi skupinami sloupců" v mm, výchozí 0. Bere se ze šířky prvku, takže se do řádku vejde méně spojů |
 | 8 | **popisky info sloupců podle vzoru** | ✅ **umíme** - hlavička sloupce je volný text |

@@ -268,6 +268,17 @@ public abstract class TemplateElement
     /// </summary>
     public abstract IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors();
 
+    /// <summary>
+    /// Jak se vytiskne každá textová část prvku. Panel, lišta i formulář z toho ukazují hodnotu
+    /// nenastavené vlastnosti stylu - do 30. 10. si ji na 40 místech dosazovaly
+    /// samy a ukazovaly jinou, než se tiskla. Prvek bez textu nemá žádnou.
+    /// </summary>
+    public virtual IEnumerable<StyleZone> ResolvedStyleZones() => [];
+
+    /// <summary>Vyřešený styl části prvku podle cesty (<c>HeaderStyle</c>…); null = prvek ji nemá.</summary>
+    public ResolvedTextStyle? ResolvedZone(string path) =>
+        ResolvedStyleZones().FirstOrDefault(z => z.Path == path)?.Style;
+
     // Názvy skupin base polí - shodné se sdíleným Caché balíčkem BaseElementFields.cls,
     // ať obě editační cesty řadí tytéž vlastnosti do stejně pojmenovaných skupin.
     internal const string PositionGroup = "Pozice a velikost";
@@ -322,25 +333,25 @@ public abstract class TemplateElement
     /// Volej na konci GetPropertyDescriptors() pomocí spread operátoru: [.. GetPositionDescriptors()]
     /// </summary>
     /// <remarks>Popisky, skupiny a rozsahy musí souhlasit se sdíleným Caché balíčkem
-    /// <c>BaseElementFields.cls</c> (druhá editační cesta téže sady polí) - hlídá
-    /// <c>EDInputFormSchemaDriftTests</c>.</remarks>
+    /// <c>BaseElementFields.cls</c> (druhá editační cesta téže sady polí) - hlídají to
+    /// <c>EDInputFormSchemaDriftTests</c> a <c>PanelProtiFormulariTests</c>.</remarks>
     protected IReadOnlyList<PropertyDescriptor> GetPositionDescriptors() =>
     [
         new FloatPropertyDescriptor { Label = "X",       Group = PositionGroup, Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
         new FloatPropertyDescriptor { Label = "Y",       Group = PositionGroup, Get = () => Y,       Set = v => Y = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
-        new FloatPropertyDescriptor { Label = "Šířka",   Group = PositionGroup, Get = () => Width,   Set = v => Width = v,  Min = 1,  Max = 9999, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "Šířka",   Group = PositionGroup, Get = () => Width,   Set = v => Width = v,  Min = NejmensiRozmerMm, Max = 9999, Unit = "mm", Format = "0.0#" },
         .. (IsDynamic
             ? new PropertyDescriptor[] { new StringPropertyDescriptor { Label = "Výška", Group = PositionGroup,
-                Get = () => "(dynamická)", Set = _ => { } } }
+                Get = () => "(podle obsahu)", Set = _ => { } } }
             : new PropertyDescriptor[] { new FloatPropertyDescriptor { Label = "Výška", Group = PositionGroup,
                 Get = () => Height ?? EffectiveDesignerHeight, Set = v => Height = v,
-                Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),
+                Min = NejmensiRozmerMm, Max = 9999, Unit = "mm", Format = "0.0#" } }),
         new FloatPropertyDescriptor { Label = "Rotace",  Group = PositionGroup, Get = () => Rotation, Set = v => Rotation = v, Min = -360, Max = 360, Unit = "°", Format = "0.#" },
-        new FloatPropertyDescriptor { Label = "Vrstva",  Group = PositionGroup, Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
-        new BoolPropertyDescriptor  { Label = "Uzamčeno", Group = PositionGroup, Get = () => IsLocked, Set = v => IsLocked = v },
+        ZIndexDescriptor(),
+        LockedDescriptor(),
 
-        new ColorPropertyDescriptor { Label = "Barva rámečku", Group = BorderGroup, Get = () => BorderColor, Set = v => BorderColor = v },
-        new FloatPropertyDescriptor { Label = "Tloušťka rámečku", Group = BorderGroup, Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
+        BorderColorDescriptor(),
+        BorderWidthDescriptor(),
         new EnumPropertyDescriptor
         {
             Label = "Rohy", Group = BorderGroup,
@@ -379,6 +390,28 @@ public abstract class TemplateElement
             }]
             : Array.Empty<PropertyDescriptor>()),
     ];
+
+    /// <summary>
+    /// Vlastnosti, které okno společných vlastností nastavuje více prvkům naráz. Tytéž deskriptory jako
+    /// v <see cref="GetPositionDescriptors"/> - do 30. 10. mělo okno vlastní kopii s jinými skupinami.
+    /// </summary>
+    internal IReadOnlyList<PropertyDescriptor> MultiEditDescriptors() =>
+        [BorderColorDescriptor(), BorderWidthDescriptor(), ZIndexDescriptor(), LockedDescriptor()];
+
+    private FloatPropertyDescriptor ZIndexDescriptor() =>
+        new() { Label = "Vrstva", Group = PositionGroup, Get = () => ZIndex, Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" };
+
+    private BoolPropertyDescriptor LockedDescriptor() =>
+        new() { Label = "Uzamčeno", Group = PositionGroup, Get = () => IsLocked, Set = v => IsLocked = v };
+
+    private ColorPropertyDescriptor BorderColorDescriptor() =>
+        new() { Label = "Barva rámečku", Group = BorderGroup, Get = () => BorderColor, Set = v => BorderColor = v };
+
+    private FloatPropertyDescriptor BorderWidthDescriptor() =>
+        new() { Label = "Tloušťka rámečku", Group = BorderGroup, Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" };
+
+    /// <summary>Nejmenší šířka a výška v panelu (formulář: <c>widthMin</c>/<c>heightMin</c> v <c>BaseElementFields.AddPosition</c>).</summary>
+    protected virtual float NejmensiRozmerMm => 1f;
 
     // ── Scale ────────────────────────────────────────────────────────────────
 

@@ -21,20 +21,23 @@ public class DepartureColumnPresetMatchTests
         new() { Id = "3", Header = "Neděle a svátky",  Days = "7+" },
     ];
 
+    /// <summary>Nabídka vzorů tak, jak ji posílá server u voleb parametru (klíč + popisek).</summary>
+    private static readonly DepartureColumnPresets.Preset[] Nabidka = [new("PRAC_SO_NE", PracSoNeLabel)];
+
     private static Dictionary<string, List<DepartureColumnDefinition>> Presets() =>
         new() { ["PRAC_SO_NE"] = PracSoNe() };
 
     [Fact]
     public void ShodneSloupce_VratiPopisekVzoru()
     {
-        Assert.Equal(PracSoNeLabel, DepartureColumnPresets.MatchLabel(PracSoNe(), Presets()));
+        Assert.Equal(PracSoNeLabel, DepartureColumnPresets.MatchOption(PracSoNe(), Presets(), Nabidka));
     }
 
     [Fact]
     public void ZadneSloupce_NevratiNic()
     {
-        Assert.Null(DepartureColumnPresets.MatchLabel([], Presets()));
-        Assert.Null(DepartureColumnPresets.MatchLabel(null, Presets()));
+        Assert.Null(DepartureColumnPresets.MatchOption([], Presets(), Nabidka));
+        Assert.Null(DepartureColumnPresets.MatchOption(null, Presets(), Nabidka));
     }
 
     [Fact]
@@ -43,7 +46,7 @@ public class DepartureColumnPresetMatchTests
         var upravene = PracSoNe();
         upravene[2].Days = "7";   // svátek vyhozen z nedělního sloupce = jiné chování
 
-        Assert.Null(DepartureColumnPresets.MatchLabel(upravene, Presets()));
+        Assert.Null(DepartureColumnPresets.MatchOption(upravene, Presets(), Nabidka));
     }
 
     [Fact]
@@ -54,7 +57,7 @@ public class DepartureColumnPresetMatchTests
         var upravene = PracSoNe();
         upravene[1].Header = "So";
 
-        Assert.Null(DepartureColumnPresets.MatchLabel(upravene, Presets()));
+        Assert.Null(DepartureColumnPresets.MatchOption(upravene, Presets(), Nabidka));
     }
 
     [Fact]
@@ -63,7 +66,7 @@ public class DepartureColumnPresetMatchTests
         var upravene = PracSoNe();
         upravene.RemoveAt(2);
 
-        Assert.Null(DepartureColumnPresets.MatchLabel(upravene, Presets()));
+        Assert.Null(DepartureColumnPresets.MatchOption(upravene, Presets(), Nabidka));
     }
 
     [Fact]
@@ -73,14 +76,14 @@ public class DepartureColumnPresetMatchTests
         var upravene = PracSoNe();
         (upravene[0], upravene[1]) = (upravene[1], upravene[0]);
 
-        Assert.Null(DepartureColumnPresets.MatchLabel(upravene, Presets()));
+        Assert.Null(DepartureColumnPresets.MatchOption(upravene, Presets(), Nabidka));
     }
 
     [Fact]
     public void BezNactenychVzoru_NevratiNic()
     {
         // Vzory chodí až s daty linky - do té doby se nesmí tvrdit ani shoda, ani rozdíl.
-        Assert.Null(DepartureColumnPresets.MatchLabel(PracSoNe(), new Dictionary<string, List<DepartureColumnDefinition>>()));
+        Assert.Null(DepartureColumnPresets.MatchOption(PracSoNe(), new Dictionary<string, List<DepartureColumnDefinition>>(), Nabidka));
     }
 
     /// <summary>`Id` je jen vazba pro per-sloupcové styly, ne obsah - a editor sloupců ho při
@@ -92,7 +95,7 @@ public class DepartureColumnPresetMatchTests
         var jinaId = PracSoNe();
         foreach (var c in jinaId) c.Id = "x" + c.Id;
 
-        Assert.Equal(PracSoNeLabel, DepartureColumnPresets.MatchLabel(jinaId, Presets()));
+        Assert.Equal(PracSoNeLabel, DepartureColumnPresets.MatchOption(jinaId, Presets(), Nabidka));
     }
 
     [Fact]

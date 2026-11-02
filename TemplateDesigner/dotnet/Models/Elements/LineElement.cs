@@ -75,6 +75,9 @@ public class LineElement : TemplateElement
         if (CustomGapMm is not null) CustomGapMm *= scale;
     }
 
+    /// <summary>Vodorovná čára má nulovou výšku a svislá nulovou šířku - do 30. 10. je panel nedovolil.</summary>
+    protected override float NejmensiRozmerMm => 0f;
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new EnumPropertyDescriptor  { Label = "Orientace", Group = "Čára", Get = () => Orientation, Set = v => Orientation = (LineOrientation)v,

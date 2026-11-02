@@ -296,7 +296,7 @@ ClassMethod NajdiVariantniPripady(ByRef sys As %String) As %Status
 						set stav = $select(v="":"-", (v="<")||(v="|"):"<", 1:"S")
 						if stav = "<" set projizdeni = 1
 						set vzor = vzor_stav
-						set casy = casy_"~"_##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota(v)
+						set casy = casy_"~"_##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota(v)
 					}
 					if '$data(sig(vzor)) { set pocetVzoru = pocetVzoru + 1 }
 					elseif sig(vzor) '= casy { set stejnyVzor = 1 }
@@ -1102,7 +1102,7 @@ ClassMethod BarvyLinky(ByRef sys As %String) As %Status
 			}
 		}
 		// jak to dnes vidí naše agenda (volá GetBarvaLinky bez pořadí)
-		set ^||ML("OUT","AGENDA_BARVA_LINKY") = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BarvaLinky(IdFa, db, sku, lin)
+		set ^||ML("OUT","AGENDA_BARVA_LINKY") = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BarvaLinky(IdFa, db, sku, lin)
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret $$$OK
@@ -1683,7 +1683,8 @@ ClassMethod MhdZnackyLinky(ByRef sys As %String) As %Status
 		kill ^||ML("IN")
 		set ^||ML("IN","LINKA_ID") = linka
 		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
-		set chyba = $get(^||ML("OUT","ERR"))
+		// Chyba agendy je v ^||ML("ERR"); sonda ji vypíše a smaže, jinak by se vrátila jako chyba sondy.
+		set chyba = $get(^||ML("ERR"))  kill ^||ML("ERR")
 		set prvni = "", klic = "", stranek = 0
 		for {
 			set klic = $order(^||ML("OUT",klic)) quit:klic=""
@@ -1736,7 +1737,6 @@ ClassMethod MhdAtributyEnums(ByRef sys As %String) As %Status
 		kill ^||ML("OUT")
 		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
 
-		set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
 		set n = 0, id = ""
 		for {
 			set id = $order(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id)) quit:id=""
@@ -1745,7 +1745,7 @@ ClassMethod MhdAtributyEnums(ByRef sys As %String) As %Status
 			set nazev = $get(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id,"Nazev"))
 			set n = n + 1
 			quit:n>30
-			set znak = $classmethod(cls, "ConvertSpecialniZnak", spec)
+			set znak = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).ConvertSpecialniZnak(spec)
 			set ^||ML("OUT","ATRIBUT",$translate($justify(n,2)," ",0)) =
 				"id="_id_" SpecZnak="""_spec_""" → kresli se znak """_znak_"""  popis="_$extract(popis_nazev,1,60)
 		}
@@ -2173,27 +2173,27 @@ ClassMethod ScanNoveZnacky(ByRef sys As %String) As %Status
 						continue:'$isvalidnum(sp)
 						set spoju = spoju + 1
 						set plk = $piece($piece($get(^[db]JRL(sku,lin,smerIdx,sp)), "#", 1), ":", 7)
-						set dny = $classmethod(cls, "DnySpoje", plk)
+						set dny = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje(plk)
 						// oddělený víkendový sloupec „7+" (vzor Prac / So / Ne+svátky)
 						set noveNe = $classmethod(cls, "DenniZnackyProSloupec", dny, "7+")
 						set legacyNe = ""   // legacy FTL0 víkendové značky netiskne vůbec
-						if (noveNe '= legacyNe) && $classmethod(cls, "SedneDoSloupceDny", dny, "7+") set novaNedele = novaNedele + 1
-						do ..Smer(.smery, "NEDELE", legacyNe, noveNe, $classmethod(cls, "SedneDoSloupceDny", dny, "7+"))
+						if (noveNe '= legacyNe) && ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "7+") set novaNedele = novaNedele + 1
+						do ..Smer(.smery, "NEDELE", legacyNe, noveNe, ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "7+"))
 						// slitý víkendový sloupec „67+" (vzor Prac / víkend)
 						set noveSl = $classmethod(cls, "DenniZnackyProSloupec", dny, "67+")
 						set legacySl = $classmethod(cls, "DenniZnacky", 2, plk)
 						set legacySl = $translate(legacySl, "12345")   // ve víkendovém sloupci jde jen o 6/7/+
-						if (noveSl '= legacySl) && $classmethod(cls, "SedneDoSloupceDny", dny, "67+") set novaSlity = novaSlity + 1
-						do ..Smer(.smery, "SLITY", legacySl, noveSl, $classmethod(cls, "SedneDoSloupceDny", dny, "67+"))
+						if (noveSl '= legacySl) && ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "67+") set novaSlity = novaSlity + 1
+						do ..Smer(.smery, "SLITY", legacySl, noveSl, ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "67+"))
 						// pracovní sloupec „12345"
 						set novePr = $classmethod(cls, "DenniZnackyProSloupec", dny, "12345")
 						set legacyPr = $translate($classmethod(cls, "DenniZnacky", 0, plk), "67+")
-						if (novePr '= legacyPr) && $classmethod(cls, "SedneDoSloupceDny", dny, "12345") set novaPrac = novaPrac + 1
-						do ..Smer(.smery, "PRACOVNI", legacyPr, novePr, $classmethod(cls, "SedneDoSloupceDny", dny, "12345"))
+						if (novePr '= legacyPr) && ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "12345") set novaPrac = novaPrac + 1
+						do ..Smer(.smery, "PRACOVNI", legacyPr, novePr, ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "12345"))
 						// jmenovatel: kolik spojů do sloupce vůbec spadne (jak hustá ta změna bude)
-						if $classmethod(cls, "SedneDoSloupceDny", dny, "7+") set smery("NEDELE","vsech") = $get(smery("NEDELE","vsech")) + 1
-						if $classmethod(cls, "SedneDoSloupceDny", dny, "67+") set smery("SLITY","vsech") = $get(smery("SLITY","vsech")) + 1
-						if $classmethod(cls, "SedneDoSloupceDny", dny, "12345") set smery("PRACOVNI","vsech") = $get(smery("PRACOVNI","vsech")) + 1
+						if ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "7+") set smery("NEDELE","vsech") = $get(smery("NEDELE","vsech")) + 1
+						if ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "67+") set smery("SLITY","vsech") = $get(smery("SLITY","vsech")) + 1
+						if ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "12345") set smery("PRACOVNI","vsech") = $get(smery("PRACOVNI","vsech")) + 1
 					}
 				}
 			}
@@ -2261,7 +2261,7 @@ ClassMethod DefiniceObdobiSonda(ByRef sys As %String) As %Status
 			set stranek = stranek + 1
 			if prvni = "" set prvni = $get(^||ML("OUT",klic))
 		}
-		set chyba = $get(^||ML("OUT","ERR"))
+		set chyba = $get(^||ML("ERR"))  kill ^||ML("ERR")
 		kill ^||ML("OUT")
 		set ^||ML("OUT","A_DEFINICE") = def
 		set ^||ML("OUT","B_TRVANI") = $fnumber(trvalo,"",3)_" s, stránek="_stranek

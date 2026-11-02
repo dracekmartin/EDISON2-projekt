@@ -39,14 +39,14 @@
                 <Button Content="Zkontrolovat" Padding="16,6"
                         Command="{Binding KontrolaCommand}"
                         Visibility="{Binding CanExportRealData, Converter={StaticResource BoolToVis}}"
-                        ToolTip="Projde všechny vybrané linky bez tisku a ukáže, co se kde nevejde nebo vytiskne jinak"
+                        ToolTip="{Binding KontrolaTooltip}"
                         Margin="0,0,16,0"/>
                 <TextBlock Text="Formát:" VerticalAlignment="Center" Margin="0,0,6,0"/>
                 <ComboBox ItemsSource="{Binding Formaty}" SelectedItem="{Binding Format}" Width="70"
                           VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <Button Content="{Binding TlacitkoVytvorit}" Padding="16,6"
                         Command="{Binding VytvoritCommand}"
-                        ToolTip="Z vybraných linek; když žádná vybraná není, z ukázkových dat"
+                        ToolTip="{Binding VytvoritTooltip}"
                         Margin="0,0,8,0"/>
                 <!-- IsDefault + IsCancel na jednom tlačítku záměrně: dialog nemá OK/Storno pár -
                      tisk/export jsou samostatné akce a Zavřít je jediný způsob odchodu (Enter i Esc). -->

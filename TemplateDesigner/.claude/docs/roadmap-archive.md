@@ -1,7 +1,247 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `P2` Stejné popisky rozdělení sloupců ve vývěsce i linkovém JŘ (hotovo 1. 11. 2026)
+
+- **Popisky voleb „Rozdělení sloupců podle platnosti"** (z `B194c`, changelog (56)): tatáž volba má ve vývěsce AD
+  i linkovém JŘ AD stejný popisek z `Jr.Parametry.PopisekVzoruSloupcu`. Uložené texty voleb zůstaly, popisek jde
+  vedle v novém poli `optionLabels`. Rozhodnutí Jan 1. 11.: nečekat na úklid nastavení tisku u kolegů - popisky
+  jdou teď přejmenovat bez ztráty uložených voleb, takže případný úklid je jen změna textu.
+
+## `B155` Jemnější nastavení mřížky (vyřazeno 1. 11. 2026)
+
+- **Z roadmapy do zákaznických požadavků** (Jan 1. 11.): řešit, až o to požádá zákazník.
+  Nikomu to slíbené není: podnětem byl bod 5 ze zkoušky kolegy podle vzoru IDZK 940 (19. 8.), ne tiket,
+  a vzor jde nastavit i dnešní mřížkou. Návrh čtyř druhů čar zůstává v `elementy-architektura.md`,
+  odkaz na něj v `customer-requirements-zastavkovy-jr.md` §0.5.
+
+## `B144` Sloupec „Čas" z ručních minut u trasy (hotovo 1. 11. 2026)
+
+- **Zaškrtávátko „Čas jízdy podle nastavení linky"** v Zastávkovém JŘ AD (changelog (55)): linka s vypnutým
+  automatickým generováním časových průběhů tras dostane do sloupce Čas ruční minuty u trasy jako starý tisk,
+  ostatní linky čas spočítaný. Rozhodnutí Jan 1. 11.: zaškrtávátko místo volby ze tří, výchozí vypnuto.
+  Odložené bylo od 11. 9., protože si o to zákazník neřekl; Jan ho vzal jako malou věc k uzavření backlogu.
+
+## Sloupec „Čas jízdy" ve vývěsce MHD (rozhodnuto 31. 10. 2026)
+
+- **Čas jízdy MHD zůstává podle trasy linky** (Jan 31. 10.): součet základních dob jízdy z chronometráže, ruční
+  jízdní doba u bodu trasy ji přebíjí - stejně jako starý tisk, od 31. 10. ověřeno oraclem (changelog (54)).
+  Se skutečným spojem sedí jen u 56 % odjezdů (spoje mají vlastní časy po úsecích, sonda `VariantyTrasMhdProbe`);
+  časy spojů ukazuje sloupec Varianty tras. Měnit až na podnět z provozu.
+- **Písmena variant ve vývěsce MHD** vyřazená z backlogu (Jan 31. 10.): zůstává pevná výchozí sada `ADLMNPTY`,
+  která se s rozdíly tras MHD (a-z) liší jen velikostí písmen (příručka to uvádí). Řešit, až to někdo nahlásí.
+
+## Hledání ve formuláři po slovech a se synonymy (hotovo 31. 10. 2026)
+
+- **Hledání se synonymy** (z `B194h` H12, changelog 2026-10-31 (53)): v oknech návrháře hledá formulář každé
+  slovo zvlášť přes popisek i skupinu, bez koncovky, a se synonymy („písmo" → Font). Rozhodnutí Jan 31. 10.:
+  aditivně jako volba ve sdíleném formuláři (`SearchSynonyms`, zděděná z okna), ne obecné chování - ve zbytku
+  EDISONu se hledá jako dřív. Slovník `Designer/SlovnikHledani.cs`.
+
+## Vlastní bloky prvků (zrušeno 31. 10. 2026)
+
+- **`B66` Vlastní bloky prvků („moje komponenta")** (podnět Jan 12. 8., zrušeno Jan 31. 10.): uživatel by
+  uložil pár prvků pod jménem a vkládal je do dalších šablon; pohltilo by i připravené bloky agend (`B77`).
+  Zrušeno, protože blok by se vkládal jako kopie: na hlavní případ, firemní hlavičku ve všech šablonách,
+  nepomůže - změna telefonu nebo loga by znamenala upravit každou šablonu. Novou šablonu pokryje „Uložit
+  jako" z firemní šablony nebo uložená sekce; obsah hlavičky jde skládat z polí dopravce, která se mění sama.
+
+## AI import z PDF pro linkový JŘ (odloženo 31. 10. 2026)
+
+- **`B179` AI import z PDF pro linkový JŘ** (Jan 24. 9.; první verze 2. 10.): funguje jako interní nástroj
+  (od 9. 10. `dev.pdfImport`, převody předloh dělá M-line), polohy tabulky a poznámek jsou ale odhad modelu.
+  Do archivu 31. 10. (Jan): vytáhnout, až bude aktuální, a pak ladit dál. Nedodělané kroky **(2)** model
+  pojmenuje bloky z PDF a **(3)** tabulka měřená z PDF celá jsou v [`architecture.md §Import z PDF`](architecture.md).
+
+## Slovo „linka" napevno (hotovo 30. 10. 2026)
+
+- **Slovo „linka" napevno** (`B194e` A5, changelog 2026-10-30 (52)): agenda hlásí tvary a rod instance
+  (`InstanceTvary`, `InstanceRod`, rozhodnutí Jan: tvary + rod, ne přeformulování), návrhář z nich skládá texty
+  hlavního okna, tisku, kontroly, výběru instancí, nápovědy F1 a exportu. Zbylo jen jméno zkratky „Výběr linek"
+  v tabulce zkratek (F1, asistent) - tabulka je statická.
+
+## Jedna šedá pozadí záhlaví (hotovo 30. 10. 2026)
+
+- **Dva odstíny šedého pozadí záhlaví** (z revize sjednocení, changelog 2026-10-30 (51)): nové tabulky měly
+  `#FFE8E8E8`, prvky jízdních řádů `#FFE0E0E0`. Rozdíl nebyl záměr (Jan 30. 10.), všechny nové prvky mají
+  `#FFE0E0E0` z jedné konstanty; migrace 1.11.0 drží pro staré šablony původní odstíny.
+
+## Varianty tras i ve vývěsce MHD (hotovo 30. 10. 2026)
+
+- **Varianty tras i ve vývěsce MHD** (Jan 27. 10., changelog 2026-10-30 (48)-(50)): sonda nad daty CB_DP a KV_DP
+  (`VariantyTrasMhdProbe`), výpočet variant přesunutý z AD do `Jr/VariantyTras.cls` beze změny výstupu AD,
+  ve vývěsce MHD zástupce varianty = spoj s nejdelší jízdou, `VariantyTras = 1`. Cestou opravený odjezd v 0:00
+  (vynechával ho i starý tisk). Otevřené zůstalo písmeno variant a „Čas jízdy" v MHD (položka v roadmapě).
+
+## Sjednocené věci definovat jednou (hotovo 30. 10. 2026)
+
+- **Revize „co je definované dvakrát"** (dokument po zapracování smazaný, je v historii gitu; changelog 2026-10-30 (37)-(47)):
+  opravené chyby E1-E10, sloučené A1-A12 (katalog prvků, písmo z kaskády, klávesové zkratky, údaje ze šablony pro server,
+  vzory sloupců ze serveru, zarovnání, příkazy vrstvy, okno více prvků, lišta formátu), přísnější testy B1-B9 (panel ×
+  formulář, klient × server, kanon názvosloví, dodávané šablony), smazaná offline nabídka dat (D). Formuláře prvků
+  zůstávají v Caché (rozhodnutí Jan). Jediná otevřená poznámka (šedé pozadí záhlaví) je v backlogu.
+
+## Úvodní obrazovka (hotovo 30. 10. 2026)
+
+- **Úvodní obrazovka** (nápad Jan 29. 10., changelog 2026-10-30 (36)): po spuštění bez linky nabídne poslední šablony,
+  kartu agendy s jejími šablonami (šablony firmy, na konci výchozí šablona M-line s ikonou) a odkazy na příručku
+  a novinky; zmizí s první úpravou, zavře ji Esc nebo křížek. Bez „Doporučeno" a bez rad (Jan). Položka
+  Nástroje → Úvodní obrazovka zůstává. Tlačítka SQL a CSV jsou jen průzkum zájmu - před vydáním je hlídá
+  položka „Externí datové zdroje" v backlogu.
+
+## Prvky jiné agendy a import šablony ze souboru (hotovo 30. 10. 2026)
+
+- **Změna agendy nesmí nechat v šabloně prvky jiné agendy** (review 27. 10., changelog 2026-10-30 (33)): předpoklad
+  položky neplatil - Změnit agendu (Ctrl+Shift+A) od května zakládá prázdnou šablonu. Prvky jiné agendy se do šablony
+  dostávaly importem ze souboru (a do 8. 10. vložením ze schránky). Import teď šablonu přijme, jen když má tvar
+  šablony, agendu zná, uživatel ji smí použít a prvky JŘ k agendě patří; agendu přepne podle souboru. Šablony
+  v databázi se nekontrolují (Jan 30. 10.: staré šablony neřešíme).
+
+## Úklid backlogu (30. 10. 2026)
+
+- **Rozsekat `TemplateDesignerViewModel`** (review 21. 9.; hotovo 30. 10., changelog 2026-10-30 (32)): ViewModel měl 4 747
+  řádků v jednom souboru. Je rozdělený do `partial` souborů podle celků, které už v něm byly oddělené komentáři (instance,
+  náhled dat, sloupce, sekce, soubory, spuštění ze shellu, úpravy prvků, parametry, výběr, ukázková šablona, firma pro vývoj);
+  pomocné ViewModely panelů jsou v `PanelItemViewModels.cs`. Beze změny chování.
+- **`B171` Úprava vysázené stránky před tiskem** - vyhozeno (Jan 30. 10.). Nápad z 21. 9. bez poptávky; levnější cesty
+  (prvek naroste do volného místa, vlastní šablona pro linku) zůstávají možné samy o sobě.
+- **`B18` Deklarativní pravidla EDInputFormu** - vyhozeno (Jan 30. 10.). Viditelnost polí sekce dál drží návrhář
+  (`MainWindow.ViditelnostPoleSekce`).
+
+## Testy Caché hlásí přeskočení poctivě (hotovo 30. 10. 2026)
+
+- **Přeskočení jako úspěch** (nález při uzavření `B56`, changelog 2026-10-30 (31)): 99 míst `$$$AssertTrue(1, "… přeskočeno")`
+  převedeno na `$$$AssertSkipped`, informační výpisy na `..LogMessage`. Na dev serveru se tím ukázaly dva další testy, které
+  nic neověřovaly (ukázková data s vlastními sloupci, výběr instancí) - běží na firmách sady. Novým zápisům brání
+  `PreskoceniTestuCacheTests`, pravidlo je v `architecture-rules.md` „must not happen" 8.
+
+## Schůzka s kolegy z jízdních řádů - nastavení tisku (29. 10. 2026)
+
+- **Nastavení jízdních řádů, která čte návrhář** - rozhodnuto s kolegy 29. 10.: většina tiskových nastavení
+  se z jízdních řádů vyhodí, zbytek kolegové dodělají. Naše strana (sladit, co agendy čtou) čeká v backlogu
+  jako „Úklid nastavení tisku v jízdních řádech", spolu s `P2` a novými poli z 10. 8. Podklad ke schůzce
+  [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
+
+## `B56` Sloučení kódu agend JŘ (uzavřené 30. 10. 2026)
+
+Cíl (Jan 29. 10.) nebyl sjednotit všechno, ale ujasnit strukturu a dát agendám základ, aby se nerozjížděly tam, kde to
+uživatel pozná nebo kde se oprava dělala víckrát. Sdílený kód je v pomocných třídách `Agendy/Jr/` mimo dědičnost agend
+(R8: data podle zdroje `DataAd`/`DataMhd`, výstup podle druhu `VystupZastavkovy`/`VystupLinkovy`, `Parametry`, `NabidkaDat`,
+`VlastniSloupce`); `BaseAgenda` je jen kontrakt a obecné věci a agendy se navzájem nevolají. Fáze 1-4 hotové (S1-S13);
+fáze 5 (relace a vozový JŘ nanečisto) se udělá jako první krok relací, fáze 6 a 7 Jan odložil (P2 a varianty tras v MHD
+jsou v backlogu). Vědomě nesjednocené tvary starých modulů s důvody: `legacy-nahrada.md §4`.
+
+- **S13** Dořešené nálezy review `B56` (hotovo 30. 10., changelog 2026-10-30 (27)-(30), Jan 30. 10.): `BaseAgenda` bez
+  14 metod pro jízdní řády (data AD do `Jr/DataAd.cls`, vlastní sloupce do `Jr/VlastniSloupce.cls` s jedním jádrem zařazení
+  spoje, formát data zpět do základu), dva různé „Jazyk" přejmenované, snímek porovnává obsah, ne bajty, a tři testy,
+  které na serveru nic neověřovaly, běží na linkách sady. Tisk beze změny.
+
+- **S12** Data MHD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (26)): výběr linek, hlavička linky, dopravce,
+  typ JŘ a formát data v `Jr/DataMhd.cls`; poslední vzájemná volání agend AD (spoje směru, barva linky) v `Jr/DataAd.cls`.
+  `DataPodleZdrojeTests` hlídá výběr linek u obou zdrojů a zakazuje agendě volat jinou agendu. Tisk beze změny.
+
+- **S7** Hlavička linky AD z jedné metody (hotovo 30. 10., changelog 2026-10-30 (25), rozhodnutí Jan 30. 10.):
+  `Jr.DataAd.AddHlavickaLinky`, agenda přidá jen vědomé rozdíly (titulek, popis dopravce, hotová věta platnosti).
+  Titulek bez náhradního textu, číslo podle licence všude číslo, označení text. Pravidlo „data, ne hotové věty" v `cache-api.md`.
+
+- **S8** Platnost linky a text omezení spojů AD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (24), rozhodnuto
+  v `B194g` R2): platnost čte jedna metoda a příponu za dvojtečkou odřízne vždy, text omezení skládá jedna metoda
+  a omezení 14 a 15 je věta i bez data. Obojí s pomocnými metodami omezení je v `Jr/DataAd.cls`. Tisk beze změny.
+
+- **S6** Výběr skupin linek a linek u AD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (23), Jan 30. 10.: ať je
+  výběr linek konzistentní i pro budoucí relaci nad AD): metody jsou v `Jr/DataAd.cls`, vývěska AD, linkový JŘ AD
+  i rozdílový JŘ je jen přesměrují; `VyberLinekAdTests` zastaví agendu nad AD s vlastní verzí.
+
+- **S5** Čtení dat AD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (22), schválil Jan 30. 10.): název, číslo
+  a první linka a hodnota času z vývěsky AD i linkového JŘ AD jsou v `Jr/DataAd.cls`; `NormalizLinku` je při přesunu
+  `FormatCisloLinky` (pravidlo 5). Výstup agend beze změny.
+
+- **S4** Výstup linkového JŘ z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (21), schválil Jan 30. 10.): poznámka
+  legendy, skupina dnů a formát času z linkového JŘ AD i MHD jsou v `Jr/VystupLinkovy.cls`. Výstup agend beze změny.
+
+- **S3** Výstup vývěsky z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (20), schválil Jan 30. 10.): deset metod,
+  které měla vývěska AD i MHD shodné, je v `Jr/VystupZastavkovy.cls`. Značky u odjezdů zůstaly v agendách (AD posílá
+  víc klíčů). Výstup agend beze změny.
+
+- **S10** Předpřipravené tabulky zrušené (hotovo 30. 10., changelog 2026-10-30 (19), rozhodnutí Jan 30. 10.): dvě pevné
+  tabulky vývěsek AD i MHD, výchozí metody v základu agend, nevolané čtení v návrháři a jejich testy. Návrhář je nikde
+  nenabízel; hotové bloky do šablony má pokrýt `B66`.
+
+- **S11** Ukázková agenda Faktury smazaná (hotovo 30. 10., changelog 2026-10-30 (18), rozhodnutí Jan 30. 10.): neměla zdroj
+  dat, uživatelům se nenabízela a testy agend ji musely vynechávat. Agenda bez linek přijde s převodem Report generátoru
+  a postaví se podle pravidel agend.
+
+- **S9** Slovník nabídky dat JŘ (hotovo 30. 10., changelog 2026-10-30 (17), schválil Jan 30. 10.): `Jr/NabidkaDat.cls`
+  drží popisek a typ 23 polí stránky a 17 polí kolekcí, která nabízejí aspoň dvě agendy; agenda vybírá pole a pořadí.
+  Výstup agend beze změny; že slovník na serveru používají všechny čtyři agendy, ověřeno zkušebním popiskem.
+
+- **S2** Společné parametry JŘ v jedné třídě (hotovo 30. 10., changelog 2026-10-30 (15) a (16), schválil Jan 30. 10.):
+  `Jr/Parametry.cls` drží sedm parametrů vývěsek AD i MHD, linkové parametry (dřív v linkovém AD, odkud je volal
+  linkový MHD) a tvar názvu zastávky (dřív v základu agend). Výstup agend beze změny.
+
+- **S1** Místo pro pomocné třídy a pojistky (hotovo 30. 10., changelog 2026-10-30 (14), rozhodnutí Jan 30. 10.):
+  pomocné třídy JŘ v `Agendy/Jr/` (balík `ALVA.TemplateDesigner.Agendy.Jr`); testy čtou zdrojáky přes `ZdrojeAgend`
+  - kontroly kódu a textů celý kód agend včetně podsložek, kontroly vlastností agendy jen agendy.
+
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+**`B194` je uzavřený 30. 10.** Zbylé `R5` (parametry vývěsek do jedné definice) je první krok `B56` a žije
+u něj v roadmapě; postup a pojistky v `legacy-nahrada.md §4`. Pracovní `konzistence-agend-jr.md` je smazaný
+(git historie).
+
+- **R4** Návrhář se o agendě rozhoduje podle registru, ne podle kódu (hotovo 30. 10., changelog 2026-10-30 (13),
+  rozhodnutí Jan 30. 10.): barvy rozdílů řídí parametr agendy `RozdilyVerzi`, import z PDF druh agendy;
+  výchozí agenda nové šablony zůstává v kódu jako vědomá výjimka. Nový kód agendy v kódu návrháře zastaví
+  `KodyAgendVKoduTests`.
+- **R7** Názvosloví v kódu agend (hotovo 30. 10., changelog 2026-10-30 (12)): `cache-api.md` pravidlo 5
+  upřesňuje anglické sloveso + českou věc, funkce bez slovesa a `Je…`/`Ma…`; pravidlo 6 pracovní globály
+  agend. Stávajících 76 metod s českým slovesem se přejmenuje při přesunu v `B56` (rozhodnutí Jan 30. 10.:
+  jen pravidla, ne plošné přejmenování), nový takový název zastaví `NazvyMetodAgendTests`.
+- **R6** Základ agend a agendy JŘ podle jednoho vzoru, návod podle skutečnosti (hotovo 30. 10., changelog
+  2026-10-30 (11)): všechny metody `BaseAgenda` a agend JŘ ošetřují chyby podle pravidel 14-15 (hlídá
+  `OsetreniChybAgendTests`), předpřipravené tabulky jsou nepovinné, `cache-api.md` místo opsaného kódu odkazuje
+  na `BaseAgenda.cls`. Faktury se nesjednocují - ukázka z počátku, možná se smaže (rozhodnutí Jan 30. 10.).
+- **R2** Opsané pod jiným jménem (hotovo 30. 10., changelog 2026-10-30 (10), rozhodnutí Jan 30. 10.):
+  změřeno sondou `DuplicityAgendProbe`, zapsané v `legacy-nahrada.md §4` spolu s postupem `B56`.
+  Sjednotit platnost linky a omezení 14/15 (tisk se nezmění), vědomě nechat popis dopravce, rozsahy čísel
+  spojů, barvu „0;0;0" (tři zdroje s vlastním významem) a nadmnožiny značek u odjezdů.
+- **R3** Kontrakt prvek ↔ agenda zapsaný a hlídaný (hotovo 30. 10., changelog 2026-10-30 (9)): `KontraktDat.cs`
+  (položky, které čte kód návrháře, s tvarem a důvodem, proč chodí jen někdy), offline `KontraktDatTests`
+  (kód čte jen položky z kontraktu) a integrační `KontraktDatAgendTests` (agendy je na serveru posílají
+  ve správném tvaru, výjimky s důvodem). Při revizi se díra nenašla, všechny chybějící položky jsou záměr.
+- **Zbytky dat vývěsky AD** (hotovo 30. 10., changelog 2026-10-30 (8), rozhodnutí Jan 30. 10.): kolekce
+  `DOPRAVCI` a pole `NZ_KONFIG`, `NEVYPISOVAT_ZNACKY_SLOUPCU` se neposílají - nic je nečetlo (nález `G1`).
+  Tím je `B194f` (pojistky před `B56`) celé hotové.
+- **G5** Tlačítko formuláře funguje v každém okně, které ho ukazuje (hotovo 30. 10., changelog 2026-10-30 (7)):
+  okno vlastností skryje tlačítko bez akce (mrtvé „Nastavení celé tabulky" v okně buňky, rozhodnutí Jan
+  30. 10.), klíče tlačítek v `TlacitkaFormulare`, panel a vlastní okna tabulek hlídá `TlacitkaFormulareTests`.
+- **G4** Názvosloví i v nápovědách, hláškách a textech oken (hotovo 30. 10., changelog 2026-10-30 (6)):
+  ban list rozdělený na názvosloví (všude, `NazvosloviTextuTests`) a tvary popisku (jen popisky);
+  „Tučně", „Podtržené", „Přeškrtnuté" se hledají i uvnitř popisku.
+- **G3** Jeden popisek = jedno pole (hotovo 30. 10., changelog 2026-10-30 (5)):
+  `AgendaSchemaDriftTests.StejnyPopisek_PatriJednomuPoli`. Vývěska MHD má „Číslo a označník aktuální
+  zastávky"; „Číslo aktuální zastávky" pod dvěma klíči (vývěska AD × linkové JŘ) je výjimka, sjednocení
+  klíče s převodem šablon případně v `B56` (rozhodnutí Jan 30. 10.).
+- **G1** Kontraktový Caché test přes registr agend (malá podoba 29. 10., celý 30. 10., changelog
+  2026-10-29 (2) a 2026-10-30 (4)): `KontraktAgendTest` hlídá i to, že data agendy odpovídají nabídce
+  dat, a jen známé klíče definice parametru. Hlášku „linka nemá data" dál hlídá ruční `DuvodPrazdnehoTest`:
+  obecná verze by pro každou agendu potřebovala linku bez dat, kterou registr nezná.
+- **Hlídání linek z testů** (30. 10., changelog 2026-10-30 (3)): `TestovaciLinkyTest`, výměna CB_GWBUS
+  0320118 a 0320113, které z dat zmizely.
+- **Snímek výstupu všech agend** před `B56` (hotovo 29. 10., changelog 2026-10-29 (6)): sonda
+  `SnimekAgendProbe` + `SnimekAgendNaostro`, 45 souborů; jak spustit v `konzistence-agend-jr.md §7`.
+- **G2** Stejnojmenný parametr je ve všech agendách týž (hotovo 29. 10., changelog 2026-10-29 (5)):
+  `KontraktAgendTest.TestSdileneParametryShodne` porovná popisek, typ, skupinu, výchozí hodnotu, volby
+  a příznak načtení dat z výstupu serveru; 4 vědomé rozdíly s důvodem v testu.
+- **G8** Zlatý odtisk linkového JŘ MHD včetně hlavičky (hotovo 29. 10., changelog 2026-10-29 (4)):
+  `LinkovyJrMhdGoldTest` na 7 linkách s výchozími parametry - kryje i hlavičku, kterou linkový MHD bere
+  z vývěsky MHD a kterou porovnání se starým modulem nevidí.
+- **G7** Drobné díry drift testů (hotovo 29. 10., changelog 2026-10-29 a (3)): Caché testy linkových JŘ
+  a sonda `AdSloupekProbe` čtou chybu agendy z `^||ML("ERR")`; kontrola schématu vidí rozšíření kolekcí
+  v porovnání verzí a přeskakuje zakomentované řádky. Pořadí „Obecné" první hlídá `G1`, parametry
+  se jménem skládaným za běhu převzalo `G2`.
+- **R1** Model sdílení kódu agend rozhodnut (Jan 29. 10.): agendy zůstávají přímými potomky `BaseAgenda`,
+  sdílený kód do pomocných tříd mimo hierarchii podle účelu; cíl `B56` je ujasnit strukturu a zabránit
+  rozjezdům, ne sjednotit všechno. Zapsáno jako [`architektonicka-rozhodnuti-agendy.md` R8](architektonicka-rozhodnuti-agendy.md).
 - **C1** Porovnání linek nespadne na lince bez dat: vybraná linka bez dat pošle důvod, původní verze bez
   dat jde do hlášení porovnání (hotovo 23. 10., changelog 2026-10-23 (15)).
 - **C2** „Upravit styl…" v panelu Minut odjezdů otevře okno stylu jako okno nastavení prvku (hotovo

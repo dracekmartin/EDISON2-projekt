@@ -26,7 +26,8 @@ ClassMethod Norm(s As %String) As %String
 	quit $zstrip(s, "<>W")
 }
 
-/// Porovná jednu linku. Naplní res(kat, "legN"/"ourN"/"match"/"diff") pro kat = "dep"/"zast"/"pozn".
+/// Porovná jednu linku. Naplní res(kat, "legN"/"ourN"/"match"/"diff") pro kat = "dep"/"zast"/"pozn"/"cas"
+/// (cas = čas jízdy v řádku zastávky, klíčem vývěska × zastávka × minuty).
 /// Vrátí 1 když oracle proběhl, 0 = skip (legacy třída nebo namespace nedostupné na tomto serveru).
 ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete As %Integer, ByRef res As %String) As %Boolean
 {
@@ -51,14 +52,14 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 	set arri("par",1) = projete
 	set ok = ##class(ALVA.MHD.LinkyPrintFormatMHD).MakeData(.idfa, .db, lin, "^||TdOracleGlb", .arri, .out)
 
-	kill la, lz, lp
+	kill la, lz, lp, lc
 	set pgn = ""
 	for {
 		set pgn = $order(^||TdOracleGlb(pgn))
 		quit:pgn=""
 		set stop = ..Norm($get(^||TdOracleGlb(pgn,"key",1,"dta",8)))
 
-		// zastávky (key=2, dta,4 = název)
+		// zastávky (key=2, dta,4 = název, dta,3 = čas jízdy od vývěskové zastávky, u projetých prázdný)
 		set zc = ""
 		for {
 			set zc = $order(^||TdOracleGlb(pgn,"key",2,zc))
@@ -66,6 +67,8 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 			set nz = ..Norm($get(^||TdOracleGlb(pgn,"key",2,zc,"dta",4)))
 			continue:nz=""
 			set lz(nz) = $get(lz(nz)) + 1
+			set k = stop_"#"_nz_"#"_$get(^||TdOracleGlb(pgn,"key",2,zc,"dta",3))
+			set lc(k) = $get(lc(k)) + 1
 		}
 
 		// odjezdy (key=3): sl = sloupec (skupina dnů), nadpis = dta,1|dta,2
@@ -101,7 +104,7 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 			// náš engine konvertuje už v datech. Sjednotíme přes ConvertSpecialniZnak → porovnává se
 			// finální glyf (což zároveň ověří, že náš převod = legacy převod).
 			set pznakRaw = $get(^||TdOracleGlb(pgn,"key",4,"arr",pc,"dta",1))
-			set pznak = $s(ptyp'=2:..Norm(pznakRaw), (pznakRaw'="")&&$data(prestupKod(pznakRaw)):prestupKod(pznakRaw), 1:##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).ConvertSpecialniZnak(pznakRaw))
+			set pznak = $s(ptyp'=2:..Norm(pznakRaw), (pznakRaw'="")&&$data(prestupKod(pznakRaw)):prestupKod(pznakRaw), 1:##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).ConvertSpecialniZnak(pznakRaw))
 			set ptext = ..Norm($get(^||TdOracleGlb(pgn,"key",4,"arr",pc,"dta",2)))
 			set k = stop_"#"_ptyps_"#"_pznak_"#"_ptext
 			set lp(k) = $get(lp(k)) + 1
@@ -114,7 +117,7 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 	set ^||ML("IN","LINKA_ID") = lin
 	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
 
-	kill oa, oz, op
+	kill oa, oz, op, oc
 	set n = +$get(^||ML("OUT"))
 	for p = 1:1:n {
 		set page = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT",p)))
@@ -132,11 +135,15 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 
 		set zas = page.rows.%Get("ZASTAVKY")
 		if $isobject(zas) {
-			set iz = zas.%GetIterator()
+			set iz = zas.%GetIterator(), zaVyveskou = 0
 			while iz.%GetNext(.zk, .z) {
+				set:z.%Get("AKTUALNI_ZASTAVKA")="true" zaVyveskou = 1
 				set nz = ..Norm(..NazevSeZnackami(z))
 				continue:nz=""
 				set oz(nz) = $get(oz(nz)) + 1
+				// Projetá zastávka nese u nás 0, starý tisk prázdno - klient ji stejně neukazuje.
+				set k = stop_"#"_nz_"#"_$select(zaVyveskou:+z.%Get("CAS_JIZDY"), 1:"")
+				set oc(k) = $get(oc(k)) + 1
 			}
 		}
 
@@ -163,6 +170,7 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 	do ..Summarize(.la, .oa, .res, "dep")
 	do ..Summarize(.lz, .oz, .res, "zast")
 	do ..Summarize(.lp, .op, .res, "pozn")
+	do ..Summarize(.lc, .oc, .res, "cas")
 	quit 1
 }
 
@@ -240,6 +248,7 @@ ClassMethod Compare(ByRef sys As %String) As %Status
 	set ^||ML("OUT","DEP")  = "leg="_res("dep","legN")_" our="_res("dep","ourN")_" match="_$s(res("dep","match"):"ANO",1:"NE")_" diff="_res("dep","diff")
 	set ^||ML("OUT","ZAST") = "leg="_res("zast","legN")_" our="_res("zast","ourN")_" match="_$s(res("zast","match"):"ANO",1:"NE")_" diff="_res("zast","diff")
 	set ^||ML("OUT","POZN") = "leg="_res("pozn","legN")_" our="_res("pozn","ourN")_" match="_$s(res("pozn","match"):"ANO",1:"NE")_" diff="_res("pozn","diff")
+	set ^||ML("OUT","CAS")  = "leg="_res("cas","legN")_" our="_res("cas","ourN")_" match="_$s(res("cas","match"):"ANO",1:"NE")_" diff="_res("cas","diff")
 	quit $$$OK
 }
 

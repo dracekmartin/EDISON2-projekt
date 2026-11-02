@@ -13,6 +13,12 @@ public class KontrolaVysledkuDialogViewModel : EDViewModel
         _hlaseni = hlaseni;
     }
 
+    /// <summary>Název instance agendy pro titulek okna.</summary>
+    public NazevInstance Nazev { get; init; } = NazevInstance.Obecny;
+
+    /// <summary>„Kontrola vybraných linek".</summary>
+    public string Titulek => $"Kontrola vybraných {Nazev.GenitivMnozne}";
+
     private string _nadpis;
     /// <summary>„Zkontrolováno 12 linek: 1 chyba, 2 upozornění", během kontroly její průběh.</summary>
     public string Nadpis { get => _nadpis; set => Set(ref _nadpis, value); }

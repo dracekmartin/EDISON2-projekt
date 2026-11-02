@@ -82,7 +82,6 @@
                           Margin="0,0,0,0">
                     <ComboBoxItem Content="Obecná šablona" Tag=""/>
                     <ComboBoxItem Content="Jízdní řád (JR)" Tag="JR"/>
-                    <ComboBoxItem Content="Faktury" Tag="FAKTURY"/>
                 </ComboBox>
                 <TextBlock Text="Vyberte agendu, pokud chcete použít specifická datová pole."
                            FontSize="{DynamicResource EDTheme.FontSize.Caption}"

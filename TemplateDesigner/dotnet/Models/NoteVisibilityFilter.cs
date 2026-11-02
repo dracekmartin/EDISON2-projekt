@@ -21,12 +21,12 @@ public static class NoteVisibilityFilter
     private const string PoznamkyKey = "POZNAMKY";
 
     /// <summary>Název parametru sestavy (GetParameters), který řídí filtr rozsahu „nepoznámkovat".</summary>
-    public const string ParamName = "SCHOVAT_V_ROZSAHU";
+    public const string ParamName = ParametrySestavy.SchovatVRozsahu;
 
     /// <summary>Parametr sestavy „Písmena variant tras" (`B141`). Vypnutý zhasne písmeno u minuty
     /// i v záhlaví variantního sloupce; sloupce samy zůstanou. Čte se **z hodnot stránky** (parametry
     /// se do nich mergují před filtrem), takže nepotřebuje protáhnout hodnotu volajícími.</summary>
-    public const string VariantLettersParamName = "PISMENA_VARIANT";
+    public const string VariantLettersParamName = ParametrySestavy.PismenaVariant;
 
 
     /// <summary>Kategorie legendy pro souhrn „všechny spoje bezbariérové" (Caché tag).</summary>
@@ -52,8 +52,8 @@ public static class NoteVisibilityFilter
     /// <summary>Převede hodnotu parametru sestavy na režim. Neznámé / „Ruční komentáře" = default (legacy).</summary>
     public static NoteRangeSuppression ParseMode(object? paramValue) => paramValue?.ToString() switch
     {
-        "Automatické (rozdíly tras)" => NoteRangeSuppression.AutoRouteNote,
-        "Obojí"                      => NoteRangeSuppression.Both,
+        ParametrySestavy.SchovatAutomaticke => NoteRangeSuppression.AutoRouteNote,
+        ParametrySestavy.SchovatOboji         => NoteRangeSuppression.Both,
         _                            => NoteRangeSuppression.ManualComment,
     };
 

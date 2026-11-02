@@ -40,210 +40,61 @@ Parameter Released = 1;
 
 Parameter InstanceParamName = "LINKA_ID";
 
+/// Od 30. 10. jako vývěska AD (`Jr.VariantyTras`); starý tisk MHD varianty neměl.
+Parameter VariantyTras As %Boolean = 1;
+
 Parameter ElementKind = "STOP";
 
-Parameter InstanceLabel = "linka";
-
-Parameter InstanceLabelPlural = "linky";
+Parameter InstanceTvary = "linka,linky,linku,linky,linek";
 
 /// Vrátí schéma polí MHD agendy.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {
-    s def = ##class(%DynamicObject).%New()
+    s err = ""
+    try {
+        s def = ##class(%DynamicObject).%New()
 
-    // Standardní JŘ skalární pole
-    s fields = ##class(%DynamicArray).%New()
-    d ..AddStandardJRFields(fields)
-    s def.fields = fields
+        // Standardní JŘ skalární pole
+        s fields = ##class(%DynamicArray).%New()
+        d ..AddStandardJRFields(fields)
+        s def.fields = fields
 
-    // Standardní JŘ kolekce + MHD-specifické
-    s collections = ##class(%DynamicArray).%New()
-    d ..AddStandardJRCollections(collections)
-    s def.fieldCollections = collections
+        // Standardní JŘ kolekce + MHD-specifické
+        s collections = ##class(%DynamicArray).%New()
+        d ..AddStandardJRCollections(collections)
+        s def.fieldCollections = collections
 
-    s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
-    ret $$$OK
-}
-
-/// Vrátí seznam Fixed šablon tabulek pro MHD.
-ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
-{
-    s arr = ##class(%DynamicArray).%New()
-
-    s t1 = ##class(%DynamicObject).%New()
-    s t1.key   = "ZAHLAVI_LINKY"
-    s t1.label = "Záhlaví linky"
-    d arr.%Push(t1)
-
-    s t2 = ##class(%DynamicObject).%New()
-    s t2.key   = "PLATNOST_DOPRAVCE"
-    s t2.label = "Platnost a dopravce"
-    d arr.%Push(t2)
-
-    s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-    ret $$$OK
-}
-
-/// Vrátí definici Fixed šablony.
-ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
-{
-    s key = $g(^||ML("IN", "key"))
-
-    if key = "ZAHLAVI_LINKY" {
-        d ..WriteTemplate2Col([
-            ["Linka",       "{CISLO_LINKY}"],
-            ["Označení",    "{LOKALNI_OZNACENI_LINKY}"],
-            ["Směr",        "{KONECNA_ZASTAVKA}"],
-            ["Zastávka",    "{POPIS_ZASTAVKA}"],
-            ["Platnost",    "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"]
-        ])
-    }
-    elseif key = "PLATNOST_DOPRAVCE" {
-        d ..WriteTemplate2Col([
-            ["Platnost",  "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"],
-            ["Dopravce",  "{POPIS_DOPRAVCE}"],
-            ["Typ JR",    "{TYP_JR}"]
-        ])
-    }
-
+        s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
 /// Vrátí parametry sestavy pro MHD.
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
-    s arr = ##class(%DynamicArray).%New()
-
-    // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) - viz GetAvailableInstances.
-    // GetData dostává LINKA_ID z pickeru, ne z těchto parametrů.
-    d ..AddStandardJRParameters(arr)
-
-    s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-    ret $$$OK
-}
-
-/// Vrátí seznam linek pro Instance Picker.
-/// Skupiny linek pro filtr Instance Pickeru - ENUMS "SkupinyLinek" mimo Blocked.
-/// OUT["1"] = JSON pole [{ "value": id, "label": název }].
-ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
-{
     s err = ""
     try {
-        $$$FillParams
-
         s arr = ##class(%DynamicArray).%New()
-        s id = ""
-        f {
-            s id = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id))
-            q:id=""
-            i +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Blocked")) continue
 
-            s nazev = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Nazev"))
-            s obj = ##class(%DynamicObject).%New()
-            d obj.%Set("value", id)
-            d obj.%Set("label", $s(nazev'="":nazev, 1:"Skupina "_id))
-            d arr.%Push(obj)
-        }
-        s ^||ML("OUT","1") = arr.%ToJSON()
-    }
-    catch (ex) { $$$CatchErrRest }
-    ret $$$OK
-}
+        // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) - viz GetAvailableInstances.
+        // GetData dostává LINKA_ID z pickeru, ne z těchto parametrů.
+        d ..AddStandardJRParameters(arr)
 
-/// IN["search"] = volitelný substring filtr (case-insensitive na display = "Cislo - Nazev")
-/// IN["limit"]  = max počet řádků (default 50)
-/// IN["SKUPINA_LINEK_ID"] = ID skupiny linek (volitelné; default = první nezblokovaná);
-///                          v budoucnu bude předáváno z Edisona jako kontext
-/// OUT["1"] = JSON pole { "value": LinkaID, "display": "Cislo - Nazev", "subtitle": "Platnost ..." }
-ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
-{
-    s err = ""   // $$$CatchErrRest čte err; bez init by catch (např. firma bez MHD dat → throw) padl na <UNDEFINED>err
-    try {
-        $$$FillParams
-        s ^||ML("OUT","1") = ..SeznamLinek(IdFa, dataDB).%ToJSON()
+        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
-/// Linky skupiny pro výběr instancí (číslo, název, platnost). Sdílí ho linkový JŘ MHD, aby se táž
-/// linka v obou nabízela stejně. Nabízí i linky bez trasy - obě agendy u nich napíšou důvod
-/// (`DUVOD_PRAZDNE`); do 23. 10. je vývěska schovávala, protože na nich padala.
-/// Helper - volá se z GetAvailableInstances obou agend MHD, které catch mají.
-ClassMethod SeznamLinek(IdFa As %String, dataDB As %String) As %DynamicArray
+/// Skupiny linek pro filtr výběru linek - jedno místo pro obě agendy MHD (`Jr.DataMhd`, `B56` S12).
+ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
 {
-    s search = $zcvt($g(^||ML("IN","search")), "L")
-    s limit  = +$g(^||ML("IN","limit"))
-    if 'limit s limit = 50
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetAvailableSkupiny(.sys)
+}
 
-    // Skupina linek = organizační kontext. V budoucnu předáváno z Edisona;
-    // zatím default první nezblokovaná skupina v ENUMS.
-    s SkupinaLinekID = +$g(^||ML("IN","SKUPINA_LINEK_ID"))
-    if 'SkupinaLinekID s SkupinaLinekID = ..GetDefaultSkupinaLinekID(IdFa, dataDB)
-
-    s arr = ##class(%DynamicArray).%New()
-    s count = 0
-    // Bez aktivní skupiny linek (typicky firma bez MHD dat, např. čistě AD firma) → prázdný
-    // picker, NE chyba: přepnutí na agendu MHD u takové firmy nemá vyhazovat popup. Smyčka níže
-    // se SkupinaLinekID=0 nenajde v indexu žádnou linku a vrátí prázdné pole.
-    // Iterace přes index ^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID) - jen linky skupiny.
-    s LinkaID = ""
-    for {
-        s LinkaID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID))
-        q:LinkaID=""
-
-        s cislo  =$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
-        if cislo = "" s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
-        s nazev  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
-        // LSO drží ISO tvar; ven jako u AD (14.12.2025), ne „2025-12-14" (Jan 23. 10.).
-        s platOd = ..FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd")),3,,,,,,,""))
-        s platDo = ..FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo")),3,,,,,,,""))
-
-        s display = cislo
-        if nazev '= "" {
-            if display '= "" s display = display_" - "_nazev
-            else  s display = nazev
-        }
-        if display = "" s display = "Linka "_LinkaID
-
-        // Filtr - substring match case-insensitive na display
-        if search '= "" {
-            if '$f($zcvt(display, "L"), search) continue
-        }
-
-        s subtitle = ""
-        if platOd '= "" {
-            s subtitle = "Platnost od "_platOd
-            if platDo '= "" s subtitle = subtitle_" do "_platDo
-        }
-
-        s obj = ##class(%DynamicObject).%New()
-        // "string" type - .NET čte přes GetString(); bez toho číselné cislo/LinkaID → JSON number → chyba
-        d obj.%Set("value",    LinkaID, "string")
-        d obj.%Set("cislo",    cislo, "string")
-        d obj.%Set("nazev",    nazev, "string")
-        d obj.%Set("display",  display, "string")
-        if subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
-        // Řadí se podle čísla linky jako v AD, ne podle interního ID (to dávalo 11, 1, 25, 2 -
-        // Jan 27. 10.): nejdřív čísla vzestupně, pak ostatní označení abecedně, linky bez čísla na konci.
-        s razeni = $s(cislo?1.N:$lb(0, +cislo), cislo'="":$lb(1, $zcvt(cislo,"U")), 1:$lb(2, 0))
-        s radky($lg(razeni,1), $lg(razeni,2), LinkaID) = obj
-    }
-    s skupina = ""
-    for {
-        s skupina = $o(radky(skupina))  q:skupina=""
-        s klic = ""
-        for {
-            s klic = $o(radky(skupina, klic))  q:klic=""
-            s id = ""
-            for {
-                s id = $o(radky(skupina, klic, id))  q:id=""
-                q:count>=limit
-                d arr.%Push(radky(skupina, klic, id))
-                s count = count + 1
-            }
-        }
-    }
-    q arr
+/// Linky pro výběr linek - jedno místo pro obě agendy MHD (`Jr.DataMhd`, `B56` S12).
+ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
+{
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetAvailableInstances(.sys)
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -268,11 +119,6 @@ ClassMethod SeznamLinek(IdFa As %String, dataDB As %String) As %DynamicArray
 ///   ("config","AutoPoznamkyOdlisnostiPlatnosti")               = flag: auto-poznámky platností
 ///   ("config","rozsahNZOd")                                    = rozsah NZ značek od
 ///   ("config","rozsahNZDo")                                    = rozsah NZ značek do
-///   ("config","CisloLinky")                                    = číslo linky dle licence
-///   ("config","LokalniOznaceni")                               = veřejné číslo linky
-///   ("config","NazevLinky")                                    = název linky
-///   ("config","QRKod")                                         = QR kód URL
-///   ("config","TypJR")                                         = typ JŘ (NÁVRH/VÝLUKOVÝ/"")
 ///   ("trasa",SmerID,BodID)                                     = $lb(ZastavkaID, CasJizdy, ZastavkaCislo)
 ///   ("trasa",SmerID,"slouceni",BodID,BodID2)                   = ""   konverzní tabulka sloučených bodů
 ///   ("trasa",SmerID,"slouceniInv",BodID2)                      = BodID hlavní bod po sloučení
@@ -287,6 +133,7 @@ ClassMethod SeznamLinek(IdFa As %String, dataDB As %String) As %DynamicArray
 ///   ("spojTyp",SpojID)                                         = TypProvozuID spoje
 ///   ("spojTrasa",SmerID,SpojID)                                = TrasaBitmap
 ///   ("spojTrasa",SmerID,SpojID,BodID)                          = TrasaBitmapZBodu
+///   ("prubeh",SmerID,SpojID,BodID)                             = $lb("S", čas) staví / $lb("<") projíždí - spoje se sloupcem minut, pro varianty tras
 ///   ("spojNZ",SpojID)                                          = NegativniZnacka
 ///   ("nzTexty",NZ)                                             = OmezeniTXT
 ///   ("spojTydenni",SpojID)                                     = tydenniPlatnost
@@ -351,13 +198,6 @@ ClassMethod SestavitVyvesky(ByRef sys As %String, LinkaID As %String, jenPrvniSt
         s rozsahNZOd = $g(^[dataDB]ALVA.MHD.SETTINGS(IdFa,"Obecne","DTA",1001,"RozsahNegativnichZnacekOd"))
         s rozsahNZDo = $g(^[dataDB]ALVA.MHD.SETTINGS(IdFa,"Obecne","DTA",1001,"RozsahNegativnichZnacekDo"))
 
-        // Skalární info o lince (pro výstup)
-        s CisloLinky = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
-        s LokalniOznaceni = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
-        s NazevLinky = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
-        s QRKod = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"QRCode"))
-        s TypJR = ..TypJrLinky(IdFa, dataDB, LinkaID)
-
         // Uložit konfiguraci do working globálu - helper metody čtou odtud
         s ^||TiskMHD("config","LinkaID") = LinkaID
         s ^||TiskMHD("config","TrasaID") = TrasaID
@@ -370,11 +210,6 @@ ClassMethod SestavitVyvesky(ByRef sys As %String, LinkaID As %String, jenPrvniSt
         s ^||TiskMHD("config","AutoPoznamkyOdlisnostiPlatnosti") = AutoPoznamkyOdlisnostiPlatnosti
         s ^||TiskMHD("config","rozsahNZOd") = rozsahNZOd
         s ^||TiskMHD("config","rozsahNZDo") = rozsahNZDo
-        s ^||TiskMHD("config","CisloLinky") = CisloLinky
-        s ^||TiskMHD("config","LokalniOznaceni") = LokalniOznaceni
-        s ^||TiskMHD("config","NazevLinky") = NazevLinky
-        s ^||TiskMHD("config","QRKod") = QRKod
-        s ^||TiskMHD("config","TypJR") = TypJR
         s ^||TiskMHD("config","jenPrvniStranka") = jenPrvniStranka
 
         // ═══════════════════════════════════════════════════════════════════
@@ -559,8 +394,8 @@ ClassMethod NacistPoznamkyAAtributyZastavek(ByRef sys As %String)
                     i pouzeZnacku s PopisPoznamky = ""
                     i Text = "" continue
                     // Barvy (volitelné - sdíleno s vozovým JŘ; prázdné → default rendering)
-                    s pForeColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaZnakuRGB")))
-                    s pBackColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaPozadiRGB")))
+                    s pForeColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaZnakuRGB")))
+                    s pBackColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaPozadiRGB")))
                     // Textová poznámka (TypPoznamkyID=0)
                     i 'TypPoznamkyID {
                         s ^||TiskMHD("poznamkyZast",SmerID,BodID,Text) = $lb(PopisPoznamky, 0, pForeColor, pBackColor)
@@ -780,18 +615,24 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
             s jeKonecny = (BodID = konecnyBod)
 
             // Najít čas spoje v tomto bodu (včetně sloučených)
-            s casOdjezdu = ""
+            s casOdjezdu = "", projizdi = 0
             s subBodID = ""
             f {
                 s subBodID = $o(^||TiskMHD("trasa",SmerID,"slouceni",BodID,subBodID), smerKrok) q:subBodID=""
                 i subBodID = konecnyBod s jeKonecny = 1
                 i '$d(tabulkaSpoje("arr",1,subBodID)) continue
                 s bodVal = $g(tabulkaSpoje("arr",1,subBodID))
-                // Průjezd → přeskočit
-                i $lg(bodVal,5) continue
-                // Čas = max(příjezd, odjezd)
-                s cas = $lg(bodVal,3) i $lg(bodVal,4) > cas s cas = $lg(bodVal,4)
-                i cas > casOdjezdu s casOdjezdu = cas
+                // Průjezd → přeskočit (varianty tras ho ale tisknou jako „<")
+                i $lg(bodVal,5) {
+                    s projizdi = 1
+                    continue
+                }
+                // Čas = max(příjezd, odjezd). Prázdno se porovnává zvlášť: 0:00 není větší než prázdný řetězec,
+                // takže odjezd o půlnoci by zmizel (starý tisk ho vynechává, linka 53 CB_DP Nádraží).
+                s prijezd = $lg(bodVal,3), odjezd = $lg(bodVal,4)
+                s cas = $s(prijezd="":odjezd, odjezd="":prijezd, odjezd>prijezd:odjezd, 1:prijezd)
+                i cas = "" continue
+                i (casOdjezdu = "") || (cas > casOdjezdu) s casOdjezdu = cas
             }
 
             i casOdjezdu '= "" {
@@ -801,6 +642,11 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
                     i smoCol '= "" s ^||TiskMHD("odjezdy",SmerID,BodID,smoCol,hh,mm,SpojID) = ""
                     s ^||TiskMHD("obsluhaKonec",SmerID,BodID,SpojID) = ""
                 }
+            }
+            // Průběh spoje pro varianty tras - jen spoje se sloupcem minut, ostatní se na vývěsce netisknou.
+            i smoCol '= "" {
+                i casOdjezdu '= "" { s ^||TiskMHD("prubeh",SmerID,SpojID,BodID) = $lb("S", casOdjezdu) }
+                elseif projizdi { s ^||TiskMHD("prubeh",SmerID,SpojID,BodID) = $lb("<") }
             }
         }
         s ^||TiskMHD("spojTrasa",SmerID,SpojID) = TrasaBitmap
@@ -1114,13 +960,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     // Načíst konfiguraci
     s TrasaID = $g(^||TiskMHD("config","TrasaID"))
     s platnostOd = $g(^||TiskMHD("config","platnostOdHrl"))
-    s platnostDo = $g(^||TiskMHD("config","platnostDoHrl"))
-    s CisloLinky = $g(^||TiskMHD("config","CisloLinky"))
     s LinkaID = $g(^||TiskMHD("config","LinkaID"))
-    s LokalniOznaceni = $g(^||TiskMHD("config","LokalniOznaceni"))
-    s NazevLinky = $g(^||TiskMHD("config","NazevLinky"))
-    s QRKod = $g(^||TiskMHD("config","QRKod"))
-    s TypJR = $g(^||TiskMHD("config","TypJR"))
     s AutoPoznamkyRozdilTrasy = $g(^||TiskMHD("config","AutoPoznamkyRozdilTrasy"))
     s AutoPoznamkyRozdilTrasyAlgoritmus = $g(^||TiskMHD("config","AutoPoznamkyRozdilTrasyAlgoritmus"))
     s smerPopis = $s(SmerID=0:"T", 1:"Z")
@@ -1145,28 +985,21 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     }
 
     // ── Skalární hodnoty ─────────────────────────────────────────────────
+    // Hlavičku linky, kterou posílají obě agendy MHD stejně, skládá Jr.DataMhd (`B56` S12).
     s vals = ##class(%DynamicObject).%New()
-    d vals.%Set("CISLO_LINKY",            CisloLinky)
-    d vals.%Set("LOKALNI_OZNACENI_LINKY", LokalniOznaceni)
-    d vals.%Set("POPIS_LINKY",            NazevLinky)
-    d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .dopravce)
-    d vals.%Set("POPIS_DOPRAVCE",         ..RadkyDopravce($g(dopravce("NAZEV")), $g(dopravce("ULICE")), $g(dopravce("MESTO")), $g(dopravce("TELEFON"))))
-    // Samotný název do úzkého rámečku záhlaví, celý popis jde pod název linky (jako vývěska AD);
-    // vedle něj adresa, telefon, e-mail a IČO po polích jako ve všech agendách JŘ.
-    d ..DopravceSkalary(.sys, dataDB, IdFa, LinkaID, vals)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).AddHlavickaLinky(.sys, dataDB, IdFa, LinkaID, vals)
+    // Popis dopravce na řádky pod název linky (jako vývěska AD); NAZEV_DOPRAVCE z hlavičky jde do úzkého rámečku záhlaví.
+    d vals.%Set("POPIS_DOPRAVCE",         ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).PopisDopravce(.sys, dataDB, IdFa, LinkaID))
     // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
-    d vals.%Set("POPIS_PLATNOSTI",        ..FormatDatum(platnostOd)_" - "_..FormatDatum(platnostDo))
-    d vals.%Set("DATUM_PLATNOSTI_OD",     ..FormatDatum(platnostOd))
-    d vals.%Set("DATUM_PLATNOSTI_DO",     ..FormatDatum(platnostDo))
+    d vals.%Set("POPIS_PLATNOSTI",        vals.%Get("DATUM_PLATNOSTI_OD")_" - "_vals.%Get("DATUM_PLATNOSTI_DO"))
     d vals.%Set("SMER",                   smerPopis)   // T/Z (A1); KONECNA_ZASTAVKA = konečná se nastaví po sestavení trasy
-    d vals.%Set("TYP_JR",                 TypJR)
-    d vals.%Set("QR_KOD",                 QRKod)
     d vals.%Set("POPIS_ZASTAVKA",         NazevZastavky)
     d vals.%Set("CISLO_ZASTAVKA",         CisloZastavky_"-"_Oznacnik)
     // TITULEK / POZNAMKA_POD_DOPRAVCE / INFORMACE: MHD pro ně nemá zdroj → nejsou ve schématu (viz AD, které je má z JRMAIN)
     // PRVNI_POSLEDNI_SPOJ (text prvního/posledního spoje) odstraněno 2026-07-20 - nepoužívané a drahé:
     // legacy MHD2 CalculatePrvniAndPosledniSpojeText se počítalo per stránka (~6,8 s z 7 s na velké lince,
     // full sken spojů + den-po-dni platnost). Kdyby ho někdo chtěl, reimplementovat nad daty fáze 4 v ^||TiskMHD.
+    d vals.%Set("VARIANTY_TRAS",          ..BuildVariantyTras(SmerID, aktualniZastBodID, ObsluhaBitmap, .varianty, .pismenoSpoje))
     d page.%Set("values", vals)
 
     // ── Kolekce ──────────────────────────────────────────────────────────
@@ -1207,7 +1040,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         // Na znamení
         s naZnameni = 0
 
-        s z = ..BuildZastavka(bodIterator, zastNazev, zastCislo, casJizdy, poradiZast, jeAktualni, naZnameni, odsazeni)
+        s z = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildZastavka(bodIterator, zastNazev, zastCislo, casJizdy, poradiZast, jeAktualni, naZnameni, odsazeni)
 
         // Zóny
         s zonaidx = ""
@@ -1215,7 +1048,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             s zonaidx = $o(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastID,"DTA",1,"ZonyID",zonaidx)) q:zonaidx=""
             s ZonaID = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastID,"DTA",1,"ZonyID",zonaidx,"Itm"))
             s ZonaCislo = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Zony","DTA",ZonaID,"Cislo"))
-            i ZonaCislo '= "" d ..AddZona(z, ZonaCislo)
+            i ZonaCislo '= "" d ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).AddZona(z, ZonaCislo)
         }
 
         // Atributy zastávky (jen neprojete + aktuální jen N,V,x)
@@ -1226,8 +1059,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                 // Aktuální zastávka: jen základní atributy (ID<=1003)
                 i (bodIterator=aktualniZastBodID)&&(AtributID>1003) continue
                 s atrVal = $g(^||TiskMHD("atributyZast",SmerID,bodIterator,AtributID))
-                s SpecZnak = ..ConvertSpecialniZnak($lg(atrVal,3))
-                d ..AddAtribut(z, SpecZnak, $lg(atrVal,1))
+                s SpecZnak = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).ConvertSpecialniZnak($lg(atrVal,3))
+                d ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).AddAtribut(z, SpecZnak, $lg(atrVal,1))
             }
         }
 
@@ -1238,7 +1071,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             f {
                 s znakPoznamky = $o(^||TiskMHD("poznamkyZast",SmerID,bodIterator,znakPoznamky)) q:znakPoznamky=""
                 s pozVal = $g(^||TiskMHD("poznamkyZast",SmerID,bodIterator,znakPoznamky))
-                d ..AddPoznamkaZastavky(z, znakPoznamky, "text", $lg(pozVal,1))
+                d ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).AddPoznamkaZastavky(z, znakPoznamky, "text", $lg(pozVal,1))
                 s znackyZastavky(znakPoznamky) = ""
             }
             // Písmeno rozdílu trasy (alg. 1002) i u zastávky, kterou obsluhují jen spoje s tímto
@@ -1251,7 +1084,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                     s DiffBitmap = $o(^||TiskMHD("rozdilTrasyPism",SmerID,aktualniZastBodID,0,DiffBitmap), 1, pismeno) q:DiffBitmap=""
                     i '+$e(DiffBitmap, bodIterator) continue
                     i (pismeno = "") || $d(znackyZastavky(pismeno)) continue
-                    d ..AddPoznamkaZastavky(z, pismeno, "text", "zastávky obsluhují pouze shodně označené spoje")
+                    d ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).AddPoznamkaZastavky(z, pismeno, "text", "zastávky obsluhují pouze shodně označené spoje")
                     s znackyZastavky(pismeno) = ""
                 }
             }
@@ -1261,6 +1094,13 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         s:vychoziNazev="" vychoziNazev = zastNazev
         s oznacnikRow = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastID,"DTA",1,"Oznacnik"))
         d z.%Set("NASTUPISTE", oznacnikRow)   // TR3: nástupiště per zastávka (MHD = Oznacnik)
+        d z.%Set("TRASA_MIN", ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).BuildTrasaMin(.varianty, bodIterator))
+        // Označník varianty: spoje MHD staví na zastávce u téhož označníku, takže tam, kde varianta staví, je to označník řádku.
+        s oznacnikyVariant = ##class(%DynamicArray).%New()
+        f n=1:1:##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetSloupcu(.varianty) {
+            d oznacnikyVariant.%Push($s(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).MaZastaveni(.varianty, n, bodIterator):oznacnikRow, 1:""))
+        }
+        d z.%Set("NASTUPISTE_VARIANT", oznacnikyVariant)
         d zastavky.%Push(z)
     }
     d rows.%Set("ZASTAVKY", zastavky)
@@ -1276,7 +1116,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         s smoCol = $o(^||TiskMHD("smoSloupce",smoCol)) q:smoCol=""
         s nadpisLb = $g(^||TiskMHD("smoNadpis",smoCol))
         // Pořadí = číslo sloupce (SMO1..SMO4), aby sloupce šly zleva SMO1→SMO4 jako v legacy.
-        d skupiny.%Push(..BuildSkupinaDnu(smoCol, $lg(nadpisLb,1), $lg(nadpisLb,2), smoCol))
+        d skupiny.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildSkupinaDnu(smoCol, $lg(nadpisLb,1), $lg(nadpisLb,2), smoCol))
     }
     d rows.%Set("SKUPINY_DNU", skupiny)
 
@@ -1323,7 +1163,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                     // Sloupec může sdílet víc typů provozu - v tomto průchodu jen aktuální typ
                     i $g(^||TiskMHD("spojTyp",SpojID)) '= tpid continue
 
-                    s odj = ..BuildOdjezd(aktualniZastBodID, smoCol, hh, mm)
+                    s odj = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildOdjezd(aktualniZastBodID, smoCol, hh, mm)
 
                     // ── Anotace odjezdu ──
 
@@ -1351,8 +1191,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         i specZnak = "" continue
                         // Barvy z PoznamkaSpoj (sdílené s vozovým JŘ; prázdné → default rendering).
                         // Aplikují se i na anotaci nad minutou (konzistence s legendou).
-                        s pForeColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaZnakuRGB")))
-                        s pBackColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaPozadiRGB")))
+                        s pForeColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaZnakuRGB")))
+                        s pBackColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaPozadiRGB")))
                         d ..AddAnotace(odj, "specialni", specZnak, pForeColor, pBackColor)
                         s PopisPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"PopisPoznamky"))
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkovePouzeZnacku")) {
@@ -1388,7 +1228,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         // SpecZnak z GetAtributySpoj může obsahovat interní ID - přečíst displayový znak z ENUMS
                         s specZnak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atributID,"SpecZnak"))
                         i specZnak = "" continue
-                        s specZnak = ..ConvertSpecialniZnak(specZnak)
+                        s specZnak = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).ConvertSpecialniZnak(specZnak)
                         s Popis = $g(^||TiskMHD("spojAtributy",SpojID,"arr",1,atributID,"Popis"))
                         d ..AddAnotace(odj, "specialni", specZnak)
                         s strankovePoznamky(specZnak) = $lb(Popis, 2)
@@ -1405,6 +1245,10 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         d ..DoplnitPoznamkuRozdilTrasy1002(.sys, odj, SmerID, aktualniZastBodID, SpojID, .strankovePoznamky)
                     }
 
+                    // Písmeno varianty trasy vedle písmene rozdílu, jako ve vývěsce AD. Vysvětluje ho záhlaví
+                    // sloupce variant, ne poznámka; bez toho sloupce ho klient podle kategorie schová.
+                    i $g(pismenoSpoje(SpojID)) '= "" d ..AddAnotace(odj, "text", pismenoSpoje(SpojID), "", "", "varianta-trasy")
+
                     // Textové poznámky spoje
                     s poznamkaID = ""
                     f {
@@ -1416,8 +1260,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         i znakPozn = "" continue
                         // Barvy z PoznamkaSpoj (sdílené s vozovým JŘ; prázdné → default rendering).
                         // Aplikují se i na anotaci nad minutou (konzistence s legendou).
-                        s pForeColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaZnakuRGB")))
-                        s pBackColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaPozadiRGB")))
+                        s pForeColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaZnakuRGB")))
+                        s pBackColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaPozadiRGB")))
                         d ..AddAnotace(odj, "text", znakPozn, pForeColor, pBackColor)
                         s PopisPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"PopisPoznamky"))
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkovePouzeZnacku")) {
@@ -1441,7 +1285,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     f {
         s znakPoznamky = $o(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,znakPoznamky)) q:znakPoznamky=""
         s pozVal = $g(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,znakPoznamky))
-        d poznamky.%Push(..BuildPoznamka("text", znakPoznamky, $lg(pozVal,1), $lg(pozVal,3), $lg(pozVal,4)))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("text", znakPoznamky, $lg(pozVal,1), $lg(pozVal,3), $lg(pozVal,4)))
     }
 
     // Poznámky ze stránky (odjezdy) - formát $lb(text, typeCode, znakOrEmpty, foreColor, backColor)
@@ -1454,7 +1298,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         s pTyp = $s(pTypCislo=0:"text", pTypCislo=1:"nz", 1:"specialni")
         s pZnak = $s(pTypCislo=1:$lg(pVal,3), 1:znak)
         s pText = $lg(pVal, 1)
-        d poznamky.%Push(..BuildPoznamka(pTyp, pZnak, pText, $lg(pVal,4), $lg(pVal,5)))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka(pTyp, pZnak, pText, $lg(pVal,4), $lg(pVal,5)))
     }
 
     // Atributy zastávky jako poznámky - ze VŠECH zobrazených zastávek (ne jen aktuální)
@@ -1473,7 +1317,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             s AtributID = $o(^||TiskMHD("atributyZast",SmerID,bodIterator,AtributID)) q:AtributID=""
             i (bodIterator=aktualniZastBodID)&&(AtributID>1003) continue
             s atrVal = $g(^||TiskMHD("atributyZast",SmerID,bodIterator,AtributID))
-            s SpecZnak = ..ConvertSpecialniZnak($lg(atrVal,3))
+            s SpecZnak = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).ConvertSpecialniZnak($lg(atrVal,3))
             i SpecZnak = "" continue
             i $d(poznamkyAtribut(SpecZnak)) continue
             s poznamkyAtribut(SpecZnak) = ""
@@ -1481,7 +1325,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             // symbol se liší dle firmy) → přepínač „Na znamení" schová značku i tento řádek legendy (#7161).
             s popisAtr = $lg(atrVal,1)
             s katAtr = $s($zcvt($e(popisAtr,1,9),"L")="na znamen":"atribut-zastavky", ..JePrestup($lg(atrVal,4)):"prestup", 1:"")
-            d poznamky.%Push(..BuildPoznamka("specialni", SpecZnak, popisAtr, "", "", katAtr))
+            d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("specialni", SpecZnak, popisAtr, "", "", katAtr))
         }
     }
 
@@ -1616,117 +1460,79 @@ ClassMethod GetDenVTydnuText(denZnak As %String) As %String
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// JŘ helpery - stavba JSON objektů
+/// Výstupní JSON - společná stavba vývěsky je v `Jr.VystupZastavkovy`, tady jen to, co má jen MHD
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// Vytvoří %DynamicObject zastávky s inicializovanými vnořenými poli.
-ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", casJizdy As %Integer = 0, poradi As %Integer = 1, jeAktualni As %Boolean = 0, naZnameni As %Boolean = 0, odsazeni As %Integer = 0) As %DynamicObject
-{
-    s zastavka = ##class(%DynamicObject).%New()
-    // Čitelná field ID (SLOVO_SLOVO) - sdílený kontrakt sloupců StopList↔DynamicTable.
-    // TC (číslo zastávky z CIS) vědomě nevystaveno; poziční potřebu pokrývá PORADI.
-    d zastavka.%Set("ID", id)                          // interní join klíč (ODJEZDY.ZASTAVKA_ID), ne ve schématu
-    d zastavka.%Set("NAZEV_ZASTAVKY", popis)
-    d zastavka.%Set("CAS_JIZDY", casJizdy)
-    d zastavka.%Set("PORADI", poradi)
-    d zastavka.%Set("AKTUALNI_ZASTAVKA", $s(jeAktualni:"true", 1:"false"))
-    d zastavka.%Set("NA_ZNAMENI", $s(naZnameni:"true", 1:"false"))
-    d zastavka.%Set("ODSAZENI", odsazeni)
-    d zastavka.%Set("ZONY", ##class(%DynamicArray).%New())
-    d zastavka.%Set("ATRIBUTY", ##class(%DynamicArray).%New())
-    d zastavka.%Set("POZNAMKY_ZASTAVKY", ##class(%DynamicArray).%New())
-    q zastavka
-}
-
-ClassMethod AddZona(zastavka As %DynamicObject, zona As %String)
-{
-    d zastavka.%Get("ZONY").%Push(zona)
-}
-
-ClassMethod AddAtribut(zastavka As %DynamicObject, znak As %String, popis As %String = "")
-{
-    s atribut = ##class(%DynamicObject).%New()
-    d atribut.%Set("ZNAK", znak)
-    d atribut.%Set("POPIS", popis)
-    d zastavka.%Get("ATRIBUTY").%Push(atribut)
-}
-
-ClassMethod AddPoznamkaZastavky(zastavka As %DynamicObject, znak As %String, typ As %String = "text", text As %String = "")
-{
-    s poznamka = ##class(%DynamicObject).%New()
-    d poznamka.%Set("ZNAK", znak)
-    d poznamka.%Set("TYP", typ)
-    d poznamka.%Set("TEXT", text)
-    d zastavka.%Get("POZNAMKY_ZASTAVKY").%Push(poznamka)
-}
-
-ClassMethod BuildSkupinaDnu(id As %String, nadpis As %String, nadpis2 As %String = "", poradi As %Integer = 1) As %DynamicObject
-{
-    s skupina = ##class(%DynamicObject).%New()
-    d skupina.%Set("ID", id)
-    d skupina.%Set("NADPIS", nadpis)
-    d skupina.%Set("NADPIS2", nadpis2)
-    d skupina.%Set("PORADI", poradi)
-    q skupina
-}
-
-ClassMethod BuildOdjezd(zastavkaId As %String, skupinaDnuId As %String, hodina As %Integer, minuta As %Integer) As %DynamicObject
-{
-    s odjezd = ##class(%DynamicObject).%New()
-    d odjezd.%Set("ZASTAVKA_ID", zastavkaId)
-    d odjezd.%Set("SKUPINA_DNU_ID", skupinaDnuId)
-    d odjezd.%Set("HODINA", hodina)
-    d odjezd.%Set("MINUTA", minuta)
-    d odjezd.%Set("FORE_COLOR", "")
-    d odjezd.%Set("BACK_COLOR", "")
-    d odjezd.%Set("ANOTACE", ##class(%DynamicArray).%New())
-    q odjezd
-}
-
-ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String, foreColor As %String = "", backColor As %String = "")
+/// `kategorie` jen u písmene varianty trasy: podle ní ho klient schová. Ostatní značky MHD kategorii
+/// neposílají, jinak by je filtr Poznámek podle kategorie začal schovávat (`legacy-nahrada.md §4`).
+ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String, foreColor As %String = "", backColor As %String = "", kategorie As %String = "")
 {
     s anotace = ##class(%DynamicObject).%New()
     d anotace.%Set("TYP", typ)
     d anotace.%Set("ZNAK", znak)
     d anotace.%Set("FORE_COLOR", foreColor)
     d anotace.%Set("BACK_COLOR", backColor)
+    i kategorie '= "" d anotace.%Set("KATEGORIE", kategorie)
     d odjezd.%Get("ANOTACE").%Push(anotace)
 }
 
-ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, foreColor As %String = "", backColor As %String = "", kategorie As %String = "") As %DynamicObject
+/// Varianty tras vývěsky (`Jr.VariantyTras`, jako vývěska AD): sled zobrazených zastávek od vývěskové
+/// dál podle průběhu spoje z fáze 4. Vrátí `VARIANTY_TRAS`; `varianty` pak plní řádky zastávek
+/// a `pismenoSpoje(SpojID)` značku u minuty.
+///
+/// Zástupce varianty je **spoj** s nejdelší jízdou, ne trasa jako v AD: v MHD má časy každý spoj zvlášť
+/// a spoje téže varianty jedou různě dlouho (sonda `VariantyTrasMhdProbe` 30. 10.: až o 16 min v CB_DP).
+/// Starý tisk MHD varianty neměl, takže se není s čím porovnat (R6) - ověřené jsou jen vlastnosti výstupu.
+ClassMethod BuildVariantyTras(SmerID As %Integer, aktualniZastBodID As %String, ObsluhaBitmap As %String, ByRef varianty, ByRef pismenoSpoje) As %DynamicArray
 {
-    s poznamka = ##class(%DynamicObject).%New()
-    d poznamka.%Set("TYP", typ)
-    d poznamka.%Set("ZNAK", znak)
-    d poznamka.%Set("TEXT", text)
-    d poznamka.%Set("FORE_COLOR", foreColor)
-    d poznamka.%Set("BACK_COLOR", backColor)
-    // kategorie = interní tag pro TD filtr viditelnosti legendy (#7161): „atribut-zastavky"
-    // = řádek „na znamení" (skryje se s přepínačem „Na znamení"). Prázdné = needitelné filtrem.
-    d poznamka.%Set("KATEGORIE", kategorie)
-    q poznamka
+    s smerKrok = $s(SmerID:-1, 1:1), jeTam = 'SmerID
+    k varianty, pismenoSpoje
+    s SpojID = ""
+    f {
+        s SpojID = $o(^||TiskMHD("obsluhaKonec",SmerID,aktualniZastBodID,SpojID)) q:SpojID=""
+        s naVyvesce = $g(^||TiskMHD("prubeh",SmerID,SpojID,aktualniZastBodID))
+        i $lg(naVyvesce,1) '= "S" continue          // spoj bez sloupce minut se na vývěsce netiskne
+        // Sled jen přes zastávky, které stránka ukazuje (jako seznam zastávek): bez skrytých bodů
+        // a bez těch, kam odtud nic nejede - jinak by se spoje lišily v řádku, který nikdo nevidí.
+        s sled = "", delka = 0, BodID = ""
+        f {
+            s BodID = $s(BodID="":aktualniZastBodID, 1:$o(^||TiskMHD("trasa",SmerID,BodID), smerKrok)) q:(BodID="")||('BodID)
+            i (BodID '= aktualniZastBodID) && ($d(^||TiskMHD("trasa",SmerID,"netisknout",BodID)) || '$e(ObsluhaBitmap,BodID)) continue
+            s prubeh = $g(^||TiskMHD("prubeh",SmerID,SpojID,BodID))
+            s $p(sled,"~",BodID) = $lg(prubeh,1)
+            i $lg(prubeh,1) = "S" {
+                s doba = ..CasOdVyvesky($lg(prubeh,2), $lg(naVyvesce,2), 1)
+                i doba > delka s delka = doba
+            }
+        }
+        d ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).AddSpoj(.varianty, SpojID, sled, delka, SpojID)
+    }
+    // Výchozí sada písmen, MHD nastavení u linky nemá (Jan 31. 10.: řešit, až to někdo nahlásí).
+    s pismena = ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).BuildSloupce(.varianty, "", .pismenoSpoje)
+    // Z průběhu zástupce vyjde i úsek před vývěskou (projeté zastávky), jako v AD.
+    f n=1:1:##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetSloupcu(.varianty) {
+        s zastupce = ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).ZastupceSloupce(.varianty, n)
+        s casVyvesky = $lg($g(^||TiskMHD("prubeh",SmerID,zastupce,aktualniZastBodID)),2)
+        s BodID = ""
+        f {
+            s BodID = $o(^||TiskMHD("prubeh",SmerID,zastupce,BodID), 1, prubeh) q:BodID=""
+            s doba = $s($lg(prubeh,1)="S":..CasOdVyvesky($lg(prubeh,2), casVyvesky, ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeVUsekuVariant(BodID, aktualniZastBodID, jeTam)), 1:"")
+            d ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).AddZastaveni(.varianty, n, BodID, $lg(prubeh,1), doba)
+        }
+    }
+    q pismena
 }
 
-/// Konvertuje 8-bit integer (0-255) na dvouznakovou velkou hex reprezentaci.
-ClassMethod IntToHex2(n As %Integer) As %String [ Private ]
+/// Jízdní doba z vývěskové zastávky na zastávku s časem `cas` (minuty od půlnoci). Za vývěskou je
+/// kladná, před ní (projetá zastávka) záporná jako v AD. Spoj přes půlnoc má za ní menší čas,
+/// proto se doba s nesprávným znaménkem posune o den.
+ClassMethod CasOdVyvesky(cas As %Integer, casVyvesky As %Integer, zaVyveskou As %Boolean) As %Integer
 {
-    s digits = "0123456789ABCDEF"
-    i n < 0 s n = 0
-    i n > 255 s n = 255
-    q $e(digits, (n\16) + 1) _ $e(digits, (n#16) + 1)
+    s doba = cas - casVyvesky
+    i zaVyveskou && (doba < 0) s doba = doba + 1440
+    i 'zaVyveskou && (doba > 0) s doba = doba - 1440
+    q doba
 }
 
-/// Konvertuje RGB string "R;G;B" (např. "255;191;128") na SkiaSharp hex "#FFRRGGBB".
-/// Prázdný vstup nebo nevalidní formát → prázdný string.
-ClassMethod RgbToHex(rgb As %String) As %String
-{
-    i rgb = "" q ""
-    s r = +$p(rgb,";",1)
-    s g = +$p(rgb,";",2)
-    s b = +$p(rgb,";",3)
-    q "#FF"_..IntToHex2(r)_..IntToHex2(g)_..IntToHex2(b)
-}
-
-/// Konvertuje číselný kód speciálního znaku na Unicode string.
 /// Přestup na autobus („A") a vlak („L") jde písmenem jako ve vývěsce AD a v linkovém JŘ - návrhář ho
 /// přeloží na piktogram a řídí ho volba „Přestupy". Kód starého fontu (119 / 120) by nakreslil vagon
 /// a „x", které se tiskne textem jako „na znamení". Ostatní atributy zůstávají kódem fontu, ten sedí.
@@ -1740,113 +1546,56 @@ ClassMethod JePrestup(znak As %String) As %Boolean
     q (znak = "A") || (znak = "L")
 }
 
-ClassMethod ConvertSpecialniZnak(cislo As %String) As %String
-{
-    i cislo = 1 q "Po"
-    i cislo = 2 q "Út"
-    i cislo = 3 q "St"
-    i cislo = 4 q "Čt"
-    i cislo = 5 q "Pá"
-    i cislo = 6 q "So"
-    i cislo = 7 q "Ne"
-    i +cislo > 31 q $c(cislo)
-    q cislo
-}
-
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// Standardní JŘ schema definice
+/// Nabídka dat - všechna pole vývěsky MHD jsou ze slovníku `Jr.NabidkaDat`
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// Přidá standardní skalární pole JŘ agendy do pole fields.
+/// Přidá standardní skalární pole JŘ agendy do pole fields (pořadí shodně s vývěskou AD).
 ClassMethod AddStandardJRFields(fields As %DynamicArray)
 {
-    // Pořadí seskupené podle toho, čeho se pole týká - shodně s AD vývěskou (nález Jan 31. 8.:
-    // zastávková pole byla rozházená mezi ostatní a hledala se v seznamu po jednom).
-
-    // ── linka ──
-    d ..AddField(fields, "CISLO_LINKY",            "Číslo linky (dle licence)", "number")
-    d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",    "text")
-    d ..AddField(fields, "POPIS_LINKY",            "Název linky",            "text")
-    d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
-
-    // ── dopravce ──
-    d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
-    // Po polích pod stejnými klíči jako AD (`B194c` D4).
-    d ..AddField(fields, "NAZEV_DOPRAVCE",         "Název dopravce",         "text")
-    d ..AddField(fields, "ADRESA_DOPRAVCE",        "Adresa dopravce",        "text")
-    d ..AddField(fields, "TELEFON_DOPRAVCE",       "Telefon dopravce",       "text")
-    d ..AddField(fields, "EMAIL_DOPRAVCE",         "E-mail dopravce",        "text")
-    d ..AddField(fields, "ICO_DOPRAVCE",           "IČO dopravce",           "text")
-
-    // ── platnost ──
-    // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD.
-    d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
-    d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
-
-    // ── zastávka, na které vývěska visí, a směr ──
-    // „Název …", aby se v nabídce polí nepletl s příznakem řádku „Je aktuální zastávka" (Jan 27. 10.).
-    d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky", "text")
-    // Popisek jako u vývěsky AD; v MHD nese číslo i s označníkem („101-A").
-    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo aktuální zastávky", "text")
-    d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
-    d ..AddField(fields, "VYCHOZI_ZASTAVKA",       "Výchozí zastávka",       "text")
-    d ..AddField(fields, "KONECNA_ZASTAVKA",       "Konečná zastávka",       "text")
-
-    // ── doplňky ──
-    d ..AddField(fields, "QR_KOD",                 "URL adresa pro QR kód",  "text")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "CISLO_LINKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "LOKALNI_OZNACENI_LINKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "POPIS_LINKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "TYP_JR")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "POPIS_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "NAZEV_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "ADRESA_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "TELEFON_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "EMAIL_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "ICO_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "DATUM_PLATNOSTI_OD")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "DATUM_PLATNOSTI_DO")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "POPIS_ZASTAVKA")
+    // V MHD nese číslo i s označníkem („101-A"), proto jiný popisek než týž klíč ve vývěsce AD (Jan 30. 10.).
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "CISLO_ZASTAVKA", "Číslo a označník aktuální zastávky")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "SMER")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "VYCHOZI_ZASTAVKA")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "KONECNA_ZASTAVKA")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "QR_KOD")
 }
 
 /// Přidá standardní tabulkové kolekce JŘ agendy do pole collections.
 ClassMethod AddStandardJRCollections(collections As %DynamicArray)
 {
-    // ZASTAVKY
-    s colZastavky = ##class(%DynamicObject).%New()
-    s colZastavky.name          = "Zastávky"
-    s colZastavky.collectionKey = "ZASTAVKY"
-    s colZastavkyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colZastavkyFields, "NAZEV_ZASTAVKY",    "Název zastávky",    "text")
-    // Text, ne číslo: vedle minut nese „<" (spoj jede jinou trasou) a prázdno (mimo trasu).
-    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",         "text")
-    d ..AddField(colZastavkyFields, "PORADI",            "Pořadí",            "number")
-    d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Je aktuální zastávka", "boolean")
-    d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
-    d ..AddField(colZastavkyFields, "NASTUPISTE",        "Označník",          "text")
-    s colZastavky.fields = colZastavkyFields
-    d collections.%Push(colZastavky)
+    s pole = ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddKolekce(collections, "ZASTAVKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "NAZEV_ZASTAVKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "CAS_JIZDY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "PORADI")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "AKTUALNI_ZASTAVKA")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "ZONY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "NASTUPISTE")
 
-    // SKUPINY_DNU
-    s colSkupiny = ##class(%DynamicObject).%New()
-    s colSkupiny.name          = "Skupiny dnů"
-    s colSkupiny.collectionKey = "SKUPINY_DNU"
-    s colSkupinyFields = ##class(%DynamicArray).%New()
-    // ID (join/pivot klíč) zůstává ve wire, ale NEvystavuje se jako sloupec.
-    d ..AddField(colSkupinyFields, "NADPIS",  "Nadpis skupiny",   "text")
-    d ..AddField(colSkupinyFields, "NADPIS2", "Nadpis skupiny 2", "text")
-    d ..AddField(colSkupinyFields, "PORADI",  "Pořadí",           "number")
-    s colSkupiny.fields = colSkupinyFields
-    d collections.%Push(colSkupiny)
+    s pole = ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddKolekce(collections, "SKUPINY_DNU")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "SKUPINY_DNU", "NADPIS")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "SKUPINY_DNU", "NADPIS2")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "SKUPINY_DNU", "PORADI")
 
-    // ODJEZDY
-    s colOdjezdy = ##class(%DynamicObject).%New()
-    s colOdjezdy.name          = "Odjezdy"
-    s colOdjezdy.collectionKey = "ODJEZDY"
-    s colOdjezdyFields = ##class(%DynamicArray).%New()
-    // Ploché user-facing pole. ZASTAVKA_ID/SKUPINA_DNU_ID (join/pivot klíče) + FORE_COLOR/BACK_COLOR
-    // (prezentační nápovědy, čte je jen render) zůstávají ve wire, ale NEvystavují se jako sloupce.
-    d ..AddField(colOdjezdyFields, "HODINA", "Hodina", "number")
-    d ..AddField(colOdjezdyFields, "MINUTA", "Minuta", "number")
-    s colOdjezdy.fields = colOdjezdyFields
-    d collections.%Push(colOdjezdy)
+    s pole = ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddKolekce(collections, "ODJEZDY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ODJEZDY", "HODINA")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ODJEZDY", "MINUTA")
 
-    // POZNAMKY
-    s colPoznamky = ##class(%DynamicObject).%New()
-    s colPoznamky.name          = "Poznámky"
-    s colPoznamky.collectionKey = "POZNAMKY"
-    s colPoznamkyFields = ##class(%DynamicArray).%New()
-    // Bez „Typu poznámky" (Jan 27. 10.): interní kód specialni/nz/text pro prvek Poznámky, data ho posílají dál.
-    d ..AddField(colPoznamkyFields, "ZNAK", "Znak",          "text")
-    d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky",  "text")
-    s colPoznamky.fields = colPoznamkyFields
-    d collections.%Push(colPoznamky)
+    s pole = ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddKolekce(collections, "POZNAMKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "POZNAMKY", "ZNAK")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "POZNAMKY", "TEXT")
 }
 
 /// Přidá standardní JŘ parametry do pole parametrů.
@@ -1854,161 +1603,17 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 {
     // `group` = vizuální seskupení v liště parametrů / dialogu (aditivní klíč - starší klient ignoruje).
     // Konvence: skupina = UI název elementu, který parametr ovlivňuje; celo-šablonové → „Obecné".
-    // `B161`: výchozí pořadí je parita se starým tiskem (obě vývěsky téže zastávky za sebou).
-    // Znění i chování se musí shodovat s agendou z AD dat, jinak by se tisk choval v každé jinak.
-    s pPorStr = ##class(%DynamicObject).%New()
-    s pPorStr.name         = "PORADI_STRANEK"
-    s pPorStr.label        = "Pořadí stránek"
-    s pPorStr.type         = "enum"
-    s pPorStr.group        = "Obecné"
-    s pPorStr.serverSide   = 1
-    s pPorStr.defaultValue = "Po zastávkách (oba směry za sebou)"
-    s pPorStr.description  = "V jakém pořadí jdou vývěsky v exportu. Po zastávkách = linka se projde jednou a u každé zastávky jsou obě její vývěsky za sebou (tak to dělá i starý tisk). Po směrech = nejdřív celý směr Tam od první zastávky k poslední, pak celý směr Zpět od poslední k první, takže se trasa projde tam a zase zpátky."
-    s optsPS = ##class(%DynamicArray).%New()
-    d optsPS.%Push("Po zastávkách (oba směry za sebou)")
-    d optsPS.%Push("Po směrech (tam vzestupně, zpět sestupně)")
-    s pPorStr.options = optsPS
-    d arr.%Push(pPorStr)
-
-    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek", "V seznamu zastávek se od aktuální zastávky nakreslí šipka ve směru jízdy. Barvu a stranu šipky nastavíte u prvku Seznam zastávek.")
-    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek", "V seznamu zastávek se vytisknou i zastávky, které spoj před aktuální zastávkou už projel. Vypnuto = seznam začíná aktuální zastávkou.")
-
-    // Časová osa odjezdů - popisné labely (Plný den vědomě vynechán, lze docílit přes Vlastní rozsah 0..23)
-    s param = ##class(%DynamicObject).%New()
-    s param.name         = "CASOVA_OSA"
-    s param.label        = "Časová osa odjezdů"
-    s param.type         = "enum"
-    s param.group        = "Minuty odjezdů"
-    s param.defaultValue = "Jen hodiny s odjezdy"
-    s param.description  = "Které hodiny se vytisknou: jen hodiny s odjezdy, všechny hodiny od první do poslední hodiny s odjezdem (i prázdné), nebo pevný rozsah Hodiny od - Hodiny do."
-    s opts = ##class(%DynamicArray).%New()
-    d opts.%Push("Jen hodiny s odjezdy")
-    d opts.%Push("Souvislá od první do poslední")
-    d opts.%Push("Vlastní rozsah")
-    s param.options = opts
-    d arr.%Push(param)
-
-    // Hodiny od/do - viditelné jen pro Vlastní rozsah; podporují wrap přes půlnoc (např. 22-5).
-    s pOd = ##class(%DynamicObject).%New()
-    s pOd.name         = "HODINY_OD"
-    s pOd.label        = "Hodiny od"
-    s pOd.type         = "number"
-    s pOd.group        = "Minuty odjezdů"
-    s pOd.defaultValue = "4"
-    s pOd.description  = "První vytištěná hodina (0-23)."
-    s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
-    d arr.%Push(pOd)
-
-    s pDo = ##class(%DynamicObject).%New()
-    s pDo.name         = "HODINY_DO"
-    s pDo.label        = "Hodiny do"
-    s pDo.type         = "number"
-    s pDo.group        = "Minuty odjezdů"
-    s pDo.defaultValue = "23"
-    s pDo.description  = "Poslední vytištěná hodina (0-23). Menší než Hodiny od = rozsah přes půlnoc."
-    s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
-    d arr.%Push(pDo)
-
-    // Roztáhnout data odjezdů (řádky + fonty) na výšku elementu, pokud je kratší rozsah hodin než kapacita.
-    // Hlavička skupin dnů + sloupec hodin zůstávají původní velikost.
-    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů", "Když je hodin s odjezdy méně, než se do prvku vejde, řádky hodin i písmo se zvětší, aby prvek vyplnily. Záhlaví zůstává.")
+    // Jen parametry společné s vývěskou AD (`Jr.Parametry`); vlastní parametry vývěska MHD nemá.
+    d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrPoradiStranek())
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddSipkyAProjeteZastavky(arr)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddVariantyTras(arr)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddCasovaOsaOdjezdu(arr)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddRoztazeniNaVysku(arr)
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// GetMockData - ukázková data pro preview
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// Reálný dopravce linky: `DruhDopravceID` → vlastní firma (`$$gIdFa^MlJFapi`) / cizí dopravce
-/// (`$$gDopFa^JRapi`). Firemní data žijí v systémovém NS (`sys("U","SystemDB")`), ne v datovém.
-/// Defensivní - selhání legacy volání → prázdno.
-///
-/// ⚠️ Vrací **víc řádků** (název, ulice, město, telefon), ne "Dopravce: <název>" jako do 31. 8.
-/// Zákazník uvození nechtěl a adresu ano (#13158, rozhodnutí Jan 31. 8.); tvar je shodný s AD
-/// vývěskou, ať se dvě vývěsky vedle sebe neliší. Tím se to rozešlo se vzorem MHD2 `Export.cls`,
-/// odkud tvar původně pocházel - je to vědomé, ne drift.
-/// `jednimRadkem` = řádek hlavičky linkového JŘ MHD (viz `RadkyDopravce`).
-ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, jednimRadkem As %Boolean = 0) As %String
-{
-    d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .udaje)
-    ret ..RadkyDopravce($g(udaje("NAZEV")), $g(udaje("ULICE")), $g(udaje("MESTO")), $g(udaje("TELEFON")), jednimRadkem)
-}
-
-/// Údaje dopravce linky po položkách: `udaje("NAZEV")`, `("ULICE")`, `("MESTO")`, `("TELEFON")`,
-/// `("EMAIL")`, `("ICO")`. Zdroj viz `PopisDopravce`; selhání legacy volání → prázdné pole.
-ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, ByRef udaje As %String)
-{
-    k udaje
-    try {
-        s sysnmsp = $g(sys("U","SystemDB"))
-        s druh = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DruhDopravceID"))
-        i druh = 0 {
-            // Vlastní firma (MlJFapiFa: 02 název, 03 upřesnění, 07 IČO, 13 ulice, 14 město, 15 PSČ, 23 tel)
-            // ⚠️ E-mail se nebere: jediný na kartě (26) je odesílací adresa EDISONu vedle SMTP serveru
-            // a hesla (KV_DP edison@…, CB_DP no-reply@m-line.cz), ne kontakt pro cestující (Jan 27. 10.).
-            k tmpArr  s err = $$gIdFa^MlJFapi(IdFa, sysnmsp, "", .tmpArr)
-            i 'err {
-                s udaje("NAZEV") = $g(tmpArr("dta",2))
-                i $g(tmpArr("dta",3)) '= "" s udaje("NAZEV") = udaje("NAZEV") _ $g(tmpArr("dta",3))
-                s udaje("ULICE") = $g(tmpArr("dta",13))
-                s udaje("MESTO") = $zstrip($g(tmpArr("dta",15))_" "_$g(tmpArr("dta",14)), "<>W")
-                s udaje("TELEFON") = $g(tmpArr("dta",23))
-                s udaje("ICO") = $g(tmpArr("dta",7))
-            }
-        } elseif druh = 1 {
-            // Cizí dopravce (gDopFa: 1 sídlo, 2 ulice, 3 telefon, 5 IČO, 7 obchodní název, 13 e-mail)
-            s ciziFa = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DopravceCiziFirmaID"))
-            i ciziFa '= "" {
-                k tmpArr  s err = $$gDopFa^JRapi(IdFa, dataDB, ciziFa, "", .tmpArr)
-                i 'err {
-                    s udaje("NAZEV") = $g(tmpArr("dta",7))
-                    s udaje("ULICE") = $g(tmpArr("dta",2))
-                    s udaje("MESTO") = $g(tmpArr("dta",1))
-                    s udaje("TELEFON") = $g(tmpArr("dta",3))
-                    s udaje("EMAIL") = $g(tmpArr("dta",13))
-                    s udaje("ICO") = $g(tmpArr("dta",5))
-                }
-            }
-        }
-    } catch ex { k udaje }
-    q
-}
-
-/// Údaje dopravce po jednotlivých polích pod stejnými klíči jako agendy AD (`ZastavkoveJrAd.DopravceSkalary`),
-/// aby šablona šla mezi agendami přenášet (`B194c` D4). Adresa = ulice, PSČ a obec.
-/// Linka bez dopravce zapíše prázdno, ať pole v datech existuje vždy.
-ClassMethod DopravceSkalary(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, vals As %DynamicObject)
-{
-    d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .udaje)
-    s ulice = $zstrip($g(udaje("ULICE")), "<>W"), mesto = $zstrip($g(udaje("MESTO")), "<>W")
-    d vals.%Set("NAZEV_DOPRAVCE",   $zstrip($g(udaje("NAZEV")), "<>W"))
-    d vals.%Set("ADRESA_DOPRAVCE",  ulice_$s((ulice '= "") && (mesto '= ""):", ", 1:"")_mesto)
-    d vals.%Set("TELEFON_DOPRAVCE", $zstrip($g(udaje("TELEFON")), "<>W"))
-    d vals.%Set("EMAIL_DOPRAVCE",   $zstrip($g(udaje("EMAIL")), "<>W"))
-    d vals.%Set("ICO_DOPRAVCE",     $zstrip($g(udaje("ICO")), "<>W"))
-}
-
-/// Složí dopravce do řádků: název, ulice, sídlo/město, telefon. Prázdné položky se vynechají,
-/// takže u dopravce bez adresy zbyde samotný název jako dřív.
-/// `jednimRadkem` = tvar řádku „Přepravu zajišťuje" linkového JŘ: název, ulice, PSČ obec, „tel. "
-/// oddělené čárkou. Oddělovače a „tel." jako linkový AD (`LinkovyJrAd.NazevDopravce`), pořadí adresy
-/// jako vývěska MHD - do 26. 10. „PSČ obec, ulice" převzaté z AD, kde jsou data členěná jinak (`B194a` T6).
-ClassMethod RadkyDopravce(nazev As %String, ulice As %String, mesto As %String, tel As %String, jednimRadkem As %Boolean = 0) As %String
-{
-    s nazev = $zstrip($g(nazev), "<>W")
-    i nazev = "" q ""
-    s ulice = $zstrip($g(ulice), "<>W"), mesto = $zstrip($g(mesto), "<>W"), tel = $zstrip($g(tel), "<>W")
-    s text = nazev
-    i jednimRadkem {
-        i ulice '= "" s text = text_", "_ulice
-        i mesto '= "" s text = text_", "_mesto
-        i tel '= ""   s text = text_", tel. "_tel
-        q text
-    }
-    i ulice '= "" s text = text_$c(10)_ulice
-    i mesto '= "" s text = text_$c(10)_mesto
-    i tel '= ""   s text = text_$c(10)_"tel: "_tel
-    q text
-}
-
 /// Ukázková data pro live preview: první vývěska první linky výchozí skupiny, stejně jako ostatní
 /// agendy JŘ berou první skutečnou linku. Vymyšlená ukázka se od dat lišila stavbou (neměla označník,
 /// nesla „na znamení", které data nemají) a do PDF z ukázky se tiskla cizí linka.
@@ -2017,7 +1622,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     s err = ""
     try {
         $$$FillParams
-        s skupinaLinek = ..GetDefaultSkupinaLinekID(IdFa, dataDB)
+        s skupinaLinek = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetDefaultSkupinaLinekID(IdFa, dataDB)
         s linkaId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,skupinaLinek,""))
         i linkaId '= "" d ..SestavitVyvesky(.sys, linkaId, 1)
         // Ukázka je jedna stránka; důvod prázdné linky patří tisku, náhled ho říká záložním textem.
@@ -2040,29 +1645,6 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     catch (ex) { $$$CatchErrRest }
     k ^||TiskMHD
     ret $$$OK
-}
-
-/// Razítko typu JŘ podle příznaků linky; při návrhu i výluce vyhrává výluka (stará vývěska
-/// `LinkyPrintFormatMHD.cls:692-693`). Sdílí linkový JŘ MHD, aby táž linka nesla v obou totéž.
-ClassMethod TypJrLinky(IdFa As %String, dataDB As %String, LinkaID As %String) As %String
-{
-    i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"Vyluka")) q "VÝLUKOVÝ"
-    i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"Navrh")) q "NÁVRH"
-    q ""
-}
-
-/// Vrátí ID první nezblokované skupiny linek pro danou IdFa.
-/// Vrátí 0 pokud žádná aktivní skupina není.
-/// Použito jako default pro Instance Picker - v budoucnu nahrazeno parametrem z Edisona.
-ClassMethod GetDefaultSkupinaLinekID(IdFa As %String, dataDB As %String) As %Integer
-{
-    s id = ""
-    for {
-        s id = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id))
-        q:id=""
-        if '+$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Blocked")) ret id
-    }
-    ret 0
 }
 
 }

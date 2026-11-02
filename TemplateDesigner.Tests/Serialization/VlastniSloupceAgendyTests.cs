@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using EDControls;
@@ -27,15 +26,14 @@ public class VlastniSloupceAgendyTests
     public void PriznakAgendySediSTim_ZdaDefiniciCte()
     {
         var priznak = new Regex(@"^Parameter CustomColumns As %Boolean = 1;", RegexOptions.Multiline);
-        var rozpor = Directory.GetFiles(AgendyDir(), "*.cls")
-            .Where(f => Path.GetFileName(f) != "BaseAgenda.cls")
+        var rozpor = ZdrojeAgend.Agendy()
             .Select(f => (Soubor: Path.GetFileName(f), Text: File.ReadAllText(f)))
-            .Where(a => a.Text.Contains("..ParseDefiniceSloupcu(") != priznak.IsMatch(a.Text))
+            .Where(a => a.Text.Contains("Jr.VlastniSloupce).ParseDefiniceSloupcu(") != priznak.IsMatch(a.Text))
             .Select(a => a.Soubor)
             .ToList();
 
         Assert.Empty(rozpor);
-        Assert.Contains("Parameter CustomColumns As %Boolean = 0;", File.ReadAllText(Path.Combine(AgendyDir(), "BaseAgenda.cls")));
+        Assert.Contains("Parameter CustomColumns As %Boolean = 0;", File.ReadAllText(Path.Combine(ZdrojeAgend.Slozka, "BaseAgenda.cls")));
     }
 
     [Fact]
@@ -65,15 +63,4 @@ public class VlastniSloupceAgendyTests
         Assert.Null(vm.CustomColumnsError);
         Assert.Same(definice, vm.ResultCustomColumns);
     }
-
-    private static string AgendyDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-        return Path.Combine(dir!.FullName, "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
 }

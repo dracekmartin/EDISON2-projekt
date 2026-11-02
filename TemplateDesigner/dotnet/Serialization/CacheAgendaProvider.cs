@@ -9,31 +9,28 @@ using TemplateDesigner.Models.Schema;
 namespace TemplateDesigner.Serialization;
 
 /// <summary>
-/// Volá Caché BaseAgenda (GetSchema, GetTableTemplates, GetTableTemplate) přes MLRest.
-/// Nahrazuje CacheDataSchemaProvider - pracuje s JSON formátem místo pipe-delimited stringů.
+/// Volá metody agendy (GetSchema, GetParameters, GetMockData, GetData, výběr instancí) přes MLRest
+/// a čte jejich JSON.
 ///
-/// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.Agendy.BaseAgenda,
-/// nakonfigurovanou v templatedesigner.appsettings.json jako "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd".
+/// Každá agenda má vlastní Caché třídu, přímého potomka ALVA.TemplateDesigner.Agendy.BaseAgenda;
+/// kód agendy a třídu dodá registr agend ze serveru (<c>CacheSchemaWiring.TryCreate</c>).
 ///
 /// ⚠️ Metody jsou ZÁMĚRNĚ SYNCHRONNÍ (`_mlRest.Query`). Pomalé operace (`GetData`, `GetAvailableInstances`,
 /// první `GetSchema`) musí volající obalit `await Task.Run(...)` - R1, jinak zamrzne UI thread.
 /// Rychlé/cachované lookupy (`GetParameters`, opakované `GetSchema`) sync OK. Nová agenda: neplánuj
 /// `GetData` přímo z UI threadu.
 /// </summary>
-public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
+public class CacheAgendaProvider : IDataSchemaProvider
 {
     private readonly MLRest _mlRest;
 
-    /// <summary>agendaCode → cacheClass mapping z appsettings</summary>
+    /// <summary>agendaCode → cacheClass z registru agend</summary>
     private readonly Dictionary<string, string> _classMap;
 
     private readonly List<AgendaInfo> _agendas;
 
     // Cache pro opakované volání
     private readonly Dictionary<string, DataSchema>                  _schemaCache     = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, TableTemplateDefinition?>    _templateCache   = new(StringComparer.OrdinalIgnoreCase);
-    // Klíč: agendaCode nebo "" pro "všechny agendy" (null argument)
-    private readonly Dictionary<string, List<TableTemplateInfo>>     _templatesCache  = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, DataContext?>                _mockDataCache   = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<TemplateParameter>>     _parametersCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, IReadOnlyList<AgendaSkupina>> _skupinyCache   = new(StringComparer.OrdinalIgnoreCase);
@@ -69,14 +66,12 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         OnReadError?.Invoke($"⚠ Databáze - {context} selhalo: {detail}");
     }
 
-    /// <summary>Vyčistí všechny cache - příští čtení (schema/parametry/mock/šablony) půjde znovu
+    /// <summary>Vyčistí všechny cache - příští čtení (schema/parametry/mock) půjde znovu
     /// na Caché. Pro „Obnovit data": data změněná na serveru se projeví bez restartu aplikace.
     /// (GetData cachovaný není - refetch řídí ViewModel voláním GetData znovu.)</summary>
     public void InvalidateCaches()
     {
         _schemaCache.Clear();
-        _templateCache.Clear();
-        _templatesCache.Clear();
         _mockDataCache.Clear();
         _parametersCache.Clear();
         _skupinyCache.Clear();
@@ -140,92 +135,6 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
     }
 
-    // ─── ITableTemplateProvider ───────────────────────────────────────────────
-
-    public IReadOnlyList<TableTemplateInfo> GetAvailableTemplates(string? agendaCode = null)
-    {
-        string cacheKey = agendaCode ?? "";
-        if (_templatesCache.TryGetValue(cacheKey, out var cached))
-            return cached;
-
-        var result = new List<TableTemplateInfo>();
-
-        foreach (var (code, cacheClass) in _classMap)
-        {
-            if (agendaCode is not null &&
-                !code.Equals(agendaCode, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            // Agenda bez Caché třídy (GENERAL) - žádné Fixed šablony
-            if (string.IsNullOrWhiteSpace(cacheClass)) continue;
-
-            try
-            {
-                CVar cvResult = _mlRest.Query(cacheClass, "GetTableTemplates", new CVar());
-
-                if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
-                {
-                    Debug.WriteLine($"[AgendaProvider] GetTableTemplates error: {_mlRest.RestStatus.Message}");
-                    continue;
-                }
-
-                string? json = cvResult["1"]?.Value?.ToString();
-                if (string.IsNullOrEmpty(json)) continue;
-
-                var templates = JsonSerializer.Deserialize<List<TableTemplateInfo>>(json, JsonOpts);
-                if (templates is not null)
-                    result.AddRange(templates);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[AgendaProvider] GetTableTemplates exception ({code}): {ex.Message}");
-            }
-        }
-
-        _templatesCache[cacheKey] = result;
-        return result;
-    }
-
-    public TableTemplateDefinition? GetTemplate(string key)
-    {
-        if (_templateCache.TryGetValue(key, out var cached))
-            return cached;
-
-        // Zkus každou třídu dokud nenajdeme šablonu
-        foreach (var cacheClass in _classMap.Values)
-        {
-            // Agenda bez Caché třídy (GENERAL) - žádné šablony
-            if (string.IsNullOrWhiteSpace(cacheClass)) continue;
-
-            try
-            {
-                var inVar = new CVar();
-                inVar["key"] = new CVar(key);
-
-                CVar result = _mlRest.Query(cacheClass, "GetTableTemplate", inVar);
-
-                if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
-                    continue;
-
-                string? json = result["1"]?.Value?.ToString();
-                if (string.IsNullOrEmpty(json)) continue;
-
-                var def = ParseTableTemplate(json);
-                if (def is not null)
-                {
-                    _templateCache[key] = def;
-                    return def;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[AgendaProvider] GetTableTemplate exception: {ex.Message}");
-            }
-        }
-
-        _templateCache[key] = null;
-        return null;
-    }
 
     // ─── Parametry sestavy ───────────────────────────────────────────────────
 
@@ -302,9 +211,18 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                 };
 
                 if (item["options"] is JsonArray opts)
-                    p.Options = opts.Select(o => o?.GetValue<string>() ?? "")
-                                    .Where(s => s.Length > 0)
+                {
+                    // Klíče a popisky jdou ve dvojici s volbou - prázdná volba se vyřadí i s nimi, jinak by se pořadí rozjelo.
+                    var keys = item["optionKeys"] as JsonArray;
+                    var labels = item["optionLabels"] as JsonArray;
+                    var pairs = opts.Select((o, i) => (Option: o?.GetValue<string>() ?? "",
+                                                       Key: TextAt(keys, i), Label: TextAt(labels, i)))
+                                    .Where(x => x.Option.Length > 0)
                                     .ToList();
+                    p.Options = [.. pairs.Select(x => x.Option)];
+                    if (keys is not null) p.OptionKeys = [.. pairs.Select(x => x.Key)];
+                    if (labels is not null) p.OptionLabels = [.. pairs.Select(x => x.Label)];
+                }
 
                 result.Add(p);
             }
@@ -316,6 +234,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             return [];
         }
     }
+
+    private static string TextAt(JsonArray? pole, int i) =>
+        pole is not null && i < pole.Count ? pole[i]?.GetValue<string>() ?? "" : "";
 
     // ─── Dostupné instance (linky / faktury / ...) ───────────────────────────
 
@@ -388,7 +309,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             CVar result = _mlRest.Query(cacheClass, "GetAvailableSkupiny", new CVar());
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
             {
-                NotifyReadError("načtení skupin linek", _mlRest.RestStatus.Message);
+                NotifyReadError("načtení skupin", _mlRest.RestStatus.Message);
                 return [];
             }
 
@@ -412,7 +333,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
         catch (Exception ex)
         {
-            NotifyReadError("načtení skupin linek", ex.Message);
+            NotifyReadError("načtení skupin", ex.Message);
             return [];
         }
     }
@@ -577,34 +498,33 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     /// ještě nenačteno (volající pak sáhne po syntetických mock datech ze schématu a spustí prefetch).
     /// GENERAL / agenda bez Caché třídy = trvale bez mock dat → true + null.
     /// </summary>
-    public bool TryGetCachedMockData(string agendaCode, string? columnsDefinitionJson, string jazyk,
-        out DataContext? data)
+    public bool TryGetCachedMockData(string agendaCode, TemplateDataInputs dataInputs, out DataContext? data)
     {
         data = null;
         if (string.IsNullOrEmpty(agendaCode)) return true;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass) || string.IsNullOrWhiteSpace(cacheClass))
             return true;
-        return _mockDataCache.TryGetValue(MockCacheKey(agendaCode, columnsDefinitionJson, jazyk), out data);
+        return _mockDataCache.TryGetValue(MockCacheKey(agendaCode, dataInputs), out data);
     }
 
     /// <summary>
-    /// Klíč cache ukázkových dat. Musí obsahovat všechno, na čem vzorek závisí: <b>definici
-    /// sloupců</b> (#13158) i <b>jazyk</b> šablony - server podle něj překládá texty značek.
-    /// Se samotným kódem agendy se po změně vrátil starý vzorek a vypadalo to, že volba nefunguje;
-    /// u jazyka se to projevilo jen bez vybrané linky, takže to působilo nahodile.
+    /// Klíč cache ukázkových dat. Musí obsahovat všechno, na čem vzorek závisí, tedy všechny údaje ze
+    /// šablony, které jdou serveru: <b>definici sloupců</b> (#13158) i <b>jazyk</b> (server podle něj
+    /// překládá texty značek). Se samotným kódem agendy se po změně vrátil starý vzorek a vypadalo to,
+    /// že volba nefunguje; u jazyka se to projevilo jen bez vybrané linky, takže to působilo nahodile.
     /// </summary>
-    internal static string MockCacheKey(string agendaCode, string? columnsDefinitionJson, string jazyk) =>
-        agendaCode + "|" + (columnsDefinitionJson ?? "") + "|" + jazyk;
+    internal static string MockCacheKey(string agendaCode, TemplateDataInputs dataInputs) =>
+        string.Join("|", dataInputs.Values().Select(v => $"{v.Key}={v.Value}").Prepend(agendaCode));
 
     /// <summary>
     /// Volá GetMockData na Caché třídě a naplní cache (i negativně). SYNCHRONNÍ HTTP - volat jen
     /// z pozadí (prefetch při změně agendy), NE z kreslicí cesty. Null = bez mock dat.
     /// Selhání/prázdno se cachuje také (fail-soft) - čistí ho až „Obnovit data" (InvalidateCaches).
     /// </summary>
-    public DataContext? GetMockData(string agendaCode, string? columnsDefinitionJson, string jazyk)
+    public DataContext? GetMockData(string agendaCode, TemplateDataInputs dataInputs)
     {
         if (string.IsNullOrEmpty(agendaCode)) return null;
-        string cacheKey = MockCacheKey(agendaCode, columnsDefinitionJson, jazyk);
+        string cacheKey = MockCacheKey(agendaCode, dataInputs);
         if (_mockDataCache.TryGetValue(cacheKey, out var cached)) return cached;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
 
@@ -613,7 +533,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
         try
         {
-            CVar result = _mlRest.Query(cacheClass, "GetMockData", MockDataInput(columnsDefinitionJson, jazyk));
+            CVar result = _mlRest.Query(cacheClass, "GetMockData", MockDataInput(dataInputs));
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
             { NotifyReadError("načtení mock dat", _mlRest.RestStatus.Message); _mockDataCache[cacheKey] = null; return null; }
 
@@ -631,7 +551,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     }
 
     /// <summary>
-    /// Vstup pro ukázková data. Posílá se <b>definice sloupců</b> ze šablony, aby náhled bez vybrané
+    /// Vstup pro ukázková data: tytéž údaje ze šablony jako do <c>GetData</c>, aby náhled bez vybrané
     /// instance ukázal rozvržení, které si uživatel nastavil.
     /// </summary>
     /// <remarks>
@@ -640,13 +560,11 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     /// s vybranou linkou fungovala (#13158). Vzorek tím nezačne odpovídat reálné lince; jde o to, aby
     /// ukazoval <b>to členění</b>, které je v šabloně.
     /// </remarks>
-    internal static CVar MockDataInput(string? columnsDefinitionJson, string jazyk)
+    internal static CVar MockDataInput(TemplateDataInputs dataInputs)
     {
         var inVar = new CVar();
-        if (!string.IsNullOrEmpty(columnsDefinitionJson))
-            inVar["DEFINICE_SLOUPCU"] = new CVar(columnsDefinitionJson);
-        // Jazyk se posílá vždy, i prázdný - server si na neznámou hodnotu spadne do češtiny sám.
-        inVar["JAZYK"] = new CVar(jazyk);
+        foreach (var (key, value) in dataInputs.Values())
+            inVar[key] = new CVar(value);
         return inVar;
     }
 
@@ -779,88 +697,6 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         "boolean"  => FieldDataType.Boolean,
         "color"    => FieldDataType.Color,
         _          => FieldDataType.Text
-    };
-
-    /// <summary>Internal kvůli testům wire kontraktu předdefinovaného layoutu tabulky.</summary>
-    internal static TableTemplateDefinition? ParseTableTemplate(string json)
-    {
-        try
-        {
-            var node = JsonNode.Parse(json);
-            if (node is null) return null;
-
-            var def = new TableTemplateDefinition();
-
-            var cols = node["columns"]?.AsArray();
-            if (cols is not null)
-                foreach (var c in cols)
-                {
-                    if (c is null) continue;
-                    def.Columns.Add(new TableColumn
-                    {
-                        Header    = c["header"]?.GetValue<string>() ?? "",
-                        Width     = c["width"]?.GetValue<float>() ?? 30f,
-                        WidthMode = c["widthMode"]?.GetValue<string>()?.ToLower() == "percent"
-                                        ? ColumnWidthMode.Percent : ColumnWidthMode.Mm,
-                        Field     = c["field"]?.GetValue<string>(),
-                        Format    = c["format"]?.GetValue<string>(),
-                        Alignment = ParseAlignment(c["alignment"]?.GetValue<string>())
-                    });
-                }
-
-            var rows = node["rows"]?.AsArray();
-            if (rows is not null)
-                foreach (var r in rows)
-                {
-                    if (r is null) continue;
-                    var row = new TableRow
-                    {
-                        BackgroundColor      = r["backgroundColor"]?.GetValue<string>(),
-                        VisibilityExpression = r["visibilityExpression"]?.GetValue<string>()
-                    };
-
-                    var cells = r["cells"]?.AsArray();
-                    if (cells is not null)
-                        foreach (var cell in cells)
-                        {
-                            if (cell is null) continue;
-                            var fontWeight = cell["fontWeight"]?.GetValue<string>();
-                            var textColor  = cell["textColor"]?.GetValue<string>();
-                            var bgColor    = cell["backgroundColor"]?.GetValue<string>();
-                            TextStyle? cellStyle = (fontWeight is not null || textColor is not null || bgColor is not null)
-                                ? new TextStyle
-                                {
-                                    Bold = fontWeight == "Bold" ? true : null,
-                                    TextColor = textColor,
-                                    BackgroundColor = bgColor,
-                                }
-                                : null;
-
-                            row.Cells.Add(new TableCell
-                            {
-                                Content = cell["content"]?.GetValue<string>() ?? "",
-                                Format  = cell["format"]?.GetValue<string>(),
-                                Style   = cellStyle,
-                            });
-                        }
-
-                    def.Rows.Add(row);
-                }
-
-            return def;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[AgendaProvider] ParseTableTemplate exception: {ex.Message}");
-            return null;
-        }
-    }
-
-    private static TextHorizontalAlignment ParseAlignment(string? s) => s?.ToLower() switch
-    {
-        "center" => TextHorizontalAlignment.Center,
-        "right"  => TextHorizontalAlignment.Right,
-        _        => TextHorizontalAlignment.Left
     };
 }
 

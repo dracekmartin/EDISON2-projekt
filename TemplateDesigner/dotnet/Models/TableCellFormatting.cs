@@ -103,15 +103,7 @@ public sealed class TableCellFormatting(
     /// jen to, co uživatel opravdu změní; jinak by potvrzení formuláře odpojilo buňku od tabulky.
     /// Čte se **reflexí přes vyřešený styl**, takže nové pole stylu se propíše samo.
     /// </summary>
-    public Dictionary<string, string> InheritedFormValues()
-    {
-        var resolved = ActiveStyle();
-        var values = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var property in typeof(ResolvedTextStyle).GetProperties())
-            if (property.GetIndexParameters().Length == 0)
-                values["Style." + property.Name] = ElementPropertyAccessor.ToFormValue(property.GetValue(resolved));
-        return values;
-    }
+    public Dictionary<string, string> InheritedFormValues() => ElementPropertyAccessor.FormValues(ActiveStyle(), "Style.");
 
     /// <summary>
     /// Vlastnosti aktivní buňky pro formátovací lištu. Bez nich je lišta u tabulky prázdná a jedinou
@@ -121,20 +113,20 @@ public sealed class TableCellFormatting(
     /// </summary>
     public List<PropertyDescriptor> Descriptors()
     {
-        BoolPropertyDescriptor Toggle(string label, Func<ResolvedTextStyle, bool> get, Action<TextStyle, bool> set) =>
+        BoolPropertyDescriptor Toggle(string label, FormatToolbarSlot slot, Func<ResolvedTextStyle, bool> get, Action<TextStyle, bool> set) =>
             new()
             {
-                Label = label, Group = "Font",
+                Label = label, Group = "Font", ToolbarSlot = slot,
                 Get = () => get(ActiveStyle()),
                 Set = v => Apply(label, s => set(s, v)),
                 MakeCommand = v => Apply(label, s => set(s, (bool)v!))
             };
 
-        EnumPropertyDescriptor Align(string label, (string Label, object Value)[] options,
+        EnumPropertyDescriptor Align(string label, FormatToolbarSlot slot, (string Label, object Value)[] options,
             Func<ResolvedTextStyle, object> get, Action<TextStyle, object> set) =>
             new()
             {
-                Label = label, Group = "Zarovnání", Options = options,
+                Label = label, Group = "Zarovnání", Options = options, ToolbarSlot = slot,
                 Get = () => get(ActiveStyle()),
                 Set = v => Apply(label, s => set(s, v)),
                 MakeCommand = v => Apply(label, s => set(s, v!))
@@ -142,13 +134,13 @@ public sealed class TableCellFormatting(
 
         return
         [
-            Toggle("Tučné",       s => s.Bold,          (s, v) => s.Bold = v),
-            Toggle("Kurzíva",     s => s.Italic,        (s, v) => s.Italic = v),
-            Toggle("Podtržení",   s => s.Underline,     (s, v) => s.Underline = v),
-            Toggle("Přeškrtnutí", s => s.Strikethrough, (s, v) => s.Strikethrough = v),
-            Align(EnumPropertyDescriptor.LabelZarovnaniVodorovne, EnumPropertyDescriptor.HAlignOptions,
+            Toggle("Tučné",       FormatToolbarSlot.Bold,          s => s.Bold,          (s, v) => s.Bold = v),
+            Toggle("Kurzíva",     FormatToolbarSlot.Italic,        s => s.Italic,        (s, v) => s.Italic = v),
+            Toggle("Podtržení",   FormatToolbarSlot.Underline,     s => s.Underline,     (s, v) => s.Underline = v),
+            Toggle("Přeškrtnutí", FormatToolbarSlot.Strikethrough, s => s.Strikethrough, (s, v) => s.Strikethrough = v),
+            Align(EnumPropertyDescriptor.LabelZarovnaniVodorovne, FormatToolbarSlot.HorizontalAlignment, EnumPropertyDescriptor.HAlignOptions,
                 s => s.HAlign, (s, v) => s.HAlign = (TextHorizontalAlignment)v),
-            Align(EnumPropertyDescriptor.LabelZarovnaniSvisle, EnumPropertyDescriptor.VAlignOptions,
+            Align(EnumPropertyDescriptor.LabelZarovnaniSvisle, FormatToolbarSlot.VerticalAlignment, EnumPropertyDescriptor.VAlignOptions,
                 s => s.VAlign, (s, v) => s.VAlign = (TextVerticalAlignment)v),
         ];
     }

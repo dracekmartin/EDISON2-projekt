@@ -22,17 +22,17 @@ public static class KontrolaVystupu
     /// </summary>
     /// <remarks>Do 23. 10. byla jen textem ve stavovém řádku, takže se nedala prokliknout a v tiskovém
     /// okně ji kontrola neukázala vůbec (rozhodnutí Jan: patří mezi hlášky, červeně).</remarks>
-    public static Hlaseni LinkaBezDat(string linka, string? duvod) =>
+    public static Hlaseni LinkaBezDat(string linka, string? duvod, NazevInstance nazev) =>
         new(ZavaznostHlaseni.Chyba, linka, "nemá data, nevytiskne se",
-            string.IsNullOrWhiteSpace(duvod) ? "zkontrolujte jízdní řád linky" : duvod) { Linka = linka };
+            string.IsNullOrWhiteSpace(duvod) ? $"zkontrolujte data {nazev.Genitiv}" : duvod) { Linka = linka };
 
     /// <summary>Linka, kterou zastavila chyba v jejích datech - agenda řekne, co opravit (`B194a` C11).</summary>
     public static Hlaseni LinkaChybaDat(string linka, string text) =>
         new(ZavaznostHlaseni.Chyba, linka, "nejde vytisknout, tisk se zastavil", text) { Linka = linka };
 
     /// <summary>Hlášky linek, které nedaly data - před hláškami ostatních linek.</summary>
-    public static List<Hlaseni> SBezDat(IReadOnlyList<(string Linka, string? Duvod)>? bezDat, IEnumerable<Hlaseni> ostatni) =>
-        [.. (bezDat ?? []).Select(v => LinkaBezDat(v.Linka, v.Duvod)), .. ostatni];
+    public static List<Hlaseni> SBezDat(IReadOnlyList<(string Linka, string? Duvod)>? bezDat, IEnumerable<Hlaseni> ostatni, NazevInstance nazev) =>
+        [.. (bezDat ?? []).Select(v => LinkaBezDat(v.Linka, v.Duvod, nazev)), .. ostatni];
 
     /// <summary>Stránky dat po linkách, v pořadí výběru.</summary>
     public static List<(string Linka, IReadOnlyList<DataContext> Stranky)> PoLinkach(IReadOnlyList<DataContext> stranky) =>
@@ -56,7 +56,7 @@ public static class KontrolaVystupu
     ];
 
     /// <summary>Sloučí hlášky linek: stejná hláška z víc linek = jeden řádek, který je jmenuje.</summary>
-    public static List<Hlaseni> Sluc(Template template, IReadOnlyList<(string Linka, List<Hlaseni> Hlaseni)> linky)
+    public static List<Hlaseni> Sluc(Template template, IReadOnlyList<(string Linka, List<Hlaseni> Hlaseni)> linky, NazevInstance nazev)
     {
         var vysledek = linky
             .SelectMany(l => l.Hlaseni.Select(h => (l.Linka, H: h)))
@@ -66,7 +66,7 @@ public static class KontrolaVystupu
                 var tyto = g.Select(n => n.Linka).Distinct().ToList();
                 return g.Key with
                 {
-                    Kde = PredponaLinek(tyto, linky.Count) + g.Key.Kde,
+                    Kde = PredponaLinek(tyto, linky.Count, nazev) + g.Key.Kde,
                     Linka = tyto.FirstOrDefault(t => t.Length > 0),
                 };
             })
@@ -80,7 +80,7 @@ public static class KontrolaVystupu
     /// sdílí cache prvků s náhledem -, proto se mezi linkami pustí kreslení, jinak by průběh stál.
     /// </summary>
     public static async Task<List<Hlaseni>> ZkontrolujAsync(Template template, IReadOnlyList<DataContext> stranky,
-        Func<IReadOnlyList<DataContext>, IReadOnlyList<Hlaseni>> sazba, Action<int, int, string>? prubeh = null)
+        Func<IReadOnlyList<DataContext>, IReadOnlyList<Hlaseni>> sazba, NazevInstance nazev, Action<int, int, string>? prubeh = null)
     {
         var linky = PoLinkach(stranky);
         var vysledky = new List<(string Linka, List<Hlaseni> Hlaseni)>();
@@ -91,7 +91,7 @@ public static class KontrolaVystupu
             vysledky.Add((linky[i].Linka, ZLinky(template, linky[i].Stranky, sazba)));
         }
         prubeh?.Invoke(linky.Count, linky.Count, "");
-        return Sluc(template, vysledky);
+        return Sluc(template, vysledky, nazev);
     }
 
     /// <summary>„2 chyby, 1 upozornění, 3 informace".</summary>
@@ -108,18 +108,16 @@ public static class KontrolaVystupu
         return string.Join(", ", casti);
     }
 
-    public static string Linek(int n) => $"{n} {(n == 1 ? "linka" : n <= 4 ? "linky" : "linek")}";
-
     /// <summary>Kontrola naráz - pro testy a místa, kde se průběh neukazuje.</summary>
     public static List<Hlaseni> Souhrn(Template template, IReadOnlyList<DataContext> stranky,
-        Func<IReadOnlyList<DataContext>, IReadOnlyList<Hlaseni>> sazba) =>
-        Sluc(template, [.. PoLinkach(stranky).Select(l => (l.Linka, ZLinky(template, l.Stranky, sazba)))]);
+        Func<IReadOnlyList<DataContext>, IReadOnlyList<Hlaseni>> sazba, NazevInstance nazev) =>
+        Sluc(template, [.. PoLinkach(stranky).Select(l => (l.Linka, ZLinky(template, l.Stranky, sazba)))], nazev);
 
     /// <summary>Kterých linek se hláška týká; u jediné vybrané linky nic (je jasné, o kterou jde).</summary>
-    private static string PredponaLinek(List<string> tyto, int celkem)
+    private static string PredponaLinek(List<string> tyto, int celkem, NazevInstance nazev)
     {
         if (celkem <= 1) return "";
-        if (tyto.Count == celkem) return $"Všechny linky ({celkem}) · ";
+        if (tyto.Count == celkem) return $"{nazev.Shoda("Všechny", "Všechny", "Všichni", "Všechna")} {nazev.Mnozne} ({celkem}) · ";
         var jmena = tyto.Where(t => t.Length > 0).Take(3).ToList();
         string dalsi = tyto.Count > jmena.Count ? $" a {tyto.Count - jmena.Count} dalších" : "";
         return $"{string.Join(", ", jmena)}{dalsi} · ";

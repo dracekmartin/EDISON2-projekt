@@ -6,7 +6,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Serialization;
 
 /// <summary>
-/// Popisek nastavení v programu (deskriptor - úprava víc prvků, protokol importu z PDF, asistent)
+/// Popisek nastavení v programu (deskriptor - formátovací lišta, protokol importu z PDF, asistent)
 /// musí být tentýž jako ve formuláři prvku, který uživatel vidí nejčastěji (`B194` E11, plán G6).
 /// Do 26. 10. se rozešly („Zalamování" × „Zalamovat řádky", „Výplň" × „Barva pozadí", „Šířka sl.
 /// hodin" × „Šířka sloupce hodin").

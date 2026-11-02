@@ -28,7 +28,7 @@ public partial class PrintDialog : Window
         vm.RequestApplyVisibility = ApplyVisibility;
         // Hlášky kontroly ve vlastním okně - nezavírá tiskové, jde mít otevřené obojí.
         vm.RequestShowHlaseni = (nadpis, hlaseni) =>
-            new KontrolaVysledkuDialog(new KontrolaVysledkuDialogViewModel(nadpis, hlaseni)) { Owner = this }.Show();
+            new KontrolaVysledkuDialog(new KontrolaVysledkuDialogViewModel(nadpis, hlaseni) { Nazev = vm.Nazev }) { Owner = this }.Show();
 
         // Parametry sestavy + export pole renderuje EDInputForm z Caché (AgendaParams) - schéma
         // řídí agenda přes GetParameters, AgendaParams přidává universální skupinu „Export".

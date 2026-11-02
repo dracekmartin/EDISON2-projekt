@@ -1,3 +1,5 @@
+using TemplateDesigner.Models;
+
 namespace TemplateDesigner.Serialization;
 
 /// <summary>
@@ -25,6 +27,10 @@ namespace TemplateDesigner.Serialization;
 ///
 /// <para><see cref="VariantyTras"/> = agenda posílá u zastávek časy variant tras; jinak Seznam zastávek
 /// sloupec „Varianty tras" nenabízí (zůstal by prázdný). Default true = starší Caché bez klíče jako dřív.</para>
+///
+/// <para><see cref="RozdilyVerzi"/> = agenda posílá dvě verze linky s vyznačenými rozdíly; jen u ní nabízí
+/// Tabulka spojů a Poznámky barvy rozdílů. Default false: starší Caché bez klíče barvy rozdílů neukáže ani
+/// u rozdílového JŘ - ten se uživatelům nenabízí a PDF pro porovnání linek formulář nepotřebuje.</para>
 /// </summary>
 public record AgendaRegistryEntry(
     string Code,
@@ -40,8 +46,16 @@ public record AgendaRegistryEntry(
     string VariantLabel = "",
     bool Released = true,
     bool CustomColumns = true,
-    bool VariantyTras = true)
+    bool VariantyTras = true,
+    bool RozdilyVerzi = false,
+    string InstanceTvary = "",
+    string InstanceRod = "")
 {
+    /// <summary>Název instance pro texty návrháře (<see cref="NazevInstance"/>). <see cref="InstanceLabel"/>
+    /// a <see cref="InstanceLabelPlural"/> server posílá jen pro starší návrháře; starší server bez tvarů
+    /// dá obecné „instance" (server se nasazuje dřív než klient).</summary>
+    public NazevInstance Nazev => NazevInstance.Z(InstanceTvary, InstanceRod);
+
     /// <summary>Label agendy s fallbackem pro starší Caché bez dvouosých klíčů (→ kombinovaný Label).</summary>
     public string EffectiveAgendaLabel => AgendaLabel is { Length: > 0 } ? AgendaLabel : Label;
 
@@ -56,6 +70,12 @@ public record AgendaRegistryEntry(
 }
 
 /// <summary>
+/// Výsledek načtení registru. Při <see cref="Failure"/> má <see cref="Agendas"/> jen GENERAL: návrhář
+/// běží dál bez agend z Caché a volající podle chyby rozhodne, co uživateli řekne.
+/// </summary>
+public sealed record AgendaRegistryLoad(IReadOnlyList<AgendaRegistryEntry> Agendas, Exception? Failure = null);
+
+/// <summary>
 /// Per-firma registr dostupných agend v TemplateDesigneru. Od 5/2026 nahrazuje
 /// `appsettings.json` agendas[] auto-discovery z Caché `BaseAgenda` subclasses
 /// (`ALVA.TemplateDesigner.API.AgendyRegistr.ListAgendy`).
@@ -65,6 +85,6 @@ public record AgendaRegistryEntry(
 /// </summary>
 public interface IAgendaRegistry
 {
-    /// <summary>Vrátí dostupné agendy včetně GENERAL. Async - volá MLRest na Caché.</summary>
-    Task<IReadOnlyList<AgendaRegistryEntry>> ListAsync();
+    /// <summary>Vrátí dostupné agendy včetně GENERAL. Async - volá MLRest na Caché. Nehází.</summary>
+    Task<AgendaRegistryLoad> ListAsync();
 }

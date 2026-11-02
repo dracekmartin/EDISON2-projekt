@@ -59,7 +59,7 @@ Method TestNeuplnyPripojNedostaneRadek()
 {
 	do ..SetupSys(.sys)
 	if '..Zmer(.sys, ..#LINKANEUPLNA, .sRadkem, .bezRadku, .vadny) {
-		do $$$AssertTrue(1, "firma linky s neúplnými přípoji tu není - přeskočeno")
+		do $$$AssertSkipped("firma linky s neúplnými přípoji tu není - přeskočeno")
 		quit
 	}
 	// Doklad, že test měl co měřit - kdyby linka přípoje ztratila, prošel by naprázdno.
@@ -83,12 +83,12 @@ Method TestLinkaProTiskPrebijeCisloLinky()
 	set popis = ..#LINKASPROTISK
 	set db = $piece(popis,"~",1), sku = $piece(popis,"~",2), lin = $piece(popis,"~",3)
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "firma linky s vlastní linkou pro tisk tu není - přeskočeno")
+		do $$$AssertSkipped("firma linky s vlastní linkou pro tisk tu není - přeskočeno")
 		quit
 	}
 	set page = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).BuildStrankaLinky(db, sku, lin, "T", 2)
 	if page = "" {
-		do $$$AssertTrue(1, "stránka se nesestavila - přeskočeno")
+		do $$$AssertSkipped("stránka se nesestavila - přeskočeno")
 		quit
 	}
 
@@ -106,7 +106,7 @@ Method TestLinkaProTiskPrebijeCisloLinky()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "linka nemá přípoje s řádkem - přeskočeno")
+		do $$$AssertSkipped("linka nemá přípoje s řádkem - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(surovych, 0, "u "_surovych_" z "_overeno_" přípojů se tiskne číslo vlaku místo označení linky - vlastní ""linka pro tisk"" se neuplatnila")
@@ -120,7 +120,7 @@ Method TestPripojNeseDruhDopravy()
 	set popis = ..#LINKAZDRAVA
 	set db = $piece(popis,"~",1), sku = $piece(popis,"~",2), lin = $piece(popis,"~",3)
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "firma tu není - přeskočeno")
+		do $$$AssertSkipped("firma tu není - přeskočeno")
 		quit
 	}
 	set page = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).BuildStrankaLinky(db, sku, lin, "T", 2)
@@ -148,7 +148,7 @@ Method TestZdravyPripojRadekDostane()
 {
 	do ..SetupSys(.sys)
 	if '..Zmer(.sys, ..#LINKAZDRAVA, .sRadkem, .bezRadku, .vadny) {
-		do $$$AssertTrue(1, "firma linky se zdravými přípoji tu není - přeskočeno")
+		do $$$AssertSkipped("firma linky se zdravými přípoji tu není - přeskočeno")
 		quit
 	}
 	do $$$AssertTrue(sRadkem > 0, "zdravý přípoj musí dostat řádek - jinak filtr bere i to, co brát nemá")

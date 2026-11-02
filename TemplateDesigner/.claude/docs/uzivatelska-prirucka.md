@@ -64,7 +64,7 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 - **Soubor** - Nová šablona, Otevřít, Uložit
 - **Upravit** - Zpět, Vpřed
 - **Stránka a sekce** - Vlastnosti stránky, Přidat sekci (rozbalovací nabídka presetů)
-- **Prvky** - paleta prvků: Text, Obdélník, Čára, Obrázek, Kód (QR, čárový), Tabulka (z dat), Tabulka (pevná) (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
+- **Prvky** - paleta prvků: Text, Obdélník, Čára, Obrázek, Kód (QR, čárový), Tabulka s řádky z dat, Pevná tabulka (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
 - **Vrstva** - Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu
 - **Zarovnat** - Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky)
 - **Mřížka plátna a přichytávání** - přepínač mřížky plátna, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání
@@ -101,8 +101,8 @@ Zleva doprava:
   Přepočítat šablonu na jinou velikost (podnabídka procent) · Kopírovat styl · Vložit styl ·
   Použít výchozí font u všech prvků
 - **Zobrazit** - Mřížka plátna, Přichytit k mřížce plátna, Přichytit k prvkům, Záhlaví sekcí,
-  Pravítka, Panel sekcí, Živý náhled (zaškrtávací položky)
-- **Nástroje** - Změnit agendu… · Šablony v databázi…
+  Pravítka, Levý panel (Ctrl+B), Živý náhled (zaškrtávací položky)
+- **Nástroje** - Změnit agendu… · Šablony v databázi… · Úvodní obrazovka
 - **Nápověda** - Klávesové zkratky a ovládání (F1) - s fulltextovým hledáním (Ctrl+F)
 
 Titulek okna má formát `[Agenda · Varianta] [DB nebo neuloženo] Název šablony [*]`, např.
@@ -111,6 +111,13 @@ Titulek okna má formát `[Agenda · Varianta] [DB nebo neuloženo] Název šabl
 ---
 
 ## 3. Práce se šablonou
+
+### Úvodní obrazovka
+
+Po spuštění bez vybrané linky ukáže návrhář přes prázdnou stránku úvodní obrazovku.
+V části „Pokračovat" jsou šablony, se kterými jste naposledy pracovali.
+Pod ní je vybraná agenda a její šablony: šablony vaší firmy a na konci výchozí šablona M-line (s logem M-line), která se otevře jako kopie a uložíte ji jako svou.
+Obrazovka zmizí s první úpravou, zavřete ji také klávesou Esc nebo křížkem; znovu ji otevřete v menu `Nástroje → Úvodní obrazovka`.
 
 ### Nová šablona
 `Soubor → Nová šablona` (Ctrl+N). Nová šablona obsahuje dvě výchozí sekce, **Záhlaví** a **Obsah** -
@@ -121,7 +128,7 @@ kdykoli přes `Nástroje → Změnit agendu` (Ctrl+Shift+A).
 
 ### Agenda a varianta - nad jakými daty šablona běží
 Každá šablona je vázaná na **agendu** (jakou sestavu tvoříte - např. Zastávkový jízdní řád,
-Faktury, Obecná (bez dat)) a u jízdních řádů navíc na **variantu dat** (odkud data jsou - **AD** = linková
+Linkový jízdní řád, Obecná (bez dat)) a u jízdních řádů navíc na **variantu dat** (odkud data jsou - **AD** = linková
 doprava z hlavního JŘ modulu, **MHD** = městský modul). Kombinace určuje, jaká **databázová pole**
 a jaké **specializované prvky** máte k dispozici.
 
@@ -154,6 +161,8 @@ databázového úložiště:
 
 - `Soubor → Importovat ze souboru…` - otevře soubor JSON; šablona se pak chová jako nová
   neuložená.
+  Otevře se i se svou agendou, stejně jako šablona z databáze.
+  Návrhář soubor odmítne, když nejde o šablonu, její agendu nezná nebo šablona obsahuje prvky jiné agendy; rozdělaná šablona pak zůstane otevřená.
 - `Soubor → Exportovat do souboru…` - uloží aktuální stav do souboru, ale **nemění**
   původ šablony (pořád zůstává vázaná na databázi, pokud odtamtud byla otevřená).
 - Hodí se pro poslání šablony e-mailem kolegovi nebo dopravci.
@@ -246,12 +255,12 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
   prvek malý, aplikace po tisku napíše konkrétní čísla („QR kód je 10 mm, pro spolehlivé čtení
   potřebuje 13,2 mm"). Kód bez obsahu (pole z dat bez hodnoty) se netiskne - rámeček „QR" je jen
   v návrháři
-- **Tabulka (z dat)** - řádky se generují automaticky z datové kolekce (viz níže)
-- **Tabulka (pevná)** - mřížku vyplňujete ručně přímo na plátně; náhrada za skládání hlaviček
+- **Tabulka s řádky z dat** - řádků je tolik, kolik je záznamů v datové kolekci (viz níže)
+- **Pevná tabulka** - řádky i obsah zadáváte sami přímo na plátně; náhrada za skládání hlaviček
   a bloků z jednotlivých textových prvků (viz níže)
 - **Prvky jízdního řádu** - specializované prvky pro tisk JŘ - objeví se v paletě jen u agend jízdních řádů; viz část II
 
-### Dynamická tabulka
+### Tabulka s řádky z dat
 Sloupce definujete jednou, řádky doplní systém z vybrané datové kolekce (počet řádků se odvíjí
 od dat). Vlastnosti:
 - **Data** - **Zdroj dat**, řazení (**Řadit podle** a **Směr řazení**, **Potom podle** a **Směr druhého řazení**), **Nejméně řádků** a **Nejvýš řádků**
@@ -261,7 +270,7 @@ od dat). Vlastnosti:
 
 Sloupce se upravují tlačítkem **Upravit sloupce…**. Buňka může obsahovat souhrnný výraz - viz kap. 8.
 
-Editor sloupců (okno „Vlastnosti - Tabulka (z dat)") má záložky **Obecné** a **Sloupce**: přidání/
+Editor sloupců (okno „Vlastnosti - Tabulka s řádky z dat") má záložky **Obecné** a **Sloupce**: přidání/
 odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce prvku",
 a pro každý sloupec záhlaví, šířku, mapované datové pole a plný editor stylu (viz kap. 7).
 
@@ -337,8 +346,7 @@ zobrazí jako samostatná úroveň.
 ### Přichytávání
 Tři nezávislé vrstvy, ovládané z lišty nástrojů:
 - **Mřížka plátna** - zobrazí se tlačítkem s ikonou mřížky, přichytávání k ní zapíná tlačítko „M";
-  velikost 0,2–10 mm (výchozí **1 mm**, přichytávání je výchozí **zapnuté** - jemný krok drží
-  pozice čisté, aniž by omezoval).
+  velikost 0,2–10 mm (výchozí **5 mm**, přichytávání k mřížce je výchozí **vypnuté**).
 - **Přichytávání k objektům** - tlačítko „O" (výchozí zapnuto); prvek se přichytává k hranám a
   středům jiných prvků i k okrajům sekce, s vizuálními vodítky.
 - **Mezera pro přichytávání** - 0–10 mm (výchozí 2 mm); prvek se umí přichytit
@@ -481,7 +489,7 @@ Text prvku i buňky/záhlaví tabulky může mít **víc řádků**. Nový řád
 
 Typické využití je **dvouřádkové (dvojjazyčné) záhlaví sloupce** - první řádek česky, druhý
 cizojazyčně (např. „Zastávka" / „Station"). U tabulkových prvků se **výška řádku záhlaví
-automaticky přizpůsobí** počtu řádků, takže se text vždy vejde. U Tabulky z dat je to pole
+automaticky přizpůsobí** počtu řádků, takže se text vždy vejde. U Tabulky s řádky z dat je to pole
 „Nejmenší výška" ve skupině Záhlaví - záhlaví se zvětší, jen když se řádky do ní nevejdou.
 Zalomení funguje v textových prvcích i v buňkách, řádek s daty se ale nezvětší: víc řádků se
 vejde jen do dost vysokého řádku.
@@ -497,7 +505,7 @@ Podporované operátory: `&&` (a zároveň), `||` (nebo), `!` (negace), `==`, `!
 upozornění, ať víte, že to potřebuje opravit.
 
 ### Agregace v tabulkách
-V obsahu buňky dynamické tabulky lze počítat souhrny: `SUM({POLE})`, `COUNT()`, `AVG({POLE})`,
+V obsahu buňky tabulky s řádky z dat lze počítat souhrny: `SUM({POLE})`, `COUNT()`, `AVG({POLE})`,
 `MIN({POLE})`, `MAX({POLE})`.
 
 ### Jazyk šablony (lokalizace)
@@ -714,22 +722,11 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
 - **Parametr „Rozdělení sloupců podle platnosti"** (záložka Parametry / tiskový dialog) - je to
   **pohled na definici sloupců uložených v šabloně a zároveň její ovladač**: ukazuje název vzoru,
   kterému vaše definice odpovídá, „Automaticky (dle linky)", když žádnou nemáte, nebo „Vlastní
-  sloupce", když jste si ji poskládali po svém. Přepnutím parametru se definice v šabloně přepíše
-  na zvolený vzor. Vzory: Pracovní-Sobota-Neděle+svátky / Pracovní-víkend / Prázdniny (mimo+o
-  prázdninách)-víkend / Prázdniny (mimo+o prázdninách)-Sobota-Neděle+svátky.
-- **Varianty tras** (sloupec „Varianty tras" na prvku Seznam zastávek - zapíná se v jeho nastavení
-  na záložce Sloupce; **z výroby je vypnutý**; zatím jen u AD - vývěska MHD varianty nepočítá a sloupec
-  nenabízí) - když spoje jedou z dané zastávky různými trasami,
-  dostane každá trasa vlastní časový sloupec. Varianta = jedna trasa (sled obsluhovaných zastávek);
-  v jejím sloupci je **průběh jedné skutečné trasy** - té s delší jízdní dobou, takže údaj odpovídá
-  spoji, který opravdu jede. Počet sloupců je dynamický (tolik, kolik je tras v datech), takže
-  **jedna položka v seznamu sloupců se v tisku rozpadne na víc sloupců**; šířka a styl, které u ní
-  nastavíte, platí pro každý z nich. **Sloupec dostane i linka s jedinou variantou** - stejná trasa
-  všech spojů je taky varianta, takže vývěska postavená na variantách vypadá všude stejně.
-  Řazení a písmenné označení variant se nastavuje parametry sestavy (viz níže).
-  ⚠️ Sloupce „Varianty tras" a „Čas jízdy" ukazují **týž údaj dvěma způsoby**, takže zapnutý má být
-  vždy jen jeden z nich. Proto je variantní z výroby vypnutý; ve vašich hotových šablonách zůstává
-  tak, jak jste si ho nastavili.
+  rozložení", když jste si ji poskládali po svém. Přepnutím parametru se definice v šabloně přepíše
+  na zvolený vzor. Vzory: *Pracovní dny / Soboty / Neděle+svátky*, *Pracovní dny / Soboty+Neděle+svátky*,
+  *Pracovní dny mimo prázdniny / o prázdninách / Soboty+Neděle+svátky* a *Pracovní dny mimo prázdniny /
+  o prázdninách / Soboty / Neděle+svátky*.
+  Stejně se jmenují i v linkovém JŘ AD.
 - **CIS názvy** - alternativní, zkrácený název zastávky/směru z centrálního číselníku (CIS) vedle
   plného lokálního názvu.
 - **Dopravce vč. adresy** - pokud pro dopravce není nastavený zkrácený název, vypíše se plný tvar
@@ -742,6 +739,39 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   **prvního** z nich. Stejná pole mají všechny agendy jízdních řádů, šablonu tak jde přenést.
   U MHD zůstává *E-mail dopravce* prázdný, když linku obsluhuje vaše vlastní firma - karta firmy
   nemá kontaktní e-mail, jen adresu, ze které EDISON odesílá poštu.
+- **Stránka pro každé stanoviště** (parametr ve skupině „Obecné") - zastávka
+  obsluhovaná z více stanovišť se vytiskne jako **samostatná vývěska pro každé z nich**, vždy jen
+  s odjezdy spojů, které z něj jedou; číslo stanoviště je i v titulku stránky. Hodí se, když vývěsku
+  fyzicky věšíte na konkrétní sloupek. Výchozí vypnuto (jedna vývěska se všemi odjezdy). Zda je
+  číslem stanoviště označník z trasy, nebo sloupek z číselníku, řídí parametr **Číslo stanoviště podle**.
+- **Čas jízdy podle nastavení linky** (parametr ve skupině „Seznam zastávek", jen AD; ukáže se, když
+  šablona tiskne sloupec „Čas jízdy").
+  Linka, která má v jízdních řádech vypnuté automatické generování časových průběhů tras, dostane do
+  sloupce „Čas jízdy" minuty zadané ručně u trasy linky, stejně jako ve starém tisku.
+  Ostatní linky mají čas spočítaný z jízdních dob spojů.
+  Výchozí vypnuto: čas se počítá z jízdních dob u všech linek, i u těch, které ruční minuty nemají vyplněné.
+- Doplňkový tiskový parametr: **„Schovat poznámky v rozsahu „nepoznámkovat“"** (Ruční komentáře /
+  Automatické rozdíly tras / Obojí).
+
+#### Varianty tras (AD i MHD)
+
+- **Varianty tras** (sloupec „Varianty tras" na prvku Seznam zastávek - zapíná se v jeho nastavení
+  na záložce Sloupce; **z výroby je vypnutý**) - když spoje jedou z dané zastávky různými trasami,
+  dostane každá trasa vlastní časový sloupec. Varianta = jedna trasa (sled obsluhovaných zastávek);
+  v jejím sloupci je **průběh jednoho skutečného spoje** - toho s nejdelší jízdní dobou, takže údaj
+  odpovídá spoji, který opravdu jede. Počet sloupců je dynamický (tolik, kolik je tras v datech), takže
+  **jedna položka v seznamu sloupců se v tisku rozpadne na víc sloupců**; šířka a styl, které u ní
+  nastavíte, platí pro každý z nich. **Sloupec dostane i linka s jedinou variantou** - stejná trasa
+  všech spojů je taky varianta, takže vývěska postavená na variantách vypadá všude stejně.
+  Řazení a písmenné označení variant se nastavuje parametry sestavy (viz níže).
+  ⚠️ Sloupce „Varianty tras" a „Čas jízdy" ukazují **týž údaj dvěma způsoby**, takže zapnutý má být
+  vždy jen jeden z nich. Proto je variantní z výroby vypnutý; ve vašich hotových šablonách zůstává
+  tak, jak jste si ho nastavili.
+- **Rozdíl u MHD:** v modulu MHD má jízdní doby každý spoj zvlášť, takže spoje jedné trasy můžou jet
+  různě dlouho (třeba ve špičce).
+  Sloupec varianty proto ukazuje spoj s nejdelší jízdou, kdežto sloupec „Čas jízdy" počítá jízdní
+  doby z trasy linky v modulu MHD.
+  Starý tisk MHD varianty tras neměl.
 - **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"). Ukážou se, jen když má
   šablona zapnutý sloupec „Varianty tras" - bez něj nemají na tisk vliv:
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
@@ -759,7 +789,10 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     u minuty je nejdřív rozdíl trasy, pak varianta („17BA" = rozdíl B, varianta A).
     Rozdíl trasy říká **kudy** spoj jede jinak a vysvětluje ho text v legendě; varianta říká,
     **podle kterého sloupce časů** se řídí, a vysvětluje ji záhlaví toho sloupce.
-  - **Která písmena se použijí, si určíte u linky** (EDISON → linka → Nastavení k tisku → záložka
+  - **Ve vývěsce MHD** jsou písmena variant zatím vždy výchozí `A, D, L, M, N, P, T, Y`.
+    Rozdíly tras MHD mají z výroby malá písmena a-z, takže se u minuty může potkat písmeno rozdílu
+    a varianty, které se liší jen velikostí (rozdíl „a", varianta „A").
+  - **Která písmena se použijí, si u AD určíte u linky** (EDISON → linka → Nastavení k tisku → záložka
     Odjezdník MHD). „Volné značky" jsou písmena rozdílů tras, „Volné značky pro minutové trasy
     spojů" písmena variant; bere se z nich znak po znaku od začátku a po vyčerpání se zdvojují
     („AA", „DD"). Nechte-li pole prázdné, použijí se **výchozí sady, které se nepřekrývají** -
@@ -780,13 +813,6 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     ⚠️ Slití něco stojí: u slitých spojů jsou **časy té delší varianty**. U dvou variant se shodnými
     časy to nevadí, u variant s jinými jízdními dobami se minuty posunou. Zapíná se to na celou
     sestavu, ne po jednotlivých variantách - před zapnutím si vývěsku prohlédněte.
-- **Stránka pro každé stanoviště** (parametr ve skupině „Obecné") - zastávka
-  obsluhovaná z více stanovišť se vytiskne jako **samostatná vývěska pro každé z nich**, vždy jen
-  s odjezdy spojů, které z něj jedou; číslo stanoviště je i v titulku stránky. Hodí se, když vývěsku
-  fyzicky věšíte na konkrétní sloupek. Výchozí vypnuto (jedna vývěska se všemi odjezdy). Zda je
-  číslem stanoviště označník z trasy, nebo sloupek z číselníku, řídí parametr **Číslo stanoviště podle**.
-- Doplňkový tiskový parametr: **„Schovat poznámky v rozsahu „nepoznámkovat“"** (Ruční komentáře /
-  Automatické rozdíly tras / Obojí).
 
 ---
 
@@ -802,7 +828,7 @@ Nastavení je seřazené tak, že nahoře jsou skupiny jen tohoto prvku (Zastáv
 Pod nimi jsou skupiny, které mají všechny tabulky stejně: Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky.
 
 - **Upravit sloupce…** - otevře editor sloupců (kap. 3)
-- **Varianty tras** (sloupec v editoru sloupců, výchozí vypnutý) - zap. = časové sloupce podle skutečných variant tras (jen AD; viz kap. 1). Je to **týž údaj jako sloupec „Čas jízdy"**, takže zapnuté má být vždy jen jedno z toho: kdo chce varianty, vypne si „Čas jízdy". Linka, kde jedou všechny spoje stejnou trasou, dostane jeden variantní sloupec (dřív žádný, takže na takové lince nebylo vidět nic)
+- **Varianty tras** (sloupec v editoru sloupců, výchozí vypnutý) - zap. = časové sloupce podle skutečných variant tras (viz kap. 1). Je to **týž údaj jako sloupec „Čas jízdy"**, takže zapnuté má být vždy jen jedno z toho: kdo chce varianty, vypne si „Čas jízdy". Linka, kde jedou všechny spoje stejnou trasou, dostane jeden variantní sloupec (dřív žádný, takže na takové lince nebylo vidět nic)
 - **Čáry mezi řádky** (skupina Mřížka) - vodorovné čáry mezi řádky zastávek
 - **Odsazení podle trasy** - odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie)
 - **Sloupec Označník** (a u AD i **Sloupek**; MHD sloupky nemá, sloupec proto nenabízí) - volitelný sloupec s číslem stanoviště, ze kterého spoj odjíždí; zapíná se v editoru sloupců, tiskne se jen tam, kde jsou data vyplněná
@@ -890,7 +916,7 @@ uplatňují **auto-zmenšení písma** (kap. 6).
 ### 3. Editory sloupců
 
 Záložka **Sloupce** vypadá ve všech oknech tabulek stejně.
-Vlevo je seznam sloupců se zaškrtávátkem viditelnosti a šipkami ▲/▼, u Tabulky z dat navíc Přidat a Odebrat.
+Vlevo je seznam sloupců se zaškrtávátkem viditelnosti a šipkami ▲/▼, u Tabulky s řádky z dat navíc Přidat a Odebrat.
 Vpravo je vybraný sloupec: **Text záhlaví**, **Šířka** a styl zvlášť pro **Záhlaví** a **Datové buňky**; prázdné pole převezme nastavení prvku ze záložky Obecné.
 Sloupec, který se tiskne vždy (Hodiny u Minut odjezdů, sloupce spojů u Tabulky spojů), nejde skrýt ani posunout.
 
@@ -1006,8 +1032,8 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 Navíc jen u AD: **Tvar názvu zastávky** (zkrácený / typograficky upravený / plný CIS), **Použít
 název pro MHD**, **Výčet spojů u dopravce**, **Rozdělení sloupců podle platnosti**, **Řazení variant
 tras**, **Písmena variant tras** (+ **První varianta bez písmene**), **Nejvýš sloupců variant tras**,
-**Slučovat varianty, které jedou jen část jiné**, **Stránka pro každé stanoviště**
-a **Číslo stanoviště podle** (vše viz kap. 1), **Barvy spojů** (minuty spoje barvou z jízdních řádů, vypnuto = všechny černě),
+**Slučovat varianty, které jedou jen část jiné**, **Stránka pro každé stanoviště**,
+**Číslo stanoviště podle** a **Čas jízdy podle nastavení linky** (vše viz kap. 1), **Barvy spojů** (minuty spoje barvou z jízdních řádů, vypnuto = všechny černě),
 **Schovat poznámky v rozsahu „nepoznámkovat“** a **Zastávky na znamení souhrnně** - místo
 značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na linkách, kde jsou na znamení
 všechny zastávky).
@@ -1278,7 +1304,7 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 **Tabulka spojů:**
 
 - **Rozdělení sloupců podle platnosti** - podle čeho se spoje rozdělí do skupin sloupců: *Bez rozlišení*,
-  *Pracovní dny / víkend+svátky*, *Pracovní dny / Soboty / Neděle+svátky*. Hodnota *Vlastní
+  *Pracovní dny / Soboty+Neděle+svátky*, *Pracovní dny / Soboty / Neděle+svátky*. Hodnota *Vlastní
   rozložení* se vybrat nedá - jen hlásí, že si šablona rozvržení drží vlastní.
 - **Sloupec tarifních čísel**, **Zastávky, kde žádný spoj nestaví** a **Písmeno systému u zóny** -
   všechny tři mají volbu **Automaticky (dle linky)**, tedy podle nastavení u linky v jízdních řádech,

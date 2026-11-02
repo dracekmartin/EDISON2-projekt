@@ -19,7 +19,7 @@ public class PdfImportDialogViewModel : EDViewModel
 
     public PdfImportDialogViewModel(
         IDataSchemaProvider? schemaProvider = null, string? apiKey = null,
-        string? preferredAgendaCode = null, string? aiUnavailableReason = null)
+        string? preferredAgendaCode = null, string? aiUnavailableReason = null, string? agendaElementKind = null)
     {
         _schemaProvider = schemaProvider;
         _apiKey = apiKey;
@@ -36,7 +36,8 @@ public class PdfImportDialogViewModel : EDViewModel
         SelectedAgendaCode = preferredAgendaCode is { Length: > 0 } pref
             && AvailableAgendas.Any(a => a.Code.Equals(pref, StringComparison.OrdinalIgnoreCase))
                 ? pref : "";
-        ScheduleImportType = ScheduleImportTypes.ForAgenda(SelectedAgendaCode);
+        ScheduleImportType = SelectedAgendaCode.Length > 0
+            ? ScheduleImportTypes.ForElementKind(agendaElementKind) : ScheduleImportType.None;
 
         // AI klíč: lokální dev, nebo vyzvednutý z mlweb/EDISONAI
         HasApiKey = !string.IsNullOrEmpty(apiKey);

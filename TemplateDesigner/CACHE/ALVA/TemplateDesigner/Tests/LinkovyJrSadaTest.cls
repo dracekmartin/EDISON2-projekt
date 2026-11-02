@@ -28,6 +28,9 @@ Parameter FIRMY = "CB_CSADAD,CB_GWBUS,KV_DP,VS_CSAD,ZL_KOVED,SKNI_MHDNITRA";
 /// ⚠️ **Přípojné řádky nese jen `CB_CSADAD`.** Návaznost má v datech kdekdo (21 ze 48 linek), ale
 /// jako tištěný řádek se projeví jen tam, kde je u ní nastaveno „Tisk na JŘ jako = Přípoj. řádek"
 /// (6 linek, všechny v CB_CSADAD). Bez těch dvou linek by testy přípojných řádků běžely naprázdno.
+///
+/// ⚠️ **Lichá Tč, stálé značky a poznámky linky nese jen CB_GWBUS.** 0320118 z dat zmizela (zjištěno
+/// 30. 10.); 0320157 je nese taky, km sloupce a zóny ve skupině 1 už nemá žádná linka (drží je jiné firmy).
 ClassMethod Sada(ByRef sada)
 {
 	kill sada
@@ -36,7 +39,7 @@ ClassMethod Sada(ByRef sada)
 	set sada($increment(sada)) = "KV_DP~1~0410107~hodneSpoju,zdvojeneRadky,zony,mhdSloupec,viceKmSloupcu,navaznosti"
 	set sada($increment(sada)) = "VS_CSAD~1~0945001~hodneSpoju,zdvojeneRadky,jedeJinudy,prazdno,skupinyDnu"
 	set sada($increment(sada)) = "ZL_KOVED~1~0823955~zony,mhdSloupec,zdvojeneRadky,projizdi"
-	set sada($increment(sada)) = "CB_GWBUS~1~0320118~viceKmSloupcu,zony,mhdSloupec,lichaTc,staleZnacky,poznamkyLinky"
+	set sada($increment(sada)) = "CB_GWBUS~1~0320157~mhdSloupec,lichaTc,staleZnacky,poznamkyLinky"
 }
 
 /// Jádro sady pro **drahé** kontroly (každý průchod = GetData nad celou linkou i legacy oracle):
@@ -207,7 +210,7 @@ Method TestSadaPokryvaTypy()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z testovací sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z testovací sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(chybi, "", "sada už tyhle typy nepokrývá: "_chybi)
@@ -245,7 +248,8 @@ Method TestSadaPokryvaVsechnyTypy()
 /// Diagnostická sonda (mimo runner, přes `cache_query_cvar`): projde linky ve firmách z parametru
 /// `FIRMY` a vypíše změřený profil každé. Slouží k **sestavení sady z měření** - ne k testování.
 ///
-/// IN: `FIRMY` (nepovinné, seznam oddělený čárkou), `MAX` (nepovinné, kolik linek per firma; 0 = vše)
+/// IN: `FIRMY` (nepovinné, seznam oddělený čárkou), `SKU` (nepovinné, jen tahle skupina linek),
+/// `MAX` (nepovinné, kolik linek ze skupiny; výchozí 15)
 /// OUT: `firma~skupina~linka~stran~zastávek~příjezdových~spojů~skupinDnů~přípojných~projíždí~jedeJinudy~prázdno~kmSloupců~sZónou~sMhd~lichýchTč~sNz~druhy` + `~` seznam typů
 ClassMethod Profily(ByRef sys As %String) As %Status
 {
@@ -256,6 +260,7 @@ ClassMethod Profily(ByRef sys As %String) As %Status
 		if firmy = "" set firmy = ..#FIRMY
 		set maxLinek = +$get(^||ML("IN","MAX"))
 		if 'maxLinek set maxLinek = 15
+		set jenSkupina = $get(^||ML("IN","SKU"))
 		kill parametry
 		for fi = 1:1:$length(firmy, ",") {
 			set db = $zstrip($piece(firmy, ",", fi), "<>W")
@@ -266,6 +271,7 @@ ClassMethod Profily(ByRef sys As %String) As %Status
 				set sku = $order(^[db]JRL(sku))
 				quit:sku=""
 				continue:'$isvalidnum(sku)
+				continue:(jenSkupina'="")&&(sku'=jenSkupina)
 				set pocet = 0, lin = ""
 				for  {
 					set lin = $order(^[db]JRL(sku, lin))

@@ -59,6 +59,13 @@ Dílčí vylepšení a náměty.
 - **Nadpisy sloupců dnů** (pracovní dny, soboty…) bere zastávkový JŘ AD z nastavení jízdních řádů
   vaší firmy, i dvouřádkové a dvojjazyčné, jako starý tisk a linkový JŘ. Nadpisy upravené v šabloně
   platí dál.
+- **Hledání ve vlastnostech prvku** rozumí běžným slovům: „písmo" najde Font a Velikost, „podbarvení" Barvu pozadí,
+  „čára" Rámeček a Mřížku. Hledá se každé slovo zvlášť, takže „výška záhlaví" najde výšku ve skupině Záhlaví.
+- **Zastávkový JŘ MHD:** seznam zastávek umí sloupec **Varianty tras** jako vývěska AD.
+  Když spoje jedou ze zastávky různými trasami, dostane každá trasa vlastní sloupec jízdních dob a minuty odjezdů její písmeno.
+  Sloupec se zapíná v editoru sloupců seznamu zastávek.
+- **Zastávkový JŘ AD:** zaškrtávátko **Čas jízdy podle nastavení linky** vezme u linek, které mají v jízdních řádech vypnuté automatické generování časových průběhů tras, minuty zadané ručně u trasy, jako starý tisk.
+  Bez něj se čas jízdy počítá z jízdních dob spojů u všech linek.
 
 ### Týden od 19. 10. 2026 · Jízdní řády - obě čísla linky
 
@@ -303,9 +310,9 @@ polí aktuální agendy s možností hledat.
   i sekce, viditelnost řádku tabulek, název souboru při exportu.
 - Psát názvy polí ručně jde dál, nic se tím nemění.
 
-### 4. 8. 2026 · Návrhář - Řádky dynamické tabulky lze seřadit
+### 4. 8. 2026 · Návrhář - Tabulku s řádky z dat lze seřadit
 
-U dynamické tabulky vyberete **sloupec a směr** řazení; druhý sloupec se nabídne, až vyplníte
+U tabulky s řádky z dat vyberete **sloupec a směr** řazení; druhý sloupec se nabídne, až vyplníte
 první. Čísla, data i text se poznají podle hodnot, takže se neptáme, jak se má řadit - textově
 by „12" bylo před „9". Prázdné hodnoty jdou vždy nakonec. Bez nastavení se pořadí nemění.
 

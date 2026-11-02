@@ -18,6 +18,7 @@ public static class ImportNaostro
 {
     private static CacheAgendaProvider? _provider;
     private static string? _klic;
+    private static IReadOnlyList<AgendaRegistryEntry> _agendy = [];
 
     /// <summary>Připojení k dev serveru a klíč k modelu - jednou za běh testů.</summary>
     public static async Task<(CacheAgendaProvider Provider, string Klic)> PripojAsync()
@@ -37,8 +38,8 @@ public static class ImportNaostro
             Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
 
         _klic = await EdisonAiService.GetApiKeyAsync();
-        var agendas = await new CacheAgendaRegistry(new MLRestAdapter(mlRest)).ListAsync();
-        _provider = CacheSchemaWiring.TryCreate(mlRest, agendas) ?? throw new Exception("Bez agend");
+        _agendy = (await new CacheAgendaRegistry(new MLRestAdapter(mlRest)).ListAsync()).Agendas;
+        _provider = CacheSchemaWiring.TryCreate(mlRest, _agendy) ?? throw new Exception("Bez agend");
         return (_provider, _klic);
     }
 
@@ -47,7 +48,8 @@ public static class ImportNaostro
         string pdf, string agenda, int strana, Action<string>? stav = null)
     {
         var (provider, klic) = await PripojAsync();
-        var typ = ScheduleImportTypes.ForAgenda(agenda);
+        var typ = ScheduleImportTypes.ForElementKind(_agendy.FirstOrDefault(a =>
+            a.Code.Equals(agenda, StringComparison.OrdinalIgnoreCase))?.ElementKind);
         var pipeline = new AiVisionImportPipeline(klic, provider, agenda, provider.GetParameters(agenda));
         var sablona = await pipeline.ImportAsync(pdf, [strana], typ, true, stav ?? (_ => { }));
 

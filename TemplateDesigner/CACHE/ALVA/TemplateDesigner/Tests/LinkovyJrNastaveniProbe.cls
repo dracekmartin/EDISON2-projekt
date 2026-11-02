@@ -2231,8 +2231,8 @@ ClassMethod AtributySpojuVyskyt(ByRef sys As %String) As %Status
 }
 
 /// Předložky textu omezení po firmách (`B194` T3d): číselník `NCOME` (CZ i *SK) pro typy omezení
-/// 11, 12, 13, 22 a liché / sudé týdny, ze kterých je bere starý tisk i Linkový JŘ AD. Zastávkový JŘ AD
-/// je má napevno (`PrefixOmezeni`), takže rozdíl je vidět jen tam, kde se číselník od nich liší.
+/// 11, 12, 13, 22 a liché / sudé týdny, ze kterých je bere starý tisk i obě agendy AD
+/// (`Jr.DataAd.PredlozkaOmezeni`); standardní znění platí jen tam, kde číselník chybí.
 ClassMethod PredlozkyOmezeni(ByRef sys As %String) As %Status
 {
 	set err = ""
@@ -2590,7 +2590,7 @@ ClassMethod NaObjednaniVyskyt(ByRef sys As %String) As %Status
 							if +$piece(hlava, ":", 23) && ($piece(radek, "#", 11) '= "") set pocty("RBP spoj s vlastnim textem") = $get(pocty("RBP spoj s vlastnim textem")) + 1
 							for ak = "RBU", "RBP" {
 								continue:'+$piece(hlava, ":", $select(ak="RBU":21, 1:23))
-								set ut = ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).UpresneniAtributuSpoje(db, sku, lin, smer, sp, ak)
+								set ut = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).UpresneniAtributuSpoje(db, sku, lin, smer, sp, ak)
 								// prefix kvůli prázdnému upřesnění - prázdný subscript nejde
 								set ruzneTexty(ak, "~"_$extract(ut, 1, 200)) = ""
 							}

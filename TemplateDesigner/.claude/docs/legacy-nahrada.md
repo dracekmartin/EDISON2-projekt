@@ -98,7 +98,7 @@ Největší soubory: `MainWindow.xaml.cs` 2 671, `MainWindowViewModel.cs` 2 471 
 | T1 | **Žádné testy** | Žádný `TemplateDesigner.Tests`, žádný TD Caché `Tests` package; pre-push hook TD nekryje (`tools/run-cache-tests.ps1:15`). Nejlevněji testovatelné vrstvy (PageLayoutEngine, ExpressionEvaluator, TemplateMigrator, TextStyle kaskáda) jsou přesně pure-logic. Gold-oracle 1:1 ověření není opakovatelné. | Založit xUnit projekt: PageLayoutEngine (stránkování, patičky, split), ExpressionEvaluator, TemplateMigrator round-trip, TextStyle Resolve. Caché: `ALVA.TemplateDesigner.Tests` s gold snapshot testy `ZastavkoveJrAd` (JSON výstup pro 5 gold linek) + přidat do pre-push. |
 | T2 | **Sync export na UI threadu** - ✅ **opraveno 2026-07-02** | Fetch + render na threadpoolu nad snapshotem šablony (`DeepClone` - editace během exportu výstup neovlivní), dvoufázový progress ve status baru, orchestrace z code-behind → VM (první řez T4). | Zbývá jen: první `GetSchema` hit sync (mitigován `_schemaCache`); cancel až na reálnou potřebu. |
 | T3 | **Versioning bez obsahu** - ✅ **guardy opraveny 2026-07-02** | Forward-compat guard (verze > current → odmítnout), selhání migrace → výjimka (ne tichý `Debug.WriteLine`), sémantické porovnání verzí, ctor pro test injection. V1 v DB neexistují (ověřeno: DB storage vznikl po TextStyle breaking change). | Zbývá jen: potvrdit neexistenci starých JSON souborů z éry před 2026-03-24 (bez `version` pole); pokud se objeví → H-19 migrace + heuristika detekce. |
-| T4 | **God objects** | `MainWindow.xaml.cs` (2 671, 167 členů) + `TemplateDesignerViewModel` (2 471, bez vnitřního členění). R4 porušení: `TableEditorDialogViewModel.cs:609-643` staví WPF UI ve VM; VM vytváří dialogy s `Owner=Application.Current.MainWindow` a sahá na `Clipboard`. | Postupný rozpad VM na služby (InstanceCoordinator, TemplatePersistence - shluky už de facto existují); nové featury nepřidávat do těchto dvou souborů. `TableEditorDialogViewModel` UI konstrukci přesunout do view. |
+| T4 | **God objects** | `MainWindow.xaml.cs` (2 671, 167 členů) + `TemplateDesignerViewModel` (2 471, bez vnitřního členění). R4 porušení: `TableEditorDialogViewModel.cs:609-643` staví WPF UI ve VM; VM vytváří dialogy s `Owner=Application.Current.MainWindow` a sahá na `Clipboard`. | Postupný rozpad VM na služby (InstanceCoordinator, TemplatePersistence - shluky už de facto existují); nové featury nepřidávat do těchto dvou souborů. `TableEditorDialogViewModel` UI konstrukci přesunout do view. **30. 10.:** VM i `MainWindow.xaml.cs` rozdělené do `partial` souborů podle oblastí (changelog 2026-10-30 (32) a (35)), na služby ne. |
 | T5 | **Živé duplikace bez pojistky** | PropertyDescriptor (C#) × EDInputForm (Caché) ~1,1k LOC mirror (vědomě akceptovaný dluh, ale bez driftového testu); `EDList/Instance.cls:113` hardcoded kopie agend registru; `ZastavkoveJrAd.GetMockData:1174` čte živá firemní data. | Driftový test (reflexe: property path z *Edit.cls existuje na elementu); `Instance.cls` napojit na `AgendyRegistr`; statický mock pro AD. |
 | T6 | Drobnosti | `architecture.md` nezná `PdfImport/` (4,3k LOC) ani `Services/` (2,6k); `MessageBox.Show` v `MainWindow.xaml.cs:1021`; 96× `new SKPaint/SKFont` per-frame v Render() běžných elementů (schedule elementy to řeší, zbytek ne); `ScheduleDetectorTest.cs` kompilovaný do produkční assembly. | Úklid při příležitosti. |
 
@@ -108,20 +108,40 @@ Největší soubory: `MainWindow.xaml.cs` 2 671, `MainWindowViewModel.cs` 2 471 
 
 ### 3.1 REPORTGENERATOR - univerzální generátor sestav (primární cíl)
 
-**Rozsah:** ~28 850 LOC VB (renderer 10 102, designer 5 410) + 6 055 LOC Caché
-(12 tříd). Obsluhuje **~28 agend** (faktury, mzdy, sklady, jízdenky, pokladny, …).
-Reálné nasazení: **33 000 textových elementů, 17 000 DB polí, 774 tabulek** napříč
-zákazníky (`Main.cls:161-188` - usage statistika existuje, použít pro prioritizaci!).
+> Ověřeno v kódu 30. 10. 2026 (`C:\DEV\EDISON\REPORTGENERATOR` a třídy agend v modulech repa EDISON).
+> Do té doby tu stálo „~28 agend" a že `Main.cls:161-188` je statistika použití agend - obojí nepravda, viz níž.
 
-**Model:** šablony čistě v globals `^AlvaReportGenerator("STROM", IdFa, "SESTAVY", ...)`;
-strom USER × MLINE větev → agenda → oblasti (složky) → sestavy; **jazykové varianty**
-(EN/DE kopie provázaná na CS zdroj); „Sada" = field set publikovaný agendou
-(FIELDS/QRKODY/TABLES+COLS/GRAFY/NTEXTS), kopíruje se do sestavy a synchronizuje.
-WYSIWYG designer existuje (5 410 ř., bez undo/redo, bez snapu/gridu - TD je zde lepší).
+**Rozsah:** ~28 850 LOC VB (renderer 10 102, designer 5 410) + 6 055 LOC Caché (12 tříd).
+**27 agend** obsluhuje 26 tříd (MTZ a SKL sdílejí jednu); zdroják 21 z nich je v repu EDISON a nabízí asi 85 pevných datových sad.
+WYSIWYG designer existuje (5 410 ř., bez undo/redo, bez snapu/gridu, bez náhledu s daty - TD je zde lepší).
 
-**Datový kontrakt:** hard-coded if-řetěz dispatch na 28 agend (`Data.cls:627-654`);
-každá agenda implementuje `GetSeznamSad`/`GetSadu`/`GetData` s `~`-delimited tokenovým
-streamem (`FIELD~`, `TABLE_START~`, `ROW_START~`, `CELL~`, `GRAF_START~`, `NTEXT~`).
+**Jak se tiskne:**
+Modul sestaví ID sestavy a `ValueId` (vstupní hodnoty spojené `|`; každá sada si je čte po svém, definice parametrů neexistuje).
+Pak otevře okno report generátoru, nebo spustí `REPORTGENERATOR.EXE` s `AUTOEXPORT=1` / `AUTOPRINT=1` bez okna, i přímo z Caché (výplatní pásky v MZDY2).
+Vstup je seznam dokladů a každý smí mít vlastní soubor PDF a heslo; k tomu e-mail, podpis certifikátem a výchozí tiskárna (`formREPORTGENERATORReportDotNet.vb:12-37`).
+ID sestavy má tvar `MLINE|USER-AGENDA-oblast-n`: z ID se vezme agenda, ze šablony sada (`Data.cls:611-614`) a zavolá se `GetData` agendy.
+Agenda vrátí `~`-textový proud (`FIELD~`, `TABLE_START~`, `ROW_START~`, `CELL~`, `NTEXT~`, `QRKOD~`, `GRAF_START~`…) a klient z něj kreslí PDF, tisk, e-mail nebo Excel.
+Výběr agendy je pevný řetězec podmínek (`Data.cls:627-653`) zkopírovaný na sedm míst (`Sady.cls` 5×, `Epson.cls`, `ExportTabulek.cls`) a kopie se rozcházejí (ISYJBN chybí ve třech).
+
+**Pojmy:**
+- **Agenda** = modul (AD, MHD, MZDY, FAKTURACE…), jedna Caché třída s `GetSeznamSad` / `GetSadu` / `GetData`.
+- **Sada** = nabídka dat agendy: pole se skupinou, tabulky se sloupci s typem (`S`, `D0-4` datum, `B`, `Nx`, `T0-4` minuty, `O0-3` období), QR, dlouhé texty, grafy (`Sady.cls:81-121`); pole typ nemají, agendy posílají hotový text.
+- **Sestava** = šablona nad jednou sadou: kopie sady (synchronizuje se nejvýš jednou denně a uživatel v ní smí přejmenovat popisky), vlastnosti papíru, sekce s prvky.
+- **Strom šablon** `^AlvaReportGenerator("STROM", IdFa|"MLINE", "SESTAVY", SestavaId)`: větev firmy a sdílená větev M-line → agenda → oblast (jen složka) → sestava.
+- Standardní šablony M-line se exportují do souboru a instalace jimi přepíše celou větev `MLINE-<agenda>`; jazyková varianta je samostatná sestava s odkazem na českou předlohu.
+- Návrhář ukazuje všechny agendy z číselníku oblastí bez ohledu na licenci (`Strom.cls:31`), sada v něm není úroveň stromu.
+
+**Agendy a sady** (seznam v `GetSeznamSad` tříd agend):
+- doprava: AD 16 (turnus pro řidiče, objednávky, plán, zpracování, zpožděnka, označení zastávek), MHD 11 (vozové listy, vypravenka, plán, denní plán, mzdové podklady, dovolenka, stažka…), JR 1 (označení vozidel), ISYZASTAVKY 1, ISYJBN 1, VLAKY2 1, ND 1;
+- vozidla: VOZIDLA 3, AUTOOPRAVNA 1; odbavení: TICKETS 2, PREPRAVNIPOKLADNA 2;
+- ekonomika: EKOS 10, POKLADNA 10, HIM 14, MTZ a SKL 2; mzdy: MZDY 2, MZDY2 7;
+- sady podle nastavení firmy: FAKTURACE (sada pro každou agendu faktur), PHLASENI (typy hlášení), SKLADY (rutina `MTapi`);
+- zdroják v repu není: BCCLEARING, BCINTDOP, PARKKARTY, PREPRAVNIKONTROLA, JIKORDPOKLADNA, OBJEDNAVKY.
+
+**Použití:** statistika použití agend neexistuje a tisky se nelogují (`^AlvaReportGeneratorLog` zapisuje jen akce v návrháři).
+`Main.cls:161-188` je zakomentovaný výpis metody `Test()` bez data a zdroje - počty prvků ve všech šablonách: datová pole 17 167, texty 15 751, obdélníky 2 246, vodorovné čáry 711, tabulky 604, nekonečný text 298, obrázky 143, tabulky s měnitelnou šířkou 131, tabulky s nakresleným řádkem 22, kombinované 17, grafy 12, zaškrtávátka 8, QR 7, Aztec 2, vypočtená pole 2; sekce s pevnou výškou 1 388, s tabulkou 604, záhlaví stránky 416.
+⚠️ `Main.Test()` není jen čtení (maže a plní `^wwwZZ`) a dnešní kód řadu typů vynechává, takže výpis nezopakuje.
+Pořadí agend jde odvodit z počtu šablon podle agendy v databázích zákazníků (jen čtení), nebo z počtu míst, která report generátor volají: zpracování AD 13, pokladna 8, zpracování MHD 7, zpracování ISY 5, dispečink AD 5, plán AD 4.
 
 **Feature highlights nad rámec TD:**
 - **Tabulky řízené daty za běhu**: per-řádek zvýraznění 0–5 (každé s kompletním stylem),
@@ -145,6 +165,33 @@ streamem (`FIELD~`, `TABLE_START~`, `ROW_START~`, `CELL~`, `GRAF_START~`, `NTEXT
 agregace, undo/redo, snap/grid, JSON verzovatelné šablony, moderní čárové kódy,
 JŘ elementy, PDF import, AI asistence.
 
+#### Převod do návrháře (rozbor 30. 10. 2026)
+
+**Agenda je jen zdroj dat.** Klient report generátoru má 17 obecných typů prvků a 9 typů sekcí (`REPORTGENERATOR/Enums.vb:35-66`) a žádnou podmínku na konkrétní agendu nebo sadu.
+Zvláštní prvky jako u jízdních řádů nejsou; tisky, které obecný kód neuměl, dostaly vlastní program (zastávkový a linkový JŘ, relace, vozový JŘ DPKV).
+Kreslení je proto hlavně technický převod: stavba šablony (sekce, podmínky, opakování sekce pro řádek dat, dělení přes stránky) v návrháři je, tabulka z dat se dotáhne (roadmapa `F3`) a drobné prvky (svislý text, kombinovaná tabulka, graf, zaškrtávátko) mají desítky použití.
+
+**Mapování na agendu a variantu** (návrh 30. 10., rozhodnutí roadmapa `F7`):
+- sada = naše agenda, pojmenovaná podle výstupu (`VYPLATNI_PASKA`), ne podle modulu - kód agendy se po vydání nemění, takže pozdější sloučení variant by jinak znamenalo převod uložených šablon;
+- modul, který dodává data pro tentýž výstup, = varianta: mzdové podklady pro řidiče (AD, MHD), denní plán (AD, MHD), výplatní páska (MZDY, MZDY2), označení zastávek (AD, ISY zastávky); většina sad má jen jeden zdroj;
+- varianty musí mít stejný tvar dat: mzdové podklady AD a MHD sdílejí jen údaje o osobě, přesčasy a tabulku činností (v AD přes 100 sloupců, v MHD 8), takže společná agenda znamená sjednotit data jako u JŘ - převodník bez zásahu do agend to nezvládne;
+- modul report generátoru = skupina v nabídce agend podle oblasti práce (Jízdní řády, Plán a provoz, Objednávky, Mzdy, Pokladna a odbavení, Účetnictví, Majetek a sklad, Vozidla), ohlášená parametrem třídy agendy; skupina se neukládá, jde kdykoli změnit;
+- sady podle nastavení firmy (faktury, hlášení, sklady) se do pevného kódu agendy nevejdou; u faktur asi jedna agenda s výběrem agendy faktur jako parametrem - jestli mají sady faktur stejná pole, neověřeno.
+
+**Koncepčně nové** (návrhář neumí a netýká se to kreslení):
+1. hromadný tisk seznamu dokladů s vlastním PDF, heslem, e-mailem, podpisem nebo tiskárnou pro každý doklad - návrhář ze spuštění umí jedno PDF v prohlížeči (`Vystup=PDF`), heslo, podpis ani e-mail v kódu nejsou;
+2. tisk ze serveru bez uživatele (mzdy spouštějí exe z Caché) - rozhodnutí R4, hotové není;
+3. data pro náhled - vstup je složený (zaměstnanec + období + filtry) nebo jeden doklad z tisíců; u každé agendy rozhodnout, jestli ukázková data, nebo výběr dokladu s filtrem;
+4. šablony zákazníků - návrhář je neotevře; převodník, nebo nový návrh (podle výpisu nejméně stovky šablon: 416 záhlaví stránky, 604 tabulek);
+5. Excel (data, ne vzhled), znakový tisk Epson, JPG;
+6. jazykové varianty šablon.
+
+Dopravní agendy (plán, provoz) narazí jen na tabulku s řádky z dat, mzdy, pokladna a faktury hned na body 1, 2 a 4.
+
+**Pilot:** vozové listy MHD (`MHD/CACHE/ALVA/MHD/REPORTGENERATOR/VozoveListy.cls:12-34`) - 5 polí, tabulka průběhu oběhu (10 sloupců) a výkonů (5), instance = oběh, data `^ALVA.MHD.LSO`, volá MHD2Linky (MHD039), řádek nese zvýraznění z dat.
+Vlastní třída agendy zavolá starý `getSadu` / `getData` a převede výstup na JSON: registr se nemění a data se starým tiskem shodují z principu.
+Další kandidáti: denní plán AD a MHD (druhý, ověří dvě varianty; AD 14 polí, 6 tabulek se 74 sloupci), zpožděnka AD (13 polí, žádná tabulka, data přijdou celá ve vstupu), turnus pro řidiče AD (4 tabulky s 12-45 sloupci, na začátek moc velký).
+
 ### 3.2 TiskMHD - zastávkový JŘ (z ~90 % pokryt)
 
 **Rozsah:** ~31 400 LOC ručního VB (render engine `_Module.vb` 16 179 - z velké části
@@ -166,8 +213,8 @@ gold oracle ověřeno). Detailní mapovací matice → `legacy-nahrada.md`.
 
 ### 3.3 TiskJR (+ TiskJRRELACE) - výlepový/knižní JŘ linky (nepokryto)
 
-**Rozsah:** TiskJR ~33 400 LOC VB + 3 290 Caché; TiskJRRELACE (slovenský relační fork,
-copy-paste) ~49 700 LOC VB + 3 900 Caché. **Pozor:** výpočetní engine JŘ
+**Rozsah:** TiskJR ~33 400 LOC VB + 3 290 Caché; TiskJRRELACE (relace, kopie kódu TiskJR
+s vlastním výpočtem, ne slovenská) ~49 700 LOC VB + 3 900 Caché. **Pozor:** výpočetní engine JŘ
 (`mkPLinWin`/`mkPRelWin` v `ALVA.JRMAIN.MLAPI` + MAC rutiny) leží mimo a v LOC není.
 
 **Co to je:** sloupcový JŘ celé linky - svislý seznam zastávek (Zóna/Km/Tč/Název/Šipky)
@@ -205,9 +252,7 @@ starého modulu se zapnutou volbou (nastavení sekce „Data linky" v návrhář
 znamená, že u turnusů zatím není proti čemu porovnávat** - TD je ověřuje proti témuž zdroji, jaký
 volá legacy.
 
-**TiskJRRELACE** = třetí typ výstupu (řádky = odjezdy, sloupce = linka/čas/směr/
-nástupiště). Samostatné rozhodnutí - ověřit, zda je slovenský zákazník live use case
-(open question v `legacy-nahrada.md`).
+**TiskJRRELACE** = třetí typ výstupu, jen nad daty AD; co to je a jak vypadá, viz mapa legacy generátorů §3 níž (ověřeno 30. 10.).
 
 ---
 
@@ -265,19 +310,19 @@ jejich priorita čtením legacy kódu.
 
 ### Etapa 4 - REPORTGENERATOR: strategie postupné náhrady
 Ne big-bang (must-not-happen #4). Doporučený postup:
-1. **Prioritizovat podle usage statistiky** (`Main.cls:161-188` - reálná čísla per
-   zákazník existují!). 774 tabulek a 33k textů se koncentruje v několika agendách.
+1. **Prioritizovat** - statistika použití agend neexistuje (§3.1 Použití); pořadí z počtu šablon podle agendy u zákazníků nebo z počtu volajících míst, dopravní agendy napřed.
 2. **Rozhodnout bridge vs migrace per agenda:** buď adaptér překládající legacy
    `~`-tokenový protokol (`FIELD~`/`TABLE_START~`/…) na TD JSON DataContext - jedna
-   `LegacyRgAgenda` třída by zpřístupnila všech 28 agend najednou s omezenou věrností;
-   nebo čisté reimplementace vybraných agend (vzor Faktury). Pragmaticky: **bridge
-   nejdřív** (rychlé pokrytí), čisté agendy tam, kde se investice vyplatí.
+   obecná třída by zpřístupnila všech 27 agend najednou s omezenou věrností;
+   nebo čisté reimplementace vybraných agend (vzor agendy JŘ).
+   Od 30. 10.: rozhodnout až po pilotu (§3.1 Pilot), který převede jednu sadu vlastní třídou.
+   Obecný převodník potřebuje registr, který vypíše dvojice agenda a sada, a varianty se stejným tvarem dat neumí.
 3. **TableElement dorovnat na RG úroveň** (navazuje na Dynamic-first tabulku):
    per-řádek zvýraznění/barvy z dat, overflow módy buňky, opakování mezisoučtového
    řádku, řádek-jako-designový-layout (koncepčně PerDataRow sekce), datové typy sloupců.
    Merged cells + conditional formatting už jsou v backlogu roadmapy (tabulkové prvky).
 
-   **Rozpis roadmapy `F3`** (navazuje na dynamickou tabulku a `B76`):
+   **Rozpis roadmapy `F3`** (navazuje na tabulku s řádky z dat a `B76`):
    - per-řádek zvýraznění 0-5 z dat, vlastní barvy per řádek a buňka;
    - overflow módy (zalamování → klonování řádků), opakování mezisoučtu na další stránce;
    - datové typy sloupců (datum, minuty, záporné červeně, skrýt nuly), řádek jako layout;
@@ -293,9 +338,10 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
    (2 - TD výrazový jazyk je nadmnožina), checkbox (8). Ověřit se zákazníky a škrtnout.
 
 ### Etapa 5 - Relace (TiskJRRELACE) + vozové JŘ (v roadmapě „Relace a vozové JŘ")
-- Nejdřív zodpovědět open questions (live use case Relace? priorita vozových?) -
-  viz `legacy-nahrada.md`. Vozové JŘ mají vlastní legacy generátory
-  (`ALVA.MHD.ReportGenerator`, `AD.ADREPORTGEN`) - samostatná analýza až bude aktuální.
+- Relace: jen AD, živý zákazník BBSK `#13070`; agenda nad sdílenými třídami AD a nový prvek.
+  Rozbor legacy (definice, obě cesty tisku, data, šablona) a návrh převodu: mapa generátorů §3a-3g.
+- Vozový JŘ je jen MHD (tisk DPKV v MHD2Tisk s vlastním kreslením) a převádí se jen na poptávku.
+  Vozové listy a turnus pro řidiče jsou sady report generátoru a jdou s etapou 4 (mapa generátorů §4).
 
 ---
 
@@ -305,8 +351,8 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
 |---|---|---|---|---|
 | TiskMHD | 31 400 + 4 313 | ~90 % (datově 1:1, elementy ✅) | TrasaMin multi-varianta, tarifní pásma, vizuální detaily | M–L (jednotlivosti) |
 | TiskJR | 33 400 + 3 290 | 0 % (jiný formát než zastávkový) | element + agenda + font + layout rozšíření | L (≈ zastávkový JŘ) |
-| TiskJRRELACE | 49 700 + 3 900 | 0 % | rozhodnout use case; pak element + agenda | ? (čeká validace) |
-| REPORTGENERATOR | 28 850 + 6 055 | ~15 % (Faktury vzor, TableElement základ) | 28 agend (bridge/migrace), tabulkové featury, kanály | XL (etapizovat) |
+| TiskJRRELACE | 49 700 + 3 900 | 0 % | agenda nad AD + prvek (návrh mapa generátorů §3e); živý zákazník BBSK `#13070` | ? |
+| REPORTGENERATOR | 28 850 + 6 055 | ~15 % (TableElement základ; ukázkové Faktury smazané 30. 10.) | 27 agend / ~85 sad (bridge/migrace), tabulkové featury, hromadný tisk, šablony zákazníků, kanály | XL (etapizovat) |
 | **Sdílená infrastruktura** | (napříč) | částečně (DB storage, versioning framework) | vendor šablony, EDISON launch, headless, merge/email | L - **první** |
 
 ---
@@ -316,7 +362,7 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
 1. **Epson znakový tisk** - migruje do TD, nebo zůstane navždy v legacy TISK? (Určuje,
    zda TD potřebuje ne-grafický výstupní kanál - architektonicky cizí prvek.)
 2. **RG bridge vs čisté agendy** - akceptovatelná dočasná věrnost bridge překladu?
-3. **Relace (SK zákazník)** - živý use case?
+3. **Relace** - zodpovězeno 30. 10.: živý zákazník je BBSK `#13070` a relace nejsou slovenské.
 4. **Grafy/AZTEC/checkbox** - škrtnout, nebo má některý zákazník tvrdou závislost?
    (Usage čísla: 12/2/8 výskytů celkem.)
 5. **Jazykové varianty šablon** - potřebné i pro JŘ (dvoujazyčné pohraniční vývěsky,
@@ -476,6 +522,7 @@ Nevyžadují akci; jen aby se to nepletlo s „chybí".
 - **Čárové kódy** - legacy jen QR (JPG, bez ECC/barev). My QR + Code128 + EAN-13/8 + PDF417 + DataMatrix. **Bohatší.**
 - **Vlastnosti stránky** - legacy A2–A6 + landscape + okraje + vodítka. My editor formátů + orientace + okraje + mřížka. **Pokryto.**
 - **Wire formát** - legacy tilde-delimited; my JSON. **Lepší (verzovatelné, debugovatelné).**
+- **Odjezd v 0:00** - legacy ho na vývěsce vynechává (čas spoje hledá jako maximum od prázdného začátku); my ho tiskneme od 30. 10. Oracle na lince 53 CB_DP: legacy 402 odjezdů, my 406, rozdíl jsou jen odjezdy 0:00 z Nádraží. **Oprava chyby.**
 
 ---
 
@@ -517,7 +564,7 @@ poznámky, sloupce), ne pixely. Místa nejnáchylnější k odlišnosti, která 
 | **P2-7** | **Režimy výšky řádku** + „nadesignovaná výška = minimum, sekce roste" | máme `DataRowHeight` (null=auto) + auto-scale; explicitní „výška je minimum a roste" model částečně | S–M |
 | **P4-x** | **Zarovnání textu do bloku (justify)** v textovém prvku | `TextElement` justify nemá | S, nízká |
 | **P4-x** | **Per-strana styl rámečku (Solid/Dot/Dash) + zaoblené rohy** sekce/prvku | jednoduchý border (barva+šířka), bez per-strana dash a bez zaoblení | S–M, nízká |
-| **P4-x** | **Sekce vyšší než stránka v designeru** - designer je model „jedna pevná A4": `GetSectionOrigins` + `GetClampedSectionHeightPx` ořezává sekce na spodek stránky, ale elementy s velkým Y přetečou na šedé pozadí. Preview stránkuje korektně (a po dnešku i varuje červeně). ⏭️ odloženo 2026-06-23. **Zjištění:** (A) clamp NEjde čistě - aktivní editor sekce je EDInputForm `SectionEdit` (starý `PrepareForSection` clamp je mrtvý kód, nevolá se); clamp by se musel lepit do generického binderu. (B) „canvas roste + dělící čáry A4" = **M** (přepis jádra: zrušit clamp sekcí, růst canvasu/pozadí, dělící čáry + **ripple:** patičky kotvené na `bottomY`, resize bounds `_resizeSectionH`, hit-test, element clamp - vše počítá s 1 stránkou). Doporučeno B po demu | jednostránkový canvas | M, nízká |
+| **P4-x** | **Sekce vyšší než stránka v designeru** - designer je model „jedna pevná A4": `GetSectionOrigins` + `GetClampedSectionHeightPx` ořezává sekce na spodek stránky, ale elementy s velkým Y přetečou na šedé pozadí. Preview stránkuje korektně (a po dnešku i varuje červeně). ⏭️ odloženo 2026-06-23. **Zjištění:** (A) clamp NEjde čistě - aktivní editor sekce je EDInputForm `SectionEdit` (starý `PrepareForSection` clamp byl mrtvý kód, smazaný 30. 10.); clamp by se musel lepit do generického binderu. (B) „canvas roste + dělící čáry A4" = **M** (přepis jádra: zrušit clamp sekcí, růst canvasu/pozadí, dělící čáry + **ripple:** patičky kotvené na `bottomY`, resize bounds `_resizeSectionH`, hit-test, element clamp - vše počítá s 1 stránkou). Doporučeno B po demu | jednostránkový canvas | M, nízká |
 
 ### Potvrzeno jako pokryté (druhé kolo)
 - **Marker legendy 3 typy** (normální / bílé-na-černém / pictografický znak) → máme inverzní barvy NZ + spec. znaky. ✅
@@ -634,27 +681,151 @@ Mapování typů jízdních řádů na **legacy Caché report generátory** + bu
 
 ---
 
-## 3) Relace (Slováci) - `ALVA.TiskJRRELACE`
+## 3) Relace - `ALVA.TiskJRRELACE` (ověřeno v kódu 30. 10. 2026)
 
-**Použití:** slovenský zákazník (CTC?). Něco mezi zastávkovým a linkovým.
+**Data jen z AD.** Tisk volá výpočet jízdních řádů `##class(ALVA.JRMAIN.MLAPI).mkPRelWin` (`TiskJRRELACE/CACHE/ALVA/TISKJRRELACE/Data.cls:107`); větev pro MHD v kódu není.
+Relaci definuje uživatel v jízdních řádech nad skupinou linek: výchozí zastávka, cílové zastávky, případně „přes"; je odjezdová (`o`) nebo příjezdová (`p`).
+Jízdní řády ji spočítají předem do `^JRi` (`calRel^JRapiRel2`, `JRapiRel2.mac:9`) a tisk jen čte výsledek (`JRapiiGOdO.mac`).
 
-**Vlastnosti:**
-- Podobné zastávkovému, **ale vypadá to trochu jinak**
-- Klíčový obsah: **odjezdy ze zastávky a kam všude to jede** (cílové destinace per odjezd)
+**Výstup:** řádek = cílová zastávka (abecedně, pod názvem upřesnění nebo „přes"), v řádku mřížka buněk pevné velikosti, jedna buňka = jeden spoj do té zastávky.
+Buňka nese linku, linku IDS, spoj, označník, platnosti, NZ, čas odjezdu, čas příjezdu do cíle a obecný text; každý údaj má v šabloně vlastní pozici a písmo a pozadí jde obarvit podle druhu spoje nebo dopravce (`formTISKJRRELACEReportDotNet_Module.vb:1483-1915`).
+Každá relace začíná na nové stránce, pod tabulkou je pět druhů poznámek.
 
-**Stav v TD:** zatím **neimplementováno**. Pravděpodobně extension zastávkového JŘ nebo samostatný element.
+**Výběr před tiskem** (`JRMAIN/frmPomocny_81`): každá relace do vlastního dokumentu, všechny do jednoho, jen jeden označník, nebo jen vybrané cílové zastávky; filtr typů linek.
+Spouští se z okna relace a skupiny linek v jízdních řádech a z ISYJR2 (`ISYJR2/TiskJRHelper.cs:362`).
+
+**Není slovenská.** Slovenské jsou jen texty šablon a režim jízdních řádů `^JRSET("COME","REC")` („cez", „stan.").
+Do 30. 10. tu stálo „slovenský fork" a „řádky = odjezdy, sloupce = linka/čas/směr" - obojí nepravda.
+S linkovým JŘ (`ALVA.TISKJR`) sdílí jen API jízdních řádů a výpočet je jiný (`mkPLinWin` × `mkPRelWin`); zbytek je kopie kódu a šablony má ve vlastním globálu `^AlvaTiskJRRelace`.
+Symboly kreslí fontem TimeTable jako linkový JŘ.
+
+**Stav v TD:** neimplementováno.
+Relace podle helpdesku používají BBSK, SADZV, SADLC, Slovak Lines, ZGROUP, KORID a ARRIVA (tikety 2019-2026).
+Otevřené tikety: BBSK `#13070` (vzor odjezdové vývěsky, šablonu jim uděláme po dokončení), BBSK `#13693` (vývěska pro každý označník, Detva aut. st. jich má čtyři), SADZV `#13654` (ptají se, jestli se jejich šablony převedou).
+BBSK dřív chtěla linku IDS „v kosodĺžniku nad časom" (`#8508`), tedy volné rozmístění údajů v buňce zákazníci využívají.
+
+Rozbor 30. 10. 2026 níž (3a-3g) je podklad pro převod, aby se legacy nemusel číst znovu.
+Cesty jsou relativně k `C:\DEV\EDISON\`; rutiny `*.mac` jsou v `JRMAIN/CACHE/`, `Relace.cls` a `JRMAIN/Main.cls` v `JRMAIN/CACHE/ALVA/JRMAIN/`, `Data.cls` a `Main.cls` bez předpony v `TiskJRRELACE/CACHE/ALVA/TISKJRRELACE/`, `Module.vb` je `TiskJRRELACE/TiskJRRelace/formTISKJRRELACEReportDotNet_Module.vb`.
+
+### 3a) Definice a výpočet relace
+
+- Definici čte a ukládá `gDefRel` / `sDefRel` (`JRMAIN/CACHE/JRapiRel.mac:57-148`), okno `formJRMAINRelaceEdit`; klíč je `sku` (skupina linek), `typ` (`o` / `p`) a `rel`.
+- Výchozí zastávka (`Zast`) má číslo, název a „název pro tisk".
+  Windows tisk bere jen název (`JRapiiGOdO.mac:65`), postskript „název pro tisk" (`JRapiRelPrtPS.mac:52-53`).
+- Cílové zastávky (`Smer`) mají název a upravený název.
+  Tiskne se upravený a podle něj se řádky řadí abecedně (`JRapiiGOdO.mac:101-107,162`); ruční pořadí neexistuje.
+- Zastávky „přes" (`Pres`) dávají samostatný řádek „kam / přes X" s vlastními buňkami (`JRapiiGOdO.mac:198-204`).
+- Spoje relace jde ručně upravit (`Relace.cls:657-934`): platnosti, označník, typ linky, příjezd, NZ, zámek, dopravce, BEV/CBE/kola, linka MHD, linka IDS (záznam spoje `JRapiRel.mac:166-185`).
+- Výpočet (`Relace.cls:979`, `calRel^JRapiRel2`) bere skupinu linek, aktuální nebo archivní JŘ a datum.
+  Řídí ho i nastavení jízdních řádů (průjezdy, pokračování spojů, posun platnosti, `JRapiRel2.mac:29-35`) a povolení NZ ve skupině (`:25-27`).
+- Výsledek leží v `^JRi(EaOP,Sku,Rel,"Def",…)` (definice, zóny) a `^JRi(EaOP,Sku,Rel,"Data",cílová,čas,linka,spoj,"Basic")` (jeden spoj).
+  **Obě cesty tisku čtou týž výsledek** (`JRapiRelPrtPS.mac:84-133`, `JRapiiGOdO.mac`) a liší se jen tím, co z něj vezmou.
+- Buňky v řádku jsou seřazené podle času, linky a spoje (`JRapiiGOdO.mac:171-174`), řádky bez buněk se mažou (`JRapiRel4.mac:473-482`).
+
+### 3b) Dvě cesty tisku
+
+| | Windows tisk (`TiskJRRELACE`) | Postskript (`JRMAIN/CACHE/JRapiRelPrtPS.mac`) |
+|---|---|---|
+| Spuštění | okno relací v JŘ, ISYJR2 Tisky (`ISYJR2/TiskJRHelper.cs:362`) | ISYJR2 Tisky → „Postscripty - Vývěsní odjezdové a příjezdové tabule" (`formISYJR2HlavniOkno.Poscripty.cs:35-47`) |
+| Nastavení | šablona, 448 vlastností sekce dat (`TiskJRRELACE/TiskJRRelace/Struktury.vb:41-560`) | 12 voleb dialogu + program `.ps` v databázi firmy (`^JRSET("PS","OZa")`, kniha `"OZaK"`) |
+| Buňka | 9 údajů, každý s pozicí, velikostí, písmem a rámečky | doplněk + platnosti + čas (`JRapiRelPrtPS.mac:236-243`) |
+| Šířka buňky | pevná | podle obsahu (procedura `NC` v programu `.ps`) |
+| Navíc | barva podle druhu spoje a dopravce, výběr cílových zastávek, 5 druhů poznámek s pořadím | dálkové a mezinárodní napřed, číslované značky, písmena místo značek, linka MHD, kniha |
+
+**Postskript** (`JRapiRelPrtPS.mac`, ověřeno v kódu):
+- „U času tisknout" vybírá jeden doplněk: linka-spoj, označník, příjezd, linka IDS, nebo linka MHD (`in("par",6)`, `:150`); linku MHD Windows tisk neposílá, v datech je (`Basic` 13. část, `:201`).
+- Dálkové a mezinárodní spoje jdou napřed a jsou v buňce označené, když to zapíná `^JRSET("Definice",…,"Setup","PrintTyp")` (`:73-75`, `:242`); ve Windows výpočtu to není.
+- Stejná značka s jiným významem dostane číslo (X, X¹), legenda pak zůstane krátká (`Pla`, `:316-358`).
+- Omezení se tisknou jako negativní značky, nebo jako písmena (`:46`, prázdná volba = negativní značky).
+- Texty záhlaví („Cílová zastávka", „Odjezdy ze zastávky", „Linka-spoj") jsou v nastavení jízdních řádů česky i slovensky (`JRMAIN/Main.cls:351-355`), ne v programu.
+- Volby dialogu (`formISYJR2PoscriptParametryTabule`): vývěska / kniha, záhlaví, centrovat záhlaví, typy linek (8), tisk zóny, U času tisknout, značky omezení, poznámky ke spoji, poznámkovat vyloučenou přepravu, měřítko X a Y, inverzní tisk; navíc „Tisknout podle zastávek (stanovišť)" (`JRapiRelPrtPSs.mac`) a výstup do PDF.
+- PDF dělá Ghostscript a dialog volá napevno `gswin32c.exe` (`ISYJR2/PoscriptTisk.cs:90`), 64bitový `gswin64c.exe` nenajde.
+- Program `OZa` ve VS_ZGBUS (54 tisíc znaků, asi 1 400 řádků, přečteno jen rozložení): stránka 210 × 285 mm, okraje 10/10/15/10 mm, sloupec zastávek 35 mm, písmo nadpisu 12, cílové zastávky 12 a 10, doplňku 6, značek 9, času 10 a 6.
+
+### 3c) Data starého Windows tisku (oracle pro paritu, R6)
+
+- Vstup `ALVA.TISKJRRELACE.Data.LoadData`: `SESTAVA` (bez ní spadne na `<UNDEFINED>SestavaId`, ověřeno voláním 30. 10.), `VALUE` = `označník#cílové zastávky^sku|typ|rel[#…]`, `VariantaVolaniMM`, `TypLinekProTisk_*`, `TiskZonyKZastavce`, `PoznamkyTiskPoznamekKeSpoji`.
+- `LoadData` volá `mkPRelWin` (`Data.cls:107`) se vstupem `skrel(rel)`, `skrelzast(rel,zast)` (má přednost), `nast(rel)`, `par(1)` poznámky ke spoji, `par(2)` zóny, `par(3,typ)` typy linek (`JRapiRel4.mac:194-199`).
+- Výstup jsou řádky oddělené `~`:
+  - `RELACE_START~sku~typ~rel~~název výchozí zastávky[(zóny)][, nást. X]` (`Data.cls:229`),
+  - `ROW_START~horní řádek~dolní řádek` - cílová zastávka, dolní řádek je upřesnění nebo „přes X" (`:243`),
+  - `CELL~Linka~LinkaIDS~Spoj~Označník~Platnosti~NZ~Odjezd~Příjezd~DruhSpoje~DopravceId`, časy HH:MM (`:317`),
+  - `ROW_END`, `POZNAMKA~sku~typ~rel~Druh~Typ~ID~Text#Text…` (`:640`), `RELACE_END` (`:653`).
+- Platnosti v buňce jsou spojené `^`: napřed 1-7, +, X, BEV, CBE, PJI jako kódy fontu Timetable (49-55, 43, 88, 72, 70, 76; `Data.cls:259-272`, `Main.cls:35-101`), pak ostatní jako `X01_text` nebo `X02_text_horníIndex` (`:274-308`).
+- `DruhSpoje` = typ linky, `DopravceId` = závod dopravce; barva v datech není.
+- Druhy poznámek: 1 týdenní platnost, 2 NZ, 3 vyčká / navazuje / pokračuje, 4 ostatní (BEV/CBE/PJI, text), 5 barvy; řazení podle pořadí druhů ze šablony (`Data.cls:579-594`).
+- Víc relací: každá položka výběru je samostatný dokument (`formTISKJRRELACEReportDotNet.vb:107-110`); „všechny do jednoho" spojí relace `#` a `LoadData` řadí bloky `RELACE_START…RELACE_END` za sebe (`Data.cls:115-145`); „jeden označník" filtruje buňky přes `nast` (`JRapiRel4.mac:389`).
+
+### 3d) Šablona Windows tisku: 448 vlastností a co z nich zbude
+
+| Skupina | Počet | V návrháři |
+|---|---|---|
+| Obsah buňky: 9 údajů × viditelnost, pozice, velikost, zarovnání, zalomení, popisek, pozadí, 16 rámečků, 9 vlastností písma | 340 | zapnutí údaje + 3 styly (čas, doplněk, značky) |
+| Hlavička (texty odjezd / příjezd, písmo, rámečky) | 39 | záhlaví prvku |
+| Sloupec cílové zastávky (dva řádky písma, pozadí, rámečky) | 23 | sloupec prvku |
+| Mřížka (šířka a výška buňky, sloupec = N buněk, místo pod zastávkou, rámečky) | 20 | 3-4 pole |
+| Poznámky (5 druhů: tisknout / počet na řádek, pořadí, písmo) | 16 | prvek Poznámky |
+| Barva pozadí podle druhu spoje a dopravce (jen 1 a 1 na šablonu) | 8 | zvýraznění buněk pravidly |
+| Opakovat zastávku na další stránce, zóny | 2 | 2 pole |
+
+Obsah výtisku mění jen tři vlastnosti, které jdou na server (zóny, poznámky ke spoji, pořadí druhů poznámek, `formTISKJRRELACEReportDotNet_Module.vb:742-745`), a v klientu výběr údajů, tvar linky (`BunkaLinkaTyp` 1-4), tvar času (12:20 / minuty v horním indexu), legenda jako buňka a legenda barev v poznámkách.
+Zbylých asi 430 vlastností je vzhled.
+Inventář z `Struktury.vb:41-560` a `Designer.cls` (`LoadSekce:9`); renderer `formTISKJRRELACEReportDotNet_Module.vb:1483-1915`.
+
+### 3e) Převod do návrháře (návrh 30. 10. 2026)
+
+Kostra z postskriptu (kompaktní buňka a málo voleb), z Windows tisku jen to, co postskript neumí.
+
+- **Agenda Relace, varianta AD.** MHD varianta nebude, relace počítají jen jízdní řády.
+  Odjezdová i příjezdová relace jsou v téže agendě - druh je v definici relace, liší se jen nadpis.
+  Kód agendy se po vydání nemění, rozhodnout ho před první verzí.
+- **Instance = relace ve skupině linek** (`sku|typ|rel`); výběr skupiny linek přesměruje do `Jr/DataAd.cls` jako ostatní agendy AD, seznam relací skupiny je nový.
+- **Data čte agenda z `^JRi` sama** jako postskript, ne voláním `mkPRelWin`: agendy JŘ v TD čtou data samy a legacy engine je jen oracle v testech (`LinkovyJrLegacyOracle`).
+  Z `^JRi` dostane i linku MHD a pořadí dálkových spojů, které Windows výstup neposílá.
+  Paritu ověří test proti `ALVA.TISKJRRELACE.Data.LoadData` (3c); rozdíly postskriptu (název pro tisk, dálkové napřed) jsou vědomé a zapíšou se jako neověřené proti němu.
+- **Nezávisí na nastavení tisku u linky** - tisk relací ho nečte, takže nečeká na úklid nastavení jízdních řádů.
+- **Nový prvek:** řádky cílových zastávek (a „přes"), v řádku buňky spojů; stavbou je nejblíž Minutám odjezdů (řádek = hodina, buňka = minuta).
+  Buňka má pevnou kostru: čas + platnosti + vybrané doplňky (linka-spoj, linka IDS, linka MHD, označník, příjezd, NZ) s pevným místem nad časem.
+- **Pole prvku (asi 10-12):** doplňky v buňce, tvar čísla linky, tvar času, šířka buňky (0 = podle obsahu), výška buňky, šířka sloupce zastávek, značky omezení (negativní značky / písmena), dálkové a mezinárodní napřed (výchozí podle nastavení jízdních řádů), opakovat zastávku na další stránce, zvýraznění buněk, styly času, doplňku a značek (sada Text); k tomu běžné skupiny Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost.
+- **Zvýraznění buněk** podle druhu spoje a dopravce: model pravidel (`HighlightRule`) mají Seznam zastávek, Tabulka spojů a Tabulka z dat pro řádky („Zvýraznění řádků"); relace ho potřebují pro buňku a bez omezení na jeden druh a jednoho dopravce.
+  Data pošlou typ linky a dopravce u spoje; legenda barev jde do poznámek jako dnes.
+- **Beze změny se použijí** Poznámky (5 druhů jako kategorie), text a obrázek (nadpis, platnost, kontakty IDS, logo); font TimeTable2 i slovenský návrhář přibaluje (`dotnet/Fonts`).
+- **Parametry sestavy (asi 5):** typy linek, vybrané cílové zastávky, „Stránka pro každé stanoviště" (`#13693`; dnes `ROZDELIT_PER_OZNACNIK` jen v `ZastavkoveJrAd`, druhou agendou se podle R8 přestěhuje do `Jr/Parametry.cls`), zóny u názvů a poznámky ke spoji.
+  Zóny a poznámky ke spoji počítá server: parametr sestavy, nebo volba prvku poslaná do vstupu (`cache-api.md` R3) - rozhodnout při stavbě.
+- **Víc relací** do jednoho nebo samostatných dokumentů pokryje tisk víc instancí, který návrhář umí; každá relace na nové stránce je v legacy napevno (`Module.vb:1910`), v návrháři to rozhodne šablona.
+- **Vědomě nepřebírat:** měřítko X a Y a inverzní tisk z postskriptu, volné rozmístění 9 údajů v buňce, písmo NZ převzaté z odjezdu (chyba, `Module.vb:3551-3562`), barvu jen pro jeden druh a jednoho dopravce.
+
+### 3f) Otevřená rozhodnutí
+
+1. **Jak volná bude buňka** - pevná kostra (doporučení) proti volnému rozmístění z Windows (`#8508`), které by potřebovalo editor buňky v okně prvku. Rozhodnout po porovnání se skutečnými šablonami BBSK a SADZV v jejich databázích; zálohy šablon v repu jsou kódované a jen od M-line z let 2014-2020.
+2. **Název výchozí zastávky** - „název pro tisk" jako postskript, nebo název jako Windows tisk.
+3. **Kniha** (`OZaK`) - jestli stačí jiná šablona, nebo kniha skládá stránky jinak; ukáže jen přečtení programu.
+4. **Dálkové a mezinárodní napřed** - volba prvku s výchozí hodnotou podle nastavení jízdních řádů, aby se zákazníkům výstup nezměnil.
+5. **Šablony zákazníků** (SADZV `#13654`) - převod, nebo nové šablony; stejná otázka jako u report generátoru (roadmapa `F10`).
+
+### 3g) Zkušební data na dev serveru
+
+- Firma **VS_ZGBUS** (Zgroup Vsetín), skupina linek 1, odjezdové relace Vs-nam, Vs-pri, luh-ja, luh-vs; data dev serveru jsou pod jménem firmy, ne pod `USER`.
+- **Vs-nam** - Vsetín, Dolní náměstí (zóna 460), 3 cílové zastávky, linky 945601, 945605, 945608, asi 80 spojů, NZ 10-12, bezbariérové spoje; omezení z let 2024-25.
+- **luh-vs** - Vsetín, Luh II, 1 cílová zastávka s asi 100 spoji (zalamování buněk), poznámky „pokračuje" s číslovanými značkami; data z let 2016-17.
+- Ve firmě jsou Windows šablony 1001 „Slovak lines 1" a 1002 „M-line vzor 1" a postscriptový program `OZa`.
+- Relace nepřepočítávat - přepíše se uložený výsledek.
+- Chybí relace s „přes", dálkovými spoji a linkou IDS; CB_CSADAD ve skupině 1 relace nemá, jinde se nehledalo.
 
 ---
 
-## 4) Vozové JŘ (turnusy)
+## 4) Vozové JŘ a tisky podle oběhu (ověřeno v kódu 30. 10. 2026)
 
-Dva legacy generátory podle typu:
-- **MHD:** `ALVA.MHD.ReportGenerator`
-- **Linky:** `AD.ADREPORTGEN`
+Do 30. 10. tu stálo, že vozové JŘ tisknou `ALVA.MHD.ReportGenerator` (MHD) a `AD.ADREPORTGEN` (linky).
+Obojí jsou obecné agendy report generátoru s mnoha sadami, ne vozové JŘ (§3.1).
 
-**Použití:** v linkové dopravě se tiskne **v turnusech** (oběhy vozidel - který spoj jede které vozidlo).
+- **Vozový JŘ DPKV** (jen MHD): `MHD2Tisk/CACHE/ALVA/MHD2/Tisk/API/DPKV/VozovyJR.cls` + `VozovyJRTabulky.cls`, klient `MHD2Tisk/API/DPKV/VozovyJR.cs`.
+  Stránka = oběh, vlastní kreslení PDF mimo report generátor (slučování tabulek linek, zmenšení písma); vydaný 27. 10. 2026 (HD 13674, bod S2), spouští ho MHD2Linky tiskem MHD202.
+- **Vozové listy** (MHD): sada `VOZOVE_LISTY` agendy MHD v report generátoru, stránka = oběh, spouští MHD2Linky (MHD039).
+- **Tisk turnusu pro řidiče** (AD): sada `ADTUR_RIDICI` agendy AD v report generátoru, stránka = turnus, spouští ADTURNUSY a ISYTurnusy.
 
-**Stav v TD:** zatím **neimplementováno**. V roadmapě „Relace a vozové JŘ".
+V AD vozový JŘ není.
+Vozové listy a turnus pro řidiče se převedou s report generátorem (§3.1, vozové listy jako pilot); vozový JŘ DPKV jen na poptávku - má jediného zákazníka a čerstvý vlastní tisk.
 
 ---
 
@@ -667,8 +838,8 @@ Per roadmap PRIORITA 2:
 V roadmapě linkové/knižní JŘ a Relace/vozové (později, nižší priorita):
 
 2. **Linkové vývěsní/knižní JŘ** - `ALVA.TISKJR` ekvivalent (meziměstský; legacy generuje obojí)
-3. **Relace** - `ALVA.TiskJRRELACE` ekvivalent (specifický slovenský use case)
-4. **Vozové JŘ** - `ALVA.MHD.ReportGenerator` + `AD.ADREPORTGEN` ekvivalent (vozové JŘ)
+3. **Relace** - `ALVA.TiskJRRELACE` ekvivalent nad AD (živý zákazník BBSK)
+4. **Vozové JŘ** - viz §4: vozové listy a turnus pro řidiče s report generátorem, vozový JŘ DPKV na poptávku
 
 ---
 
@@ -676,8 +847,6 @@ V roadmapě linkové/knižní JŘ a Relace/vozové (později, nižší priorita)
 
 - ❓ `ALVA.TISKJR` - funguje i pro MHD nebo jen linkový?
 - ❓ Datové zdroje linkového JŘ v Caché (analogie `ALVA.MHD.LSO/CHR/ZST` pro MHD)?
-- ❓ Relace - který zákazník přesně, je to live use case nebo legacy?
-- ❓ Vozové JŘ - koho přesně to zajímá, časová priorita?
 
 
 
@@ -785,35 +954,37 @@ sdílené helpery hostuje.
 **Změřeno 21. 9.:** vývěsky mají 10 metod znak po znaku shodných (~100 řádků: barvy, atributy
 zastávky, stavba odjezdu a skupiny dnů, obě metody předdefinovaných tabulek); ze schématu je 25 z 27
 popisů polí MHD totožných s AD (u linkových 22 z 24). Liší se dva popisky po ose AD × MHD
-(`CISLO_LINKY`, `LOKALNI_OZNACENI_LINKY`) - ve společné metodě by byly parametrem. Navržený tvar:
-mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase`, varianta si doplní svoje. Popisky polí hlídá
-`AgendaSchemaDriftTests`.
+(`CISLO_LINKY`, `LOKALNI_OZNACENI_LINKY`) - ve společné metodě by byly parametrem. Popisky polí hlídá
+`AgendaSchemaDriftTests`. Tvar sdílení je rozhodnutý (29. 10.): **pomocné třídy mimo hierarchii agend**,
+ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval z nabídky
+([`architektonicka-rozhodnuti-agendy.md` R8](architektonicka-rozhodnuti-agendy.md)).
 
 **Doplněno 23. 10. (review `B193`)** - kde začít, protože se to už rozešlo:
 
-- **Výběr skupin linek a linek** - u AD dvě kopie (`GetAvailableSkupiny`, `GetAvailableInstances`).
-  MHD je od 23. 10. sdílí (`ZastavkoveJrMhd.SeznamLinek`, `B193c`), kopie se do té doby rozešly
-  v příznaku zablokované skupiny.
-- **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - každá agenda ji skládá zvlášť; odtud čtyři
-  tvary popisu platnosti a dva texty návrhu (`B193f`, viz changelog 23. 10.).
-- **Společné parametry vývěsek** (Pořadí stránek, šipky, projeté zastávky, časová osa, roztažení) jsou
-  opsané (`ZastavkoveJrAd.cls:3521-3675` × `ZastavkoveJrMhd.cls:1774-1826`). Linkové agendy mají jednu
-  sdílenou definici (`LinkovyJrAd.cls:373-446`) a to je vzor.
-- **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`, vývěsky a faktury): návrhář je
-  nikde nenabízí a do 23. 10. při volání padaly (`B193f`). Zrušit, nebo napojit do vkládání tabulky.
-- **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` (`LinkovyJrAd.cls:1814, 2120, 2131`
-  × `LinkovyJrMhd.cls:1176-1195`) a `RgbToHex` vedle `BaseAgenda.RgbNaHex`.
+- **Výběr skupin linek a linek** - od 30. 10. jednou pro každý zdroj, v `Jr/DataAd.cls` (`B56` S6) a `Jr/DataMhd.cls` (S12);
+  agendy ho jen přesměrují (hlídá `DataPodleZdrojeTests`). Kopie MHD se do 23. 10. rozešly v příznaku zablokované skupiny.
+- **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - od 30. 10. ji skládá `Jr.DataAd.AddHlavickaLinky` (`B56` S7)
+  a `Jr.DataMhd.AddHlavickaLinky` (S12); agenda přidá jen svoje vědomé rozdíly: titulek (vývěska AD, bez náhradního textu),
+  popis dopravce (řádky × čárky) a hotovou větu platnosti pro starší šablony (čtyři tvary, `B193f`). Číslo podle licence jde
+  ve všech agendách jako číslo, veřejné označení jako text (`KontraktAgendTest.TestTypyCislaLinky`).
+- **Agendy se navzájem nevolají** (od 30. 10., S12, hlídá `DataPodleZdrojeTests.AgendaNevolaJinouAgendu`): co čtou dvě,
+  je v pomocné třídě zdroje. Výjimka je rozdílový JŘ, který je postavený nad linkovým JŘ AD.
+- **Společné parametry JŘ** jsou od 30. 10. definované jednou v `Jr/Parametry.cls` (`B56` S2): sedm parametrů
+  vývěsek, linkové parametry a tvar názvu zastávky. Agenda si je skládá v `GetParameters` sama, pořadí v panelu drží ona.
+- **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`) jsou od 30. 10. zrušené i se čtením v návrháři
+  (`B56` S10, Jan): návrhář je nikde nenabízel a do 23. 10. při volání padaly (`B193f`). Hotové bloky se nedělají (`B66` zrušené 31. 10.).
+- **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` jsou od 30. 10. jednou v `Jr/VystupLinkovy.cls` (`B56` S4).
+  `Jr.VystupZastavkovy.RgbToHex` vedle `Jr.DataAd.BarvaSpoje` není kopie, viz „Opsané pod jiným jménem" níž.
+- **Stavba výstupu vývěsky** (řádek zastávky, zóna, atribut, poznámka zastávky, skupina dnů, odjezd, poznámka,
+  barva, speciální znak) je od 30. 10. jednou v `Jr/VystupZastavkovy.cls` (`B56` S3); značky u odjezdů
+  (`AddAnotace`) zůstávají v agendách, AD posílá o tři klíče víc.
 
-**Popisky voleb rozdělení sloupců (`P2`, revize `B194` 23. 10., ověřeno na serveru)** - patří ke kroku R5
-(parametry vývěsek do jedné definice), čeká na vyjasnění nastavení JŘ s kolegy (Jan 28. 10.).
-
-- Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb: „Pracovní / Sobota / Neděle+svátky" × „Pracovní dny / Soboty / Neděle+svátky", k tomu kryptické prázdninové volby vývěsky.
-  Vnitřní klíče jsou stejné (`PRAC_SO_NE`, `PRAC_VIKEND`).
-- Volby jsou zamčené (ukládá se zobrazený text, `ux-conventions §8`), proto přidat souběžný klíč `optionLabels` a `options` nechat jako text.
-  `CacheAgendaProvider.ParseParameters` čte `options` jako pole textů: volba poslaná jako objekt by vyhodila výjimku a návrhář by ztratil všechny parametry agendy.
-- Třetí kopie popisků je v `DepartureColumnPresets` (vzory vlastních sloupců).
-- Popisky a nápovědy parametrů výstup ani uložené volby nemění, návrhář je bere ze serveru.
-  Citují je ale hlášky linky bez dat (`BuildStrankaLinky` v obou linkových agendách), při přejmenování opravit i je.
+**Popisky voleb rozdělení sloupců (`P2`, hotovo 1. 11.)** - tatáž volba má ve vývěsce i linkovém JŘ AD stejný popisek
+z `Jr.Parametry.PopisekVzoruSloupcu` podle klíče vzoru (`PRAC_SO_NE`, `PRAC_VIKEND`); volby skládá `AddVolbyRozdeleniSloupcu`.
+Uložené texty voleb (`options`) zůstaly, protože se ukládají; popisek jde vedle v poli `optionLabels` a čte ho lišta parametrů,
+tiskové okno, formulář parametrů (`AgendaParams`) i nabídka vzorů v editoru sloupců. ⚠️ Volba poslaná jako objekt místo textu
+by `CacheAgendaProvider.ParseParameters` shodila a návrhář by ztratil všechny parametry agendy - proto souběžné pole, ne objekty.
+Sada voleb se mezi agendami liší dál (vývěska má Automaticky a prázdninové vzory, linka Bez rozlišení), sjednocené jsou jen jména.
 
 **Vědomé rozdíly mezi agendami JŘ (rozhodnutí Jan 26. 10., revize `B194`)** - každá agenda tu drží tvar
 svého starého modulu, sloučení kódu je nesmí srovnat.
@@ -829,3 +1000,65 @@ svého starého modulu, sloučení kódu je nesmí srovnat.
   Rozdíl je vidět jen u zastávek se zónou mimo trasu nebo ve dvou IDS.
 - **T10b Stanoviště u názvu zastávky:** Linkový JŘ AD ho tiskne v řádku tabulky u zastávky s příznakem trasy „S" jako „, stan.16" (parita starého linkového tisku, `LinkovyJrAd.BuildZastavkaRadek`), Zastávkový JŘ AD jen v nadpisu rozdělené vývěsky jako „, označník 3" / „, sloupek 1" (vzor KOVED #8828, `ZastavkoveJrAd.BuildStrankaZastavky`).
   Jiné místo i účel; zkratka „stan." neumí rozlišit označník a sloupek.
+
+**Opsané pod jiným jménem (revize `B194g` R2, změřeno a rozhodnuto 30. 10.)** - kopie, které analýza z 5. 8. hledala podle názvu, a proto je nenašla.
+Měřeno sondou `DuplicityAgendProbe` na šesti testovacích firmách (96 531 linek, 2,4 mil. spojů).
+
+Sjednoceno v `B56` S8 (30. 10.), tisk se nezměnil:
+
+- **Platnost linky** (`PATCH,"Plati"` = „od~do:…") se četla na šesti místech agend AD a příponu za dvojtečkou odřízla jen dvě; starý modul ji odřízne vždy.
+  V datech ji nemá žádná linka (0 z 96 531). Teď ji čte jen `Jr.DataAd.PlatnostLinky` (s odříznutím) a horolog dává `Jr.DataAd.HorologPlatnostiLinky`.
+  Tři převody data na `$h` vyšly na všech 193 050 datech platnosti stejně (sonda `PrevodyPlatnosti`; všechna mají tvar `dd.mm.rrrr`).
+- **Omezení 14 a 15** („jede jen v sudých / lichých týdnech") linkový JŘ vytiskl i bez data, vývěska bez data přeskočila.
+  Bez data není žádné z 319 výskytů; teď obě agendy skládají text v `Jr.DataAd.TextOmezeni` a věta platí i bez data.
+  Jazyk předložky zůstal každé agendě svůj (parametr `rec`): vývěska ho bere z jazyka šablony, linkový JŘ z kódu jazyka a číselníku firmy.
+
+Vědomě nesjednocovat (rozhodnutí Jan 30. 10.):
+
+- **Popis dopravce** (`POPIS_DOPRAVCE`): tři kopie v agendách a skládání v návrháři (`PageLayoutEngine`, `LineTableElement.PopisDopravcuStranky`).
+  Vývěska AD podle starého zastávkového tisku dává sídlo firmy a sídlo provozovny každé na řádek, takže u GW BUS (320157) vyjde adresa dvakrát; linkový JŘ dává vše na jeden řádek s čárkami a adresu jednou.
+  Každý tvar odpovídá svému starému tisku, dvojí adresu (#13158) řeší pole dopravce po položkách.
+- **Rozsahy čísel spojů**: souhrn dopravců ve vývěsce (`ZastavkoveJrAd.RozsahyCisel`) vede řadu jen přes čísla těsně po sobě („1-35, 37, 39, 41, 43, 45, 101"), Tabulka spojů (`LineTableElement.Rady`) i přes ob jedno, protože stránka nese jeden směr („1-45, 101").
+  Každé pravidlo sedí na svůj případ.
+- **Barva „0;0;0"** znamená v každém zdroji něco jiného, nejde o kopii téhož.
+  Barva spoje AD (`#`-pole 12, `Jr.DataAd.BarvaSpoje`, do 30. 10. `BaseAgenda.RgbNaHex`) = bez barvy: má ji 2 185 160 z 2 189 806 spojů s barvou.
+  Barva linky (`Jr.DataAd.BarvaLinky`) a barvy poznámek ke spojům MHD (`ZastavkoveJrMhd`) jdou přes `Jr.VystupZastavkovy.RgbToHex` a černá je černá: v KV_DP má 24 poznámek černý znak záměrně.
+  Pojmenováno podle zdroje v `B56` S13.
+- **Značky u odjezdů a kolekce vývěsek**: `AddAnotace` AD posílá navíc `KATEGORIE`, `SPOJ` a `V_ROZSAHU_NEPOZNAMKOVAT`, `AddStandardJRCollections` AD má o pět polí víc.
+  Společná metoda jen tak, aby MHD tyto klíče dál neposílal - jinak by filtr Poznámek podle kategorie začal skrývat poznámky i v MHD.
+
+Stejné jméno, jiný význam - při přesunu do pomocné třídy přejmenovat, ne sloučit.
+`Jazyk` je přejmenovaný (`B56` S13): vývěska AD má `JazykSablony` (`cs`/`sk` z `^||TiskAd`) a obě agendy AD `KodJazykaCiselniku` (`CZ`/`*SK`;
+vývěska ho volí jen podle jazyka šablony, linkový JŘ i podle varianty, kterou má firma v číselníku - vědomý rozdíl).
+Zbývá: `ZonaBezPismen` (úprava textu × ano/ne z nastavení), `NactiNastaveniNazvu` (výchozí „Plný CIS" × „Zkrácený", vědomý rozdíl hlídaný v `KontraktAgendTest.Vyjimka`), `PopisDopravce` (viz výš), `BuildStrankaLinky`.
+Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKnizni("wmap",trasa)` × `^||TiskAd("wmap",db,sku,lin,trasa)`), `ZaznamZastavky` bere datum z jiného globálu.
+
+**Měření duplicity 30. 10.** (skript bez komentářů, prázdných řádků a povinné kostry metod; historie od 19. 5., 287 commitů):
+
+- Kód agend JŘ má asi 5 850 řádků kódu (11 600 řádků souborů).
+  Doslova shodných metod je 20 dvojic (asi 170 řádků), téměř shodných 6 dvojic (asi 140 společných řádků).
+- Opsané bloky (6 a více řádků za sebou): vývěska AD 18 % kódu, vývěska MHD 19 %, linkový AD 13 %, linkový MHD 10 %.
+  Vývěsky AD × MHD sdílí asi 200 řádků, vývěska AD × linkový AD 130-170, linkový AD × MHD asi 70 a nabídku dat shodnou z 89 %.
+- 42 commitů změnilo totéž ve dvou agendách (18 oprav), 56 změnilo jen jednu kopii (31 nových funkcí, 12 oprav).
+  Nejvíc kolekce vývěsek (11× obě, 15× jedna) a nabídka linkového JŘ (10× obě, 12× jedna), pak parametry vývěsek (5×) a předpřipravené tabulky (4×, nikdo je nepoužívá).
+  Přiřazení změny k metodě je přibližné (nejbližší hlavička metody v diffu, počítají se i hromadné úpravy).
+- Agendy se navzájem volají 16× (linkový MHD → zastávkový MHD a linkový AD, linkový AD → zastávkový AD, zastávkový AD → linkový AD).
+- Ubude asi 400-500 řádků; přínos je udržitelnost, ne délka kódu ([R8](architektonicka-rozhodnuti-agendy.md)).
+
+**Postup `B56`** (z revize `B194`, 30. 10.):
+
+- **Pojistky:** `KontraktAgendTest` (kontrakt každé agendy z registru, data odpovídají nabídce, sdílené parametry shodné), integrační `KontraktDatAgendTests` (položky, které čtou prvky, ve správném tvaru), `TestovaciLinkyTest` (linky testů v datech jsou), zlaté odtisky všech čtyř agend JŘ a snímek výstupu agend.
+- **Snímek výstupu je sonda, ne test** (výstup závisí na datech dev serveru): schéma, parametry a ukázka všech agend z registru a `GetData` linek z `KontraktAgendTest.LinkyAgend` - 45 souborů, 16 MB.
+  Spouští se `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo); první běh uloží, další porovná obsah stránek jako JSON.
+  Jiná hodnota nebo typ (číslo × text) test shodí s cestou k prvnímu rozdílu, jiné pořadí položek jen vypíše (návrhář je čte podle jména; do 30. 10. se porovnávalo bajt po bajtu).
+  Nový snímek po vědomé změně: starou podsložku `snimek` přejmenovat (`snimek-pred-…`), další běh sejme nový.
+  Porovnává se **před krokem** na nezměněném kódu (data mění i kolegové; když se liší, sejme se znovu) a **po kroku** (musí vyjít stejně).
+  Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
+- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11, S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`), S4 (výstup linkového JŘ, `Jr/VystupLinkovy.cls`), S5 až S8 (data AD, výběr linek, hlavička linky, platnost a text omezení, `Jr/DataAd.cls`) a S12 (data MHD, `Jr/DataMhd.cls`) hotové 30. 10.
+  Sdílené parametry porovnává mezi agendami `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
+  Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky (hotové, S3); linkové (hotové, S4, `Jr/VystupLinkovy.cls`); AD (hotové, S5, `Jr/DataAd.cls`; `NormalizLinku` přejmenované na `FormatCisloLinky`), výběr skupin linek a linek (hotový, S6).
+  Pak sjednocení z odstavce výš (platnost, omezení 14 a 15; hotové, S8) a data MHD včetně posledních vzájemných volání agend (hotové, S12).
+  Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až kolegové uklidí nastavení tisku v jízdních řádech (fáze 6 `B56`).
+- **Pojistky při přesunu kódu (S1 hotové 30. 10.):** pomocné třídy jsou v `Agendy/Jr/` a testy čtou zdrojáky přes `ZdrojeAgend`: kontroly kódu a textů celý kód agend včetně podsložek, kontroly vlastností agendy jen agendy (přímé potomky `BaseAgenda`, jako registr).
+  Při přesunu dál pozor na kontroly vázané na jednu agendu: pořadí polí nabídky po souborech, vyřazená pole agendy, „Obecné" jako první skupina parametrů, příznak v registru proti obsahu agendy (`TRASA_MIN`, `ParseDefiniceSloupcu`, `"puvodni"`) a doslovné `AddBoolParam(arr,` v `ServerSideParamsDriftTests`.
+  Ty se upraví v témže commitu, který jejich kód přesune; serverové kontroly (`KontraktAgendTest`, `KontraktDatAgendTests`) přesun přežijí.

@@ -1,5 +1,607 @@
 ﻿# Changelog
 
+## 2026-11-01 (56) - Rozdělení sloupců se ve vývěsce i linkovém JŘ jmenuje stejně (`P2`)
+
+Volba „Rozdělení sloupců podle platnosti" měla pro totéž rozdělení dvě jména: „Pracovní / Sobota / Neděle+svátky" ve vývěsce a „Pracovní dny / Soboty / Neděle+svátky" v linkovém JŘ, k tomu zkratky v prázdninových volbách vývěsky („Prac. mimo+o prázd.").
+Texty voleb se ukládají (uložené volby uživatelů i šablon), takže je přejmenovat nešlo: uložená volba by se tiše vrátila na výchozí.
+Server teď vedle textů posílá aditivní pole `optionLabels` se společným popiskem podle klíče vzoru (`Jr.Parametry.PopisekVzoruSloupcu`, volby skládá `AddVolbyRozdeleniSloupcu` pro obě agendy).
+Popisek ukazuje lišta parametrů, tiskové okno (`ParameterOption`), formulář parametrů (`AgendaParams` dá popisek do položky seznamu) i nabídka vzorů v editoru sloupců; hodnota je dál uložený text, vzor se hledá podle něj (`DepartureColumnPresets.KeyForOption`, `MatchOption`).
+Nové popisky: Pracovní dny / Soboty / Neděle+svátky, Pracovní dny / Soboty+Neděle+svátky, Pracovní dny mimo prázdniny / o prázdninách / Soboty+Neděle+svátky (i se Sobotou a Nedělí zvlášť). Rozhodnutí Jan 1. 11.: vzít hned, nečekat na úklid nastavení tisku u kolegů - popisek jde teď přejmenovat kdykoli.
+Starší návrhář `optionLabels` nezná a ukáže dosavadní texty; nový návrhář se starším serverem taky.
+Ověřeno: Caché `VzorySloupcuTest` (stejný popisek v obou agendách, uložené texty beze změny; mutace bez společných popisků ho shodí), .NET `VzorySloupcuZParametruTests` (mutace „vzor podle popisku" a „nabídka bez popisků" je shodí), formulář parametrů voláním `AgendaParams.Init` na dev serveru. Caché testy TemplateDesigneru 287/288 (1 přeskočený z dřívějška), .NET testy 2680/2680, integrační 48/48. V aplikaci neproklikané.
+
+## 2026-11-01 (55) - Čas jízdy vývěsky AD z ručních minut u trasy (`B144`)
+
+Starý tisk vývěsky AD bere do sloupce Čas ruční minuty u trasy linky, když má linka v JŘ vypnuté automatické generování časových průběhů tras (`^JRL(sku,lin,"PATCH","mhd","par",1)`, `JRapiExp10.mac:383`). My jsme vždy počítali z jízdních dob, takže linky Nitry v ručním režimu měly jiná čísla než starý výtisk.
+Nové zaškrtávátko „Čas jízdy podle nastavení linky" (`CAS_JIZDY_PODLE_LINKY`, skupina Seznam zastávek, serverový parametr, ukáže se jen se sloupcem Čas jízdy) přepínač u linky respektuje; rozhodnutí Jan 1. 11.: zaškrtávátko místo volby ze tří.
+Výchozí vypnuto, protože české firmy mají přepínač vypnutý a minuty prázdné a sloupec by se jim vyprázdnil.
+Přepočet je přepis starého `GetMin` (`JRapiLinPrtMhd1.mac:765-790`) v `ZastavkoveJrAd.RucniCasyJizdy`: rozdíl proti vývěskové zastávce, prázdno u projetých, u vývěskové a u nuly; vývěsková zastávka bez minut se počítá od nejbližší předchozí s minutami.
+Ověřeno: oracle `TestRucniCasJizdyVsLegacyNitra` - Nitra `0000002` shodná se starým tiskem na všech 55 vývěskách (mutace „nula se tiskne" ho shodí na 38 zastávkách); větev bez minut u vývěskové zastávky data Nitry nemají, drží ji jednotkový `TestRucniCasyJizdy` (ověřeno mutací). Na lince `0000001` v automatickém režimu volba nic nemění.
+Caché testy TemplateDesigneru 286/287 (1 přeskočený z dřívějška), .NET testy 2677/2677, integrační testy 48/48, parametr ověřený voláním `GetParameters` na dev serveru. V aplikaci neproklikané.
+Vedlejší nález oraclem (zapsaný v `ad-data-mapa.md`, neřešený): na `0000001` se náš spočítaný Čas od starého tisku liší o 1-2 minuty na řadě vývěsek, protože jinak vybíráme základní trasu; a seznam zastávek `0000002` má 23 řádků navíc (zastávky, kam jezdí jen část spojů).
+
+## 2026-10-31 (54) - Čas jízdy vývěsky MHD ověřený proti starému tisku
+
+Oracle starého tisku MHD (`MhdLegacyOracle`) porovnával odjezdy, zastávky a poznámky, ale ne čas jízdy v seznamu zastávek - tvrzení „jako starý modul" stálo jen na čtení kódu.
+Teď porovnává i ten (vývěska × zastávka × minuty) a test parity ho hlídá: CB_DP linky 1, 3 a 6 i KV_DP linka 1 sedí 1:1 (např. linka 1: 1543 řádků).
+Výpočet je v obou stejný (`LinkyPrintFormatMHD.cls:189-223` a `:796` × `ZastavkoveJrMhd.PripravitTrasu`): součet základních dob jízdy z chronometráže po bodech trasy linky, ruční jízdní doba u bodu trasy ji přebíjí, v řádku je čas zastávky minus čas vývěskové zastávky. Projetá zastávka má u nás 0, ve starém tisku prázdno - klient ji neukazuje.
+Ověřeno: Caché testy vývěsky MHD 22/22, mutace (+1 minuta v našem výpočtu) shodí paritu na všech čtyřech linkách.
+
+## 2026-10-31 (53) - Hledání ve vlastnostech po slovech a se synonymy
+
+Hledání ve formuláři vlastností bralo celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení" ani „čára" nenašly nic a „výška záhlaví" nenašla Nejmenší výšku ve skupině Záhlaví.
+V oknech návrháře teď hledá každé slovo zvlášť přes popisek i skupinu, slova od pěti písmen bez poslední hlásky, a se synonymy ze slovníku `Designer/SlovnikHledani.cs` (písmo → Font, Velikost, Tučné, Kurzíva; podbarvení → Barva pozadí; čára → Rámeček, Mřížka, Tloušťka…; 22 slov).
+Sdílený formulář (`EDControls`) dostal volbu `SearchSynonyms` aditivně: je to zděděná vlastnost, kterou návrhář dosadí na všechna svá okna (`App.OnAnyWindowLoaded`). Rozhodnutí Jan: ne obecné chování - ve zbytku EDISONu, kde by „písmo = font" nedávalo smysl, se hledá jako dřív.
+⚠️ Nové veřejné členy `EDControls.dll` (`PublicAPI.Unshipped.txt`): návrhář s touto změnou potřebuje novou knihovnu, při vydání jdou ven spolu.
+Ověřeno: EDControls testy 1269/1291 (22 testů s okny přeskočených jako vždy) včetně nových `EDInputFormSearchSynonymsTests` (ověřeno mutací: bez dědění z okna test padá), .NET testy návrháře 2677/2677 včetně `SlovnikHledaniTests` (každé synonymum má ve formulářích cíl, ověřeno mutací), build celého řešení bez chyb. V aplikaci neproklikané.
+
+## 2026-10-30 (52) - Texty návrháře mluví slovem agendy, ne „linkou"
+
+Asi 25 obecných textů (menu a bublina kontroly, hlášky tisku a kontroly, výběr instancí, spuštění z jízdních řádů, nápověda F1, volba exportu „Jeden PDF na …") mělo „linku" napevno; agenda report generátoru by tiskla „Žádná vybraná linka nemá data" i u oběhů.
+Agenda teď hlásí, jak se jmenuje to, co tiskne: parametr třídy `InstanceTvary` (1., 2. a 4. pád jednotného čísla, 1. a 2. pád množného, volitelně 4. pád množného u mužského životného) a `InstanceRod` (F, M, MZ, N); rozhodnutí Jan: tvary a rod, ne přeformulované věty.
+Registr je posílá (aditivně, `instanceLabel` a `instanceLabelPlural` dál z tvarů pro starší návrháře), návrhář z nich skládá věty přes `Models/NazevInstance` včetně shody („Žádný vybraný oběh"). Starší server bez tvarů dá obecné „instance"; server se nasazuje dřív než klient.
+Formulář exportu bral 4. pád heuristikou z koncovky (`AgendaParams.Akuzativ`), ta je smazaná.
+Pro jízdní řády se texty nemění, kromě drobností: chybí-li důvod prázdné linky, rada zní „zkontrolujte data linky" (dřív „jízdní řád linky"), u nápovědy „Předchozí a další z vybraných linek" a hláška spuštění bez agendy na serveru „návrhář ji nemůže otevřít".
+Zbylo jméno zkratky „Výběr linek" v tabulce zkratek (F1, asistent) - tabulka je statická.
+Ověřeno: .NET testy 2675/2675 včetně nových `NazevInstanceTests` (shoda pro všechny rody, starší server, hlídání obecných oken - zabral na skutečném textu), Caché testy TemplateDesigneru 284/285 (1 přeskočený z dřívějška), integrační testy 48/48, voláním `ListAgendy` a formuláře exportu na dev serveru. V aplikaci neproklikané.
+
+## 2026-10-30 (51) - Jedna šedá pro záhlaví nových prvků
+
+Nově vložená pevná tabulka a tabulka s řádky z dat měly záhlaví o odstín světlejší (`#FFE8E8E8`) než prvky jízdních řádů, dodávané šablony a import z PDF (`#FFE0E0E0`). Rozdíl nebyl záměr (Jan).
+Teď mají všechny nové prvky `#FFE0E0E0` z jedné konstanty `TableStyleDefaults.NoveZahlaviPozadi`; konstanta v `ScheduleElementBase` zanikla.
+Hotové šablony se nemění, barvu mají uloženou. Migrace 1.11.0, která starým šablonám barvu dopisuje, má proto původní odstíny zmrazené a nebere je z konstanty nového prvku.
+Ověřeno: .NET testy 2661/2661; test migrace ověřen mutací (s barvou z konstanty by staré tabulky ztmavly a test spadne).
+
+## 2026-10-30 (50) - Varianty tras ve vývěsce MHD
+
+Seznam zastávek vývěsky MHD umí sloupec „Varianty tras" jako AD: každá trasa ze zastávky má svůj sloupec jízdních dob a minuty odjezdů její písmeno (kategorie „varianta-trasy").
+Varianty počítá sdílená `Jr/VariantyTras.cls`, platí pro ně týchž pět parametrů sestavy a agenda hlásí `VariantyTras = 1`, takže návrhář sloupec nabídne sám.
+Rozdíl proti AD: zástupcem varianty je spoj s nejdelší jízdou, ne trasa, protože v MHD má jízdní doby každý spoj zvlášť (sonda `VariantyTrasMhdProbe`: spoje jedné varianty se liší až o 16 min).
+Sled varianty se bere jen přes zastávky, které stránka ukazuje (bez bodů „netisknout" a bez zastávek, kam odtud nic nejede); na KV_DP linka 1 by se skrytými body vyšlo až 12 variant místo 7.
+Sloupec „Čas jízdy" počítá dál z chronometráže trasy linky; podle sondy sedí se skutečným spojem jen u 56 % odjezdů, to je samostatná otázka.
+Písmena variant jsou zatím pevně výchozí sada `ADLMNPTY` (rozhodnutí Jan: sada se doladí, až varianty poběží); rozdíly tras MHD mají z výroby a-z, takže se písmena můžou lišit jen velikostí.
+Sloupek variant MHD neposílá (sloupky jsou jen v AD), integrační test kontraktu na to má výjimku.
+Starý tisk MHD varianty neměl, takže paritu není s čím ověřit (R6); `ZastavkoveJrMhdVariantyTest` hlídá vlastnosti výstupu na lince 1 CB_DP (7 variant).
+Ověřeno: Caché testy TemplateDesigneru 284/285 (1 přeskočený z dřívějška; nový test ověřen dvěma mutacemi), zlaté otisky MHD 1001/1003/1006 přepsané se shodnými počty stránek, zastávek, odjezdů i poznámek, parita se starým tiskem beze změny, integrační testy 48/48, .NET testy 2661/2661, voláním na CB_DP 1001 a KV_DP 1073 (počty variant na stránku shodné se sondou). V aplikaci neproklikané.
+
+## 2026-10-30 (49) - Varianty tras ve sdílené třídě (příprava pro vývěsku MHD)
+
+Výpočet variant tras (sled zastávek, zástupce varianty, slití úseků, řazení, ořez a písmena) byl jen ve vývěsce AD.
+Teď je v `Jr/VariantyTras.cls` a vývěska AD do ní jen dává spoje a průběh zástupce; vývěska MHD ji použije stejně.
+Pět voleb variant (řazení, nejvýš sloupců, slučování, písmena, první bez písmene) je ve sdílených parametrech (`Jr.Parametry.AddVariantyTras`).
+Pro uživatele se nic nemění.
+Cestou se opravily dva zastaralé komentáře: u parametrů tvrdil, že se písmena variant a rozdílů tras kryjí (od 3. 9. neplatí), a u písmen, že prázdná sada dá prázdné písmeno (dá výchozí sadu).
+Ověřeno: výstup AD linky 0330510 (11 variant) při čtyřech kombinacích řazení, slučování, ořezu a písmen je znak po znaku stejný jako před změnou, snímek všech agend (42 volání včetně parametrů) beze změny, Caché testy TemplateDesigneru 282/283 (1 přeskočený z dřívějška) včetně nového `VariantyTrasTest` (7 testů, ověřeno mutací), .NET testy 2661/2661.
+
+## 2026-10-30 (48) - Odjezd v 0:00 na vývěsce MHD
+
+Vývěska MHD vynechávala odjezd přesně v 0:00: čas spoje se hledal jako maximum od prázdného začátku a 0 není větší než nic.
+Na lince 53 CB_DP chyběl odjezd z Nádraží v obou směrech, přitom na další zastávce vývěska ukazovala 0:01.
+Starý tisk má tutéž chybu (oracle: legacy 402 odjezdů, my teď 406, rozdíl jsou jen tyto čtyři), takže je to vědomý rozdíl proti starému modulu (`legacy-nahrada.md` P3).
+Našla ho sonda variant tras MHD (`Tests/VariantyTrasMhdProbe.cls`); z prvních 100 linek CB_DP se to týká linek 53 a 59.
+Ověřeno: Caché testy zastávkového JŘ MHD 20/20 včetně nového `TestOdjezdVPulnoc` (před opravou padal), zlaté otisky i parita se starým tiskem na linkách 1001/1003/1006 beze změny, voláním oracle na lince 53.
+
+## 2026-10-30 (47) - Přísnější testy toho, co je zapsané dvakrát (sjednocení B1-B9)
+
+Co zůstává na dvou místech (formulář v Caché × panel v kódu, server × klient, kanon × seznam zákazů), teď hlídají testy:
+- **Panel proti formuláři** (`PanelProtiFormulariTests`): skupina, meze, jednotka, druh a volby každé vlastnosti. Našel 23 jinak pojmenovaných skupin (Poznámky, obě tabulky - srovnané podle formulářů, asistent teď mluví skupinami, které uživatel vidí), panel nedovoloval čáře nulovou šířku ani výšku (vodorovná a svislá čára ji mají) a formuláře u prvků s výškou podle obsahu dovolovaly výšku 0 (teď nejméně 1, prázdné pole dál znamená „podle obsahu").
+- **Klíče mezi klientem a serverem** (`KliceKontraktuTests`, `RegistrAgendKontraktTests`): definice vlastních sloupců, klíče parametrů, typy sekcí, parametry agendy v registru.
+- **Parametry sestavy** (`ParametrySestavy`): jména a zamčené volby, které klient čte, jsou v jedné třídě a test ověří, že je agendy posílají.
+- **Kontrakt dat prvků**: položky mimo nabídku se s ním porovnávají přesně; test čtení dat zná všechny konstanty a našel `POPIS_DOPRAVCE` (sazba stránek ho čte, v kontraktu chyběl). Výjimky agend MHD se odvozují z příznaků registru.
+- **Názvosloví**: každý tvar, který kanon zakazuje, hlídá seznam zákazů (doplněno 25 tvarů, např. canvas, Výplň, dynamická výška).
+- **Dodávané šablony** používají jen pole, která jejich agenda nabízí.
+Každý nový test je ověřený mutací (schválně zanesenou chybou). Ověřeno: .NET testy 2661/2661, Caché testy TemplateDesigneru 274/275 (1 přeskočený z dřívějška), integrační testy agend; formuláře nasazené a ověřené voláním serveru.
+
+## 2026-10-30 (46) - Popisky vzorů sloupců jen na serveru (sjednocení A5)
+
+Vzory rozložení sloupců (Pracovní / Sobota / Neděle+svátky…) měly popisky na serveru ve volbách parametru „Rozdělení sloupců" i v převodu volby na rozložení a klient je měl opsané znovu, zvlášť pro vývěsku a linkový JŘ.
+Teď agendy zastávkového a linkového JŘ AD staví volby parametru, klíče vzorů k nim (nové aditivní pole `optionKeys`) i převod volby na rozložení z jednoho seznamu (`VzorySloupcu`, `VzorySloupcuLinky`) a klient si popisky vzorů bere z voleb parametru (rozhodnutí Jan: k volbám, ne do dat tisku, takže zlaté otisky zůstaly beze změny).
+Pro uživatele se nic nemění. ⚠️ Server se musí nasadit dřív než klient: nový klient se starým serverem vzory nenabídne (editor sloupců Minut nabídne jen prázdnou definici).
+Ověřeno: .NET testy 2637/2637, Caché testy TemplateDesigneru 274/275 (1 přeskočený z dřívějška) včetně nového `VzorySloupcuTest` (ověřeno mutací), integrační testy agend 2/2, voláním `GetParameters` na dev serveru; v aplikaci neproklikané.
+
+## 2026-10-30 (45) - Smazaná offline nabídka dat (revize sjednocení D)
+
+Návrhář měl záložní nabídku dat ze souborů `schemas/*.schema.json` pro chod bez serveru, jenže ta složka od `899e05ba` neexistuje, takže záloha nic nenabízela.
+Smazané třídy `JsonFileDataSchemaProvider`, `CompositeDataSchemaProvider` a nepoužitý `CacheDataSchemaProvider` (stará cesta přes `LoadDBFieldIds`), odkaz v projektu a popis v dokumentaci; bez serveru teď stojí `EmptyDataSchemaProvider` se stejným výsledkem (žádné agendy ani pole).
+Ověřeno: .NET testy 2634/2634, žádný kód na smazané třídy neodkazuje.
+
+## 2026-10-30 (44) - Volby zarovnání na jednom místě (sjednocení A8)
+
+Popisky zarovnání (Vlevo / Na střed / Vpravo / Do bloku, Nahoře / Na střed / Dole) byly v kódu na pěti místech: nabídka panelu, nabídka v editoru stylu sloupce, šedá nápověda zděděné hodnoty, bubliny lišty formátu a volba Do bloku u textu.
+Teď jsou v `Models/Elements/AlignmentLabels.cs` a všechna místa z nich čtou. Formuláře v Caché (sada stylu a formulář textu) se dál opravují na serveru; test `VolbyZarovnaniTests` hlídá, že mají tytéž kódy i popisky (ověřeno mutací).
+Pro uživatele se nic nemění.
+Ověřeno: .NET testy 2634/2634.
+
+## 2026-10-30 (43) - Jednotné texty příkazů vrstvy (sjednocení A12)
+
+Místní nabídka Vrstva říkala „Dopředu / Dozadu / Úplně dopředu / Úplně dozadu", hlavní menu a bubliny „Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu".
+Platí druhá sada (rozhodnutí Jan) a menu, místní nabídka, bubliny i historie kroků ji berou z tabulky zkratek; nápověda F1 ji shrnuje stejnými slovy. Staré tvary zakazuje test názvosloví (ověřeno mutací).
+Ověřeno: .NET testy 2633/2633; v aplikaci neproklikané.
+
+## 2026-10-30 (42) - Okno společných vlastností a lišta formátu bez vlastních kopií (sjednocení A7, A9)
+
+**Okno společných vlastností** (Enter nad více prvky) mělo vlastní kopii rámečku, vrstvy a uzamčení se skupinami „Rámeček" a „Pozice"; teď bere tytéž vlastnosti jako panel prvku („Rámeček prvku", „Pozice a velikost").
+Přitom se našla chyba: **Ctrl+Z po změně více prvků vrátil všem hodnotu prvního**, takže rámečky nebo vrstvy, které se předtím lišily, zůstaly srovnané. Teď je zápis jeden vratný krok složený z kroku každého prvku a zpětný krok vrátí každému jeho hodnotu.
+**Lišta formátu** hledala tučné, kurzívu a zarovnání podle textu popisku a skupiny, takže by ji jejich přejmenování tiše vypnulo. Teď vlastnost nese, které tlačítko lišty ovládá.
+Ověřeno: .NET testy 2633/2633; chyba zpětného kroku reprodukovaná testem před opravou, lišta ověřená mutací; v aplikaci neproklikané.
+
+## 2026-10-30 (41) - Údaje ze šablony pro server v jednom typu (sjednocení A4)
+
+Vlastní sloupce vývěsky, turnusy ke spojům a jazyk textů značek posílá serveru šablona, ne parametry sestavy.
+Byly opsané na čtyřech místech: vstup načtení dat, kontrola „změnila se data, načíst znovu?", vstup ukázkových dat a výjimky testu parametrů. Zapomenuté místo znamenalo zaškrtnutí, které nic neudělá, dokud uživatel nezmáčkne obnovení dat.
+Teď je drží jeden typ `Models/TemplateDataInputs` a všechna čtyři místa se z něj staví; nová taková volba je jedna vlastnost.
+Vedlejší opravy: ukázková data dostávají i turnusy (dřív jen sloupce a jazyk), tisk víc linek bere jazyk ze snímku šablony pořízeného před tiskem (dřív ho četl z živé šablony na pozadí) a živý test tisku posílá jazyk šablony místo napevno „cs".
+Ověřeno: .NET testy 2626/2626, mutace (neodebraný klíč, chybějící hodnota) testy zachytily; v aplikaci neproklikané.
+
+## 2026-10-30 (40) - Klávesové zkratky v jedné tabulce (sjednocení A3)
+
+Zkratky byly opsané na sedmi místech (obsluha kláves, menu, bubliny, místní nabídky, nápověda F1, asistent, příručka) a rozcházely se: menu psalo „Del" a „Ctrl+PgUp", nápověda „Delete" a „Ctrl+PageUp".
+Teď je každá zkratka jednou v `Designer/KeyboardShortcuts.cs` (akce, kategorie, klávesa) a text se skládá z klávesy:
+- obsluha kláves okna i pevné tabulky s tabulkou porovnává, takže nápis a skutečná klávesa se nemůžou rozejít,
+- hlavní menu a bubliny tlačítek berou text přes `{td:Gesture …}` a `{td:Tip …}`, místní nabídky ukazují zkratku vpravo jako hlavní menu (dřív v závorce za textem) a nově i u příkazů vrstvy,
+- nápověda F1 a úplný seznam pro asistenta se skládají z tabulky.
+Shoda kláves je přesná: Ctrl+Shift+Z už nevrací krok, Shift+Delete nemaže a AltGr nespustí zkratku s Ctrl.
+Věty, které zkratku jen zmiňují (asistent, hlášky, celá příručka, přehled v ux §3), hlídá `KlavesoveZkratkyTests`: zkratku, kterou tabulka nezná, neprojdou (ověřeno mutací).
+Ověřeno: .NET testy; menu, bubliny a klávesy v aplikaci neproklikané.
+
+## 2026-10-30 (39) - Panel, lišta a formulář ukazují písmo, se kterým se prvek tiskne (sjednocení A2)
+
+Nenastavené vlastnosti stylu (font, velikost, tučné, barvy) panel, lišta formátu i formulář prvku dosud doplňovaly vlastní výchozí hodnotou z kódu (44 míst, `?? 9f`, `?? "Arial"`), ne hodnotou, se kterou se prvek vytiskne.
+Projevy: lišta u textu ukazovala „Arial" v šabloně s jiným výchozím fontem, Tabulka s řádky z dat ukazovala šedé pozadí záhlaví, které se netiskne, Minuty odjezdů velikost minuty 8 pt i při jiné velikosti buněk, Poznámky font záhlaví jiný, než se kreslí.
+Teď každý prvek s textem vyjmenuje své části stylu (`TemplateElement.ResolvedStyleZones()`) s hodnotami z týchž metod, kterými kreslí, a panel, lišta i formulář je čtou odtud (`ElementFormBinder.InheritedValuesFor` pro všechny části, ne jen pro text).
+Zaškrtávátka 2. řádku záhlaví, minuty a textu značek v Minutách odjezdů zapisují vypnutí jako hodnotu, ne jako „dědit" - zděděné tučné by se jinak odškrtnutím nevypnulo.
+Symboly značek v Minutách zůstávají mimo (velikost se dopočítá z minut), výška datového řádku také.
+Ověřeno: .NET testy 2606/2606, 6 nových v `VychoziHodnotyZKaskadyTests` před opravou padalo; v aplikaci neproklikané.
+
+## 2026-10-30 (38) - Katalog prvků (sjednocení A1)
+
+Nový prvek se dosud zapisoval na 12 až 20 míst (továrna, výchozí velikost, paleta, nabídka, jména, agendy, asistent, F1, třídy formulářů…) a dvě z nich se už rozešla.
+Teď má každý druh prvku jeden záznam v `Models/ElementCatalog.cs` (jméno, popis, ikona, výchozí velikost, druhy agend, pozice v nabídce, založení) a zbytek se z něj odvozuje:
+- paleta se staví z katalogu (bublina „Jméno - co prvek dělá", u obecných prvků nově i s popisem), nabídka „Přidat prvek" také (s popisem v bublině),
+- `ElementNames`, `AgendaCapabilities`, továrna, seznam prvků pro asistenta a nápovědu F1,
+- třída formuláře podle pravidla `{Typ}Edit` místo 23 opsaných názvů.
+Ručně zůstává třída, atribut `JsonDerivedType`, formulář `.cls`, ikona a výška podle dat. `ElementCatalogTests` porovná katalog s konstantami `ElementTypes`, atributy, třídami, formuláři a ikonami - konstantu bez registrace do 30. 10. nehlídalo nic (ověřeno mutací). Skill `novy-element` popisuje nový postup.
+Ověřeno: .NET testy 2599/2599; paleta a nabídka v aplikaci neproklikané.
+
+## 2026-10-30 (37) - Opravy z revize sjednocení a nová jména tabulek
+
+Revize „co je definované dvakrát" (jednorázový dokument, po zapracování smazaný - je v historii gitu) našla chyby, které Jan nechal opravit před slučováním:
+- **Formulář textu** u nenastavené vlastnosti stylu ukazuje hodnotu, se kterou se text tiskne - text z importu PDF ukazoval svislé zarovnání „Na střed" a tiskl se „Nahoře". Panel navíc nesl zděděné hodnoty buňky pevné tabulky k dalšímu vybranému prvku.
+- **Výchozí mřížka plátna** je 5 mm bez přichytávání na jednom místě (rozhodnutí Jan); dřív stav návrháře říkal 1 mm se zapnutým přichytáváním a předvolby uživatele opak.
+- **Menu Zobrazit → Levý panel** dělá totéž co ☰ a Ctrl+B; vlastní kód panel nikdy neschoval.
+- **Nápověda F1, pravidla a asistent** popisují aplikaci, jak se chová: mezera u Ctrl+D + šipka je mezera pro přichytávání, šablona se přepočítá v menu Upravit, Poznámky má i linkový JŘ, změna formátu stránky se ptá, levý panel má 6 záložek, pevná tabulka je živý prvek.
+- Drobnosti: výška „(podle obsahu)", „…" v místní nabídce, zastaralé komentáře a skill pro nový prvek.
+
+**Jména tabulek** (rozhodnutí Jan): **Pevná tabulka** a **Tabulka s řádky z dat** - jméno říká, odkud se berou řádky, protože data (pole `{…}`) může mít i pevná tabulka. Přejmenované v paletě (s vysvětlením v bublině), nabídce, titulcích oken, F1, příručce, Novinkách, pravidlech a pro asistenta; v šablonách se ukládá technický typ, takže se nic nemigruje. „Tabulka (z dat)", „Tabulka (pevná)" a „dynamická tabulka" jsou v kanonu a v testu názvosloví zakázané.
+Ověřeno: .NET testy 2598/2598 (nové testy formuláře textu, výchozí mřížky a jmen pro asistenta; zákaz starých jmen zkoušený mutací); formulář textu a levý panel testy okna nemají, v aplikaci neproklikané.
+
+## 2026-10-30 (36) - Úvodní obrazovka návrháře (zkušební verze)
+
+Návrhář si dosud nepamatoval, s čím uživatel pracoval, a po každém spuštění ukázal prázdnou stránku.
+Teď si pamatuje posledních 10 šablon z databáze, které uživatel otevřel nebo uložil (předvolby uživatele a firmy, `RecentTemplates`), a po spuštění bez linky ukáže přes plátno úvodní obrazovku (zkušební verze z 29. 10. přepracovaná s Janem):
+- **Pokračovat**: až 3 poslední šablony z kterékoli agendy - cesta zkušeného uživatele.
+- **Karta agendy**: agenda nové šablony s tlačítkem „Změnit agendu…" a pod ní „Vyberte šablonu": až 5 naposledy upravených šablon firmy pro agendu a na konci výchozí šablona M-line s ikonou M-line (otevře se jako kopie) - cesta nového uživatele. Bez „Doporučeno" a bez rad, kterou šablonu vzít si uživatel rozhodne sám (Jan). Odkazy „Všechny šablony…" a „Začít s prázdnou šablonou".
+- **Externí datové zdroje - připravujeme**: SQL a CSV zatím jen řeknou, že to návrhář neumí; před vydáním se rozhodne, jestli zůstanou.
+- Dole odkazy na příručku a novinky na podpoře M-line, klávesové zkratky a Pomocníka.
+Obrazovka nic sama neotevře, zmizí s první úpravou nebo otevřením šablony, zavře ji Esc nebo křížek; na zkoušení jde otevřít kdykoli přes Nástroje → Úvodní obrazovka.
+Při spuštění s linkou ani při tisku do PDF se neukáže.
+Mimochodem opravené pozadí nabídky datových polí v buňce tabulky (odkazovalo na neexistující barvu, takže bylo průhledné).
+Ověřeno: .NET testy 2593/2593 (`UvodniObrazovkaTests`); vzhled proklikal Jan, zavření klávesou Esc testy nekryjí a zatím neověřené.
+
+## 2026-10-30 (35) - Kód hlavního okna rozdělený do souborů
+
+`MainWindow.xaml.cs` měl 3 690 řádků; stejně jako ViewModel (32) ho agent četl po kusech a souběžné práce si v něm překážely.
+Každá oblast, kterou v souboru oddělovaly komentáře, má vlastní část `MainWindow.<Oblast>.cs`: Render (plátno a náhled), Mouse, Keyboard, InlineTextEdit, Palette, Sections, Menus, AgendaParams, Properties; vedle zůstává TableCells.
+Pole stavu myši, přetahování sekcí, palety a zkratky Ctrl+D se přesunula k oblasti, která je používá; v hlavním souboru zůstal stav okna, konstruktor, rozložení panelů a přehled částí.
+Kód se jen přesunul: porovnání proti původnímu souboru nenašlo žádný chybějící řádek, přibyly jen hlavičky částí.
+Dva testy, které hledaly paletu a obsluhu tlačítek formuláře v jednom souboru, čtou všechny části; odkazy v dokumentaci a skillu `novy-element` ukazují na nové části.
+Ověřeno: .NET testy 2578/2578, build bez nových varování.
+
+## 2026-10-30 (34) - Šablona bez kódu agendy je obecná, šablona od AI asistenta prochází kontrolou
+
+Šablona bez kódu agendy (obecná šablona načtená ze souboru, kam se prázdný kód nezapisuje) dovolila vložit ze schránky prvek jízdního řádu: návrhář ji v seznamu agend nedohledal a nic neblokoval.
+Teď ji bere jako obecnou, stejně jako ukládání do databáze, a prvek jízdního řádu nevloží ani nevynechá bez hlášky.
+Šablona od AI asistenta (a z importu PDF) prochází stejnou kontrolou jako import ze souboru; model může míchat agendy a do 30. 10. se šablona otevřela bez kontroly.
+Z okna vlastností zmizel nepoužívaný kód vlastností stránky a sekce (329 řádků, mimo jiné volné pole „Kód agendy", kterým šlo přepsat agendu i s obsahem); stránku i sekci dnes upravují formuláře `PageEdit` a `SectionEdit`.
+Ověřeno: .NET testy 2578/2578 (tři nové testy, první z nich na kódu před opravou spadl).
+
+## 2026-10-30 (33) - Import šablony ze souboru ji před otevřením zkontroluje
+
+Položka backlogu „Změna agendy nesmí nechat v šabloně prvky jiné agendy" vycházela z omylu: Změnit agendu (Ctrl+Shift+A) od května zakládá prázdnou šablonu.
+Prvky jiné agendy se do šablony dostávaly importem ze souboru, který přijal skoro cokoli: `{}` jako šablonu bez sekce, neznámou agendu i tabulku spojů v zastávkovém JŘ (zůstalo jen upozornění ve stavovém řádku).
+Prvek bez typu shodil import chybou programu, neznámý typ hlásil „type discriminator" a cizí tvar „migraci ze starší verze se nepodařilo dokončit".
+Teď import šablonu přijme, jen když agendu zná, uživatel ji smí použít (nezveřejněnou jen vývojář nebo ve stejné agendě, jako v okně Změnit agendu) a prvky jízdních řádů k agendě patří (`TemplateImportCheck`); agendu přepne podle souboru jako otevření z databáze.
+Bez seznamu agend ze serveru import odmítne, protože šablonu nejde ověřit (rozhodnutí Jan).
+JSON bez sekcí je informace „není šablona návrháře", poškozená šablona zůstává chybou programu, ale hláška říká, co je špatně (neplatný JSON, prvek bez typu, neznámý typ, nečekaná hodnota).
+Šablony v databázi se nekontrolují (Jan: staré šablony neřešíme); upozornění na prvek jiné agendy u nich zůstává.
+Ověřeno: .NET testy 2575/2575 (nové `ImportSablonyZeSouboruTests` a dva testy importu nad oknem návrháře v `OtevreniCizihoSouboruTests`; s vypnutou kontrolou test okna spadne), v aplikaci neproklikáno.
+
+## 2026-10-30 (32) - ViewModel hlavního okna rozdělený do souborů a úklid backlogu
+
+`TemplateDesignerViewModel.cs` měl 4 747 řádků; agent ho četl po kusech a dvě souběžné práce si v něm překážely.
+Třída je teď `partial` a každý celek, který už v souboru oddělovaly komentáře, má vlastní soubor `TemplateDesignerViewModel.<Celek>.cs` (Instances, PreviewData, Columns, Sections, Files, Launch, Editing, Parameters, Selection, SampleTemplate, DevFirm).
+V hlavním souboru zůstal konstruktor, sdílený stav a přehled částí; pomocné ViewModely panelů (sekce, pole schématu, ovladač parametru) jsou v `PanelItemViewModels.cs`.
+Kód se jen přesunul: porovnání řádek po řádku proti původnímu souboru nenašlo žádný chybějící řádek, přibyl jen přehled částí.
+Dva testy četly zdroják z jednoho souboru (výjimka kódu agendy u ukázkové šablony, cesty změny parametrů) a teď čtou všechny části.
+Z backlogu vyhozené `B171` (úprava vysázené stránky před tiskem) a `B18` (deklarativní pravidla formuláře), rozhodnutí Jan.
+Ověřeno: .NET testy 2550/2550, build bez nových varování.
+
+## 2026-10-30 (31) - Testy Caché hlásí přeskočení poctivě
+
+99 míst v testech Caché hlásilo „firma nebo linka na serveru není" přes `$$$AssertTrue(1, …)`, takže takový test vypadal v souhrnu jako ověřený.
+Teď jsou to `$$$AssertSkipped` (v souhrnu viditelné jako přeskočené) a dva informační výpisy po skutečných kontrolách šly do `..LogMessage`; „porovnáno linek: 0" u linkového JŘ MHD se hlásí jako přeskočení.
+Na dev serveru se tím ukázaly další dva testy, které nic neověřovaly, protože hledaly data v testovacím namespace: ukázková data s vlastními sloupci a výběr instancí - teď běží na firmách sady (výběr instancí nově u všech čtyř agend JŘ) a procházejí.
+Parita vlastních sloupců hlásila vědomou odchylku linky 0365005 jako přeskočení, ačkoli druhou linku ověří - je to teď zápis do logu.
+Jako přeskočený zůstává jen `LinkovyJrTurnusyTest.TestParitaSLegacy` (starý modul turnus nevytiskne u žádného spoje, popsáno ve třídě).
+Novým zápisům brání `PreskoceniTestuCacheTests` (prohledá třídy Caché všech projektů; na kódu před změnou našla všech 99 míst), pravidlo „must not happen" 8 v `architecture-rules.md`.
+Ověřeno: Caché testy 272 prošlo, 1 přeskočen, 0 selhalo; .NET testy 2550/2550.
+
+## 2026-10-30 (30) - Testy, které nic neověřovaly, a uzavření `B56` (S13, čtvrtá část)
+
+Smoke test GetData vývěsky AD a dva testy dopravců hledaly linku v testovacím namespace, kde linky AD nejsou, a hlásily úspěch, aniž co ověřily.
+Teď běží na linkách sady, jejichž firma je na serveru (`ZastavkoveJrAdSadaTest.LinkyNaServeru`), a bez nich se hlásí jako přeskočené.
+Po zapnutí spadly na zastaralých očekáváních: zastávka už dávno nenese `POPIS` (prvky čtou `NAZEV_ZASTAVKY`) a adresa firmy v popisu dopravce není, když má provozovna vlastní ulici (CB_CSADAD, prov. Písek) - opraveno v testech, výstup je v pořádku.
+Pravidlo „plné pole adresy 10, pole 2 jen záloha" ověřuje nový test na záznamu číselníku pod jedinečným klíčem.
+Stejným způsobem (`$$$AssertTrue(1, "… přeskočeno")`) hlásí přeskočení asi 100 dalších míst v testech; zapsané do backlogu.
+`B56` je tím uzavřené a přesunuté do archivu roadmapy.
+Ověřeno: Caché testy 273/273.
+
+## 2026-10-30 (29) - Snímek výstupu agend porovnává obsah, ne bajty (`B56` S13, třetí část)
+
+Snímek výstupu agend dřív porovnával bajt po bajtu, takže každé přeskládání položek hlavičky (S7, S12) hlásil jako rozdíl a obsah jsem musel ověřovat skriptem mimo repo.
+Teď porovnává stránky jako JSON: jiná hodnota nebo typ (číslo × text) test shodí a ukáže cestu k prvnímu rozdílu (`$.values.CISLO_LINKY: "325013" → 325013`), jiné pořadí položek jen vypíše - návrhář je čte podle jména.
+Ověřeno na skutečných snímcích: proti snímku před S12 hlásí jen pořadí v 10 souborech MHD (shodně se skriptem), proti snímku před S7 spadne na čísle linky a titulku. Dva nové testy porovnání (pořadí, typ, stránky, text).
+
+## 2026-10-30 (28) - Dva různé „Jazyk" přejmenované (`B56` S13, druhá část)
+
+Vývěska AD měla `Jazyk()` = jazyk šablony („cs" / „sk") a linkový JŘ AD `Jazyk(dataDB)` = kód číselníku firmy („CZ" / „*SK") - stejné jméno, jiný význam, zapsané v R2 k přejmenování.
+Teď má vývěska `JazykSablony()` a obě agendy `KodJazykaCiselniku`; vývěska ho volí jen podle jazyka šablony, linkový JŘ i podle varianty, kterou má firma v číselníku (vědomý rozdíl).
+Šest opsaných převodů „sk → *SK" ve vývěsce nahradilo jedno volání.
+Ověřeno: snímek výstupu agend bajtově beze změny, Caché testy 272/272 (včetně slovenských textů vývěsky), .NET testy 2548/2548; staré jméno na serveru není.
+
+## 2026-10-30 (27) - Základ agend jen kontrakt a obecné věci (`B56` S13, první část)
+
+Review B56 ukázalo, že `BaseAgenda` pořád drží 14 metod jen pro jízdní řády, které čtou data AD - R8 je chtělo přesunout, aby základ sloužil i agendám report generátoru a agendy MHD nedědily čtení AD.
+Teď je v `Jr/DataAd.cls` záznam zastávky k datu, tvar názvu zastávky, nadpisy skupin dnů z nastavení, upřesnění „na objednání", dny spoje, barva spoje a tisk barev spojů a hláška „linka není v JŘ".
+Vlastní sloupce spojů (rozbor definice ze šablony, zařazení spoje podle dnů a značek) mají vlastní třídu `Jr/VlastniSloupce.cls`, protože je používají oba druhy výstupu; jádro zařazení spoje, které měla vývěska i linkový JŘ AD opsané, je teď jedno (`JeSpojVeSloupci`).
+Čtení volby barev spojů je u parametrů (`Jr.Parametry`). Formát data se vrátil do základu - v S12 jsem ho omylem přesunul do dat MHD, R8 ho ale řadí k obecným věcem.
+Přejmenováno při přesunu: `RgbNaHex` → `BarvaSpoje` (podle zdroje, R2), `NadpisySkupinDnuAd` → `NadpisySkupinDnuZNastaveni` (odlišené od `LinkovyJrAd.NadpisySkupinDnu`), `NormalizujSeznamZnacek` → `FormatSeznamZnacek` (pravidlo 5).
+Nová kontrola `DataPodleZdrojeTests.ZakladAgendNectaData` zastaví čtení dat v základu.
+Ověřeno: snímek výstupu agend bajtově beze změny (42 souborů), Caché testy 272/272, .NET testy 2548/2548, integrační testy 48/48; staré metody na agendách na serveru nejsou.
+
+## 2026-10-30 (26) - Data MHD z jedné třídy, agendy se navzájem nevolají (`B56` S12)
+
+Linkový JŘ MHD bral výběr linek, dopravce, typ JŘ a výchozí skupinu linek voláním vývěsky MHD; vývěska AD a linkový JŘ AD si navzájem půjčovaly „má směr spoje" a barvu linky.
+Teď je čtení dat MHD v `Jr/DataMhd.cls` (výběr linek, hlavička linky přes `AddHlavickaLinky`, dopravce, typ JŘ, formát data z `BaseAgenda`) a zbytek AD v `Jr/DataAd.cls`, jako u AD v S5 až S7.
+Agendy MHD výběr linek jen přesměrují a hlavičku linky skládá jedna metoda; vývěska MHD přestala hlavičku ukládat do pracovního globálu.
+Nová kontrola `DataPodleZdrojeTests` (dřív `VyberLinekAdTests`) hlídá výběr linek u AD i MHD a zastaví agendu, která volá jinou agendu (výjimka rozdílový JŘ nad linkovým AD); obě části spadly na dočasně vrácené volání vývěsky MHD z linkového JŘ MHD.
+Ověřeno: snímek výstupu agend - AD beze změny i po bajtech, 10 souborů MHD se liší jen pořadím položek hlavičky (porovnáno podle obsahu); zlaté odtisky MHD přebaselinované, mění se jen md5. Na serveru staré metody nejsou a výběr linek MHD vrací linky s platností (KV_DP); výběr linek snímek nepokrývá, kód se přesunul beze změny. Caché testy 272/272, .NET testy 2547/2547, integrační testy 48/48.
+
+## 2026-10-30 (25) - Hlavička linky AD z jedné metody, titulek bez náhradního textu (`B56` S7)
+
+Hlavičku linky (číslo a označení, název, poznámky nad linkou a pod dopravcem, údaje dopravce po polích, data platnosti, typ JŘ, QR) skládala vývěska AD i linkový JŘ AD každá sama.
+Teď ji zapíše `Jr.DataAd.AddHlavickaLinky` a agenda za ni přidá jen své vědomé rozdíly: titulek (vývěska), popis dopravce (řádky × čárky) a hotovou větu platnosti pro starší šablony.
+Relace a vozový JŘ nad AD tak dostanou tutéž hlavičku. Do `Jr/DataAd.cls` se z `BaseAgenda` a vývěsky AD přesunulo veřejné označení linky, typ JŘ a údaje dopravce po polích.
+Rozhodnutí Jan 30. 10.: agenda posílá hodnoty, ne hotové věty ani náhradní texty (nové pravidlo v `cache-api.md`, výjimky popis platnosti, popis dopravce a typ JŘ).
+Podle něj titulek vývěsky AD už za prázdný neposílá „Městská hromadná doprava..." ze starého tisku - titulek má vyplněný jen 3 227 z 96 531 linek AD (sonda `DuplicityAgendProbe.HlavickaLinky`).
+Šablona s titulkem na lince bez něj teď vytiskne prázdno; na dev serveru je to jediná ukázková šablona KV_DP.
+Číslo linky podle licence posílají všechny agendy jako číslo a veřejné označení jako text; MHD je dřív posílalo podle toho, jak hodnota ležela v datech. Návrhář z obojího dělá text, uživatel rozdíl nepozná.
+Nové testy: `KontraktAgendTest.TestTypyCislaLinky` (spadl na MHD před změnou), `ZastavkoveJrAdSmokeTest.TestTitulekBezNahradnihoTextu` (spadl na náhradním textu před změnou) a typy v `LinkovyJrSmokeTest.TestAdObeCislaLinky`.
+Ověřeno: snímek výstupu agend porovnaný podle obsahu se liší jen v titulku (243 stránek), typu čísla (141) a označení linky (107), jinak jen pořadím položek; zlaté odtisky 11 linek přebaselinované, mění se jen md5. Caché testy 272/272, .NET testy 2544/2544, integrační testy 48/48, staré metody na serveru nejsou.
+
+## 2026-10-30 (24) - Platnost linky a text omezení spojů AD z jedné třídy (`B56` S8)
+
+Platnost jízdního řádu linky (`PATCH,"Plati"`) četly agendy AD na šesti místech a příponu za dvojtečkou odřízla jen dvě; ostatní by ji poslala v datu „do".
+Teď ji čte `Jr.DataAd.PlatnostLinky` a příponu odřízne vždy, jako starý tisk; horolog dává `HorologPlatnostiLinky` jedním převodem místo tří.
+Text datumových omezení spoje měla vývěska AD i linkový JŘ AD každá vlastní; teď ho skládá `Jr.DataAd.TextOmezeni` a omezení 14 a 15 („jede jen v sudých / lichých týdnech") je věta i bez data, jako v linkovém JŘ.
+Pomocné metody omezení (předložka, věta o týdnech, režim roku, formát dat) se přesunuly z `BaseAgenda` do `Jr/DataAd.cls`, protože čtou data AD; `UpravDatum` je teď `FormatDatumOmezeni` (pravidlo 5), `ZastavkoveJrAd.PrefixOmezeni` zmizel.
+Tisk se nemění: příponu nemá žádná linka a omezení 14 a 15 bez data není žádné z 319 (sondy `DuplicityAgendProbe` na šesti firmách), tři převody data vyšly stejně na všech 193 050 datech platnosti (nová sonda `PrevodyPlatnosti`).
+Nové testy: `TestTextOmezeni` (pořadí, 14 bez data zůstane, jiné bez data zmizí, věta o lichých týdnech) a odříznutí přípony v `ZastavkyKDatuTest`.
+Ověřeno: staré metody na serveru nejsou (volání vrátí „doesn't exist"), výběr linek ukazuje platnost jako dřív (CB_GWBUS), snímek výstupu agend beze změny (42 souborů), Caché testy 270/270, .NET testy 2544/2544, integrační testy 48/48.
+
+## 2026-10-30 (23) - Výběr linek ve všech agendách AD z jednoho místa (`B56` S6)
+
+Výběr skupin linek a linek, který okno výběru linek volá, měla vývěska AD i linkový JŘ AD každá ve vlastní kopii; kopie MHD se do 23. 10. rozešla v příznaku zablokované skupiny a stejné riziko hrozilo u AD.
+Obě metody jsou teď v `Jr/DataAd.cls` a vývěska AD, linkový JŘ AD i rozdílový JŘ je jen přesměrují; rozdílový JŘ přestal kvůli nim volat linkový JŘ AD.
+Budoucí relace nad AD tak dostane týž výběr linek, ne třetí kopii (Jan 30. 10.).
+`VyberLinekAdTests` zastaví agendu nad daty AD, která by měla vlastní výběr; spadl na dočasně vráceném přesměrování rozdílového JŘ přes linkový JŘ AD.
+Ověřeno: na serveru vracejí vývěska AD i rozdílový JŘ stejné skupiny linek a vývěska AD i linkový JŘ AD stejný seznam linek s filtrem a limitem (CB_GWBUS), snímek výstupu agend beze změny (42 souborů), Caché testy 269/269, .NET testy 2544/2544, integrační testy 48/48.
+
+## 2026-10-30 (22) - Čtení dat AD z jedné třídy (`B56` S5)
+
+Název linky, číslo linky ve tvaru uloženém v `^JRL`, první linka firmy a hodnota času z trasy, které měla vývěska AD i linkový JŘ AD shodné, jsou jednou v `Jr/DataAd.cls`.
+Je to první třída na ose zdroje dat (R8): přibudou do ní další společná čtení AD a budou z ní brát i relace a vozový JŘ.
+Normalizace čísla linky se při přesunu jmenuje `FormatCisloLinky` místo `NormalizLinku` (pravidlo 5 o českých slovesech); seznam stávajících takových metod v `NazvyMetodAgendTests` se tím zmenšil o dvě.
+Rozdílový JŘ a pět Caché testů a sond volá novou třídu.
+Ověřeno: obě agendy AD na serveru vlastní kopii nemají (volání vrátí „doesn't exist"), snímek výstupu všech agend beze změny (42 souborů), Caché testy 269/269 včetně zlatých odtisků, .NET testy 2542/2542, integrační testy 48/48.
+
+## 2026-10-30 (21) - Výstup linkového JŘ AD a MHD z jedné třídy (`B56` S4)
+
+Stavba poznámky legendy, skupiny dnů a formát času, které měl linkový JŘ AD i MHD znak po znaku stejné, jsou jednou v `Jr/VystupLinkovy.cls`.
+Poznámka linkového JŘ má jiný tvar než poznámka vývěsky (druh místo kategorie a barev), proto má linkový výstup vlastní třídu vedle `Jr/VystupZastavkovy.cls`.
+Ověřeno: obě linkové agendy na serveru vlastní kopii nemají (volání vrátí „doesn't exist"), snímek výstupu všech agend beze změny (42 souborů), Caché testy 269/269, .NET testy 2542/2542, integrační testy 48/48.
+
+## 2026-10-30 (20) - Výstup vývěsky AD a MHD z jedné třídy (`B56` S3)
+
+Deset metod, které skládají výstup vývěsky a měla je vývěska AD i MHD shodné, je jednou v `Jr/VystupZastavkovy.cls`: řádek zastávky, zóna, atribut a poznámka zastávky, skupina dnů, odjezd, poznámka, převod barvy a speciálního znaku.
+Osm z nich bylo znak po znaku stejných, stavba řádku zastávky a poznámky se lišily jen komentářem a nevynucovaným typem jednoho parametru.
+Značky u odjezdů zůstaly v agendách: vývěska AD posílá navíc kategorii, spoj a rozsah „nepoznámkovat" a MHD je posílat nesmí, jinak by filtr Poznámek schovával poznámky i v MHD.
+Do pracovního globálu agendy třída nesahá, všechno dostává parametry (`cache-api.md` pravidlo 6).
+Testy a sondy, které volaly převod speciálního znaku na vývěsce MHD, ho volají na nové třídě; komentář převodu, který ve vývěsce MHD visel nad cizí metodou, je u ní.
+Ověřeno: obě vývěsky na serveru vlastní kopie nemají (volání vrátí „doesn't exist"), snímek výstupu všech agend beze změny (42 souborů), Caché testy 269/269 včetně zlatých odtisků, .NET testy 2542/2542, integrační testy 48/48.
+
+## 2026-10-30 (19) - Předpřipravené tabulky zrušené (`B56` S10)
+
+Vývěsky AD i MHD nabízely dvě hotové pevné tabulky („Záhlaví linky", „Platnost a dopravce") s popisky a poli, návrhář je ale nikde nenabízel; tlačítko „Ze šablony..." v editoru tabulky, které README popisovalo, v návrháři už není.
+Přesto se podle historie čtyřikrát udržovaly ve dvou kopiích a do 23. 10. při volání padaly.
+Zrušené jsou metody v obou vývěskách, výchozí verze a pomocná metoda v základu agend, čtení v návrháři (rozhraní, dvě mezipaměti, převod odpovědi) i jejich testy (rozhodnutí Jan 30. 10.).
+Hotové bloky do šablony má pokrýt `B66` (vlastní bloky prvků), obecněji než pevná tabulka ze serveru.
+Uživatel nic nepozná.
+Ověřeno: metoda tabulek na serveru už neexistuje (volání vrátí „doesn't exist"), snímek výstupu agend beze změny (42 souborů), Caché testy 269/269, .NET testy 2542/2542, integrační testy 48/48.
+
+## 2026-10-30 (18) - Ukázková agenda Faktury smazaná (`B56` S11)
+
+Agenda Faktury vznikla na začátku jako ukázka a neměla zdroj dat; uživatelům se nenabízela a testy agend ji musely vynechávat (rozhodnutí Jan 30. 10.).
+Agenda bez linek přijde s převodem Report generátoru a postaví se podle pravidel agend JŘ.
+Smazaná je třída agendy, výjimky v testech (ošetření chyb, kontrakt dat), volba Faktury v asistentovi pro tvorbu šablon a příklad kódu `FAKTURY` v jeho zadání.
+Dokumentace přestala uvádět Faktury jako existující agendu (pravidla agend, architektura, příručka, README); obecné zmínky o fakturách jako o budoucím typu sestavy zůstávají.
+Test předpřipravených tabulek teď prochází čtyři tabulky vývěsek místo šesti.
+Na dev serveru třídu smazal Jan ručně (nasazovací skript mazat neumí); dokud tam byla, registr ji vracel a Caché test kontraktu na ní padal.
+Na produkčních serverech může třída zůstat, pokud se tam nasadila; uživatelům se nenabízí, smazat ji při nejbližším nasazení.
+Ověřeno: registr na dev serveru Faktury nevrací, snímek výstupu agend beze změny až na tři soubory Faktur (přesunuté stranou, 42 souborů), Caché testy 270/270, .NET testy 2546/2546, integrační testy 48/48.
+
+## 2026-10-30 (17) - Slovník nabídky dat jízdních řádů (`B56` S9)
+
+Popisek a typ každého pole, které v nabídce dat nabízejí aspoň dvě agendy JŘ, jsou jednou v `Jr/NabidkaDat.cls`: 23 polí stránky (linka, dopravce, platnost, zastávka a směr, poznámky, adresa pro QR) a 17 polí kolekcí (zastávky, skupiny dnů, odjezdy, poznámky, spoje).
+Do teď je každá agenda psala sama a 17 polí měly všechny čtyři agendy stejně; podle historie je nabídka dat místo, kde se změny nejčastěji dělaly dvakrát (21× v obou kopiích, 27× jen v jedné).
+Agenda dál sama určuje, která pole nabízí a v jakém pořadí, a pole jen své agendy si přidá sama; vědomý rozdíl (číslo aktuální zastávky ve vývěsce MHD nese i označník) přepíše popisek ve volání.
+Data posílá každá agenda dál sama a test kontraktu na serveru hlídá, že posílá každé nabízené pole.
+`AgendaSchemaDriftTests` čte popisky ze slovníku a nově hlídá, že pole ze slovníku ve slovníku je (jinak by na serveru spadla celá nabídka), že slovník drží jen pole aspoň dvou agend (pravidlo druhého použití, R8) a že agenda pole slovníku nepíše znovu s vlastním popiskem; všechny tři kontroly spadly na dočasně vložené chybě.
+`RowVisibilityHelpTests` čte pole zastávek i ze slovníku (bez toho spadl).
+Pole čísla zastávky pro QR v kroku není: čeká na tvar adresy u vyhledávače odjezdů.
+Ověřeno: snímek výstupu všech agend beze změny (45 souborů); dočasný popisek ve slovníku se na serveru ukázal ve všech čtyřech agendách, po vrácení snímek opět beze změny; Caché testy 270/270, .NET testy 2546/2546, integrační testy 48/48.
+
+## 2026-10-30 (16) - Parametry vývěsek AD a MHD z jedné definice (`B56` S2, druhá část)
+
+Sedm parametrů, které měla vývěska AD i MHD opsané znak po znaku (pořadí stránek, šipky směru, projeté zastávky, časová osa s hodinami od a do, roztažení na výšku), je jednou v `Jr/Parametry.cls`.
+Podle historie se jejich popisek nebo nápověda měnily 5× ve dvou kopiích; teď se mění na jednom místě.
+Parametry jsou ve třech souvislých blocích, protože vývěska AD mezi ně vkládá asi 15 vlastních; každá agenda volá bloky ve stávajícím pořadí, takže se panel parametrů nepřeskupí.
+Vývěska MHD vlastní parametry nemá a skládá se jen z těchto bloků.
+Ověřeno: snímek výstupu všech agend beze změny (45 souborů), nová metoda třídy parametrů zavolaná na serveru, Caché testy 270/270, .NET testy 2542/2542, integrační testy 48/48.
+
+## 2026-10-30 (15) - Sdílené parametry jízdních řádů v jedné třídě, první část (`B56` S2)
+
+První pomocná třída JŘ `Agendy/Jr/Parametry.cls` drží parametry, které používají aspoň dvě agendy: tvar názvu zastávky (dosud v základu agend), směr tisku, počet stran, zastávky bez zastavení a zvýraznění zastávky (dosud v linkovém JŘ AD, odkud si je bral linkový JŘ MHD) a převod volby směru na směry k tisku.
+Linkový JŘ MHD tím přestal volat agendu linkový JŘ AD kvůli parametrům a základ agend přišel o parametr, který patří jen jízdním řádům (R8).
+Agendy si parametry dál skládají samy ve stejném pořadí; panel parametrů, popisky, výchozí hodnoty i uložené volby se nemění.
+Test parserů parametrů vyžaduje parametry, které teď leží jen v podsložce `Jr/`, a prošel; testy tedy pomocnou třídu opravdu čtou (doklad k S1).
+Ověřeno: snímek výstupu všech agend beze změny (45 souborů, před krokem i po něm), voláním parametrů linkového JŘ MHD na serveru, Caché testy 270/270, .NET testy 2542/2542, integrační testy 48/48.
+
+## 2026-10-30 (14) - Místo pro sdílený kód agend a testy, které ho hlídají (`B56` S1)
+
+Sdílený kód agend JŘ bude v podsložce `Agendy/Jr/` (balík `ALVA.TemplateDesigner.Agendy.Jr`), třídy pojmenované podle role; žádná zatím nevznikla, založí ji až krok, který ji potřebuje (rozhodnutí Jan 30. 10., R8).
+Testy zdrojáků agend do teď četly jen soubory přímo ve složce agend a každý soubor braly jako agendu; kód přesunutý do pomocné třídy by tiše přestaly hlídat.
+Nový `ZdrojeAgend` rozlišuje agendu (přímý potomek `BaseAgenda`, stejně jako registr) a celý kód agend včetně podsložek.
+Kontroly kódu a textů (názvosloví a popisky polí a parametrů, příznak mění data, typy poznámek, texty pro uživatele, ošetření chyb, názvy metod) čtou celý kód, kontroly vlastností agendy (zveřejnění, kódy, příznaky registru) jen agendy; 15 testů už nehledá kořen repa každý po svém.
+`ZdrojeAgendTests` na zkušební složce ověří, že pomocná třída v podsložce patří do kódu a není agenda, a že seznam agend v repu odpovídá třídám s kódem agendy.
+Zkouška s dočasnou třídou v repu neproběhla (oprávnění ji nepovolilo); kontroly vázané na jednu agendu upraví až krok, který jejich kód přesune (`legacy-nahrada.md §4`).
+Kód agend ani tisk se nemění.
+Ověřeno: .NET testy 2542/2542.
+
+## 2026-10-30 (13) - Návrhář se o agendě rozhoduje podle registru, ne podle kódu (`B194g` R4)
+
+Barvy rozdílů v Tabulce spojů a Poznámkách nabízel formulář jen u agendy s kódem rozdílového linkového JŘ AD.
+Teď je řídí nový parametr agendy `RozdilyVerzi`, který server posílá v seznamu agend vedle druhu prvků, vlastních sloupců a variant tras; rozdílová agenda pro jinou linku nebo vývěsku tak nepotřebuje změnu návrháře.
+Import z PDF poznával vývěsku a linkový JŘ podle začátku kódu agendy, teď podle druhu agendy, který řídí i paletu prvků.
+Výchozí agenda nové šablony zůstává v kódu: je to volba toho, na čem se pracuje, a musí fungovat i bez seznamu agend (rozhodnutí Jan 30. 10.).
+`KodyAgendVKoduTests` zastaví kód agendy v kódu návrháře (kódy bere z tříd agend), výjimky mají důvod a test hlídá, že pořád platí; spadl na dočasně vráceném porovnání s kódem rozdílového JŘ i se začátkem `ZASTAVKOVY_JR`.
+`AgendaRegistryEntryTests` hlídá, že příznak rozdílů má právě agenda, která v datech značí verzi.
+Starší server příznak neposílá a barvy rozdílů pak formulář neukáže; rozdílový JŘ se uživatelům nenabízí a PDF pro porovnání linek formulář nepotřebuje.
+Pracovní `konzistence-agend-jr.md` je smazaný, `B194` je uzavřený; `R5` je první krok `B56`.
+Tisk se nemění.
+Ověřeno: server posílá příznak jen u rozdílového JŘ (volání `ListAgendy`), .NET testy 2540/2540, Caché testy 270/270, integrační testy 48/48.
+
+## 2026-10-30 (12) - Pravidla pojmenování v kódu agend a jejich hlídání (`B194g` R7)
+
+Pravidlo 5 v `cache-api.md` říkalo „obecné vzory anglicky", ale nestanovilo, která slovesa, a 76 metod agend začíná českým slovesem (`PridatPoznamky`, `NactiTurnusy`, `SestavitStranky`).
+Pravidlo teď vyjmenovává zavedená anglická slovesa (`Get`, `Build`, `Add`, `Load`, `Write`, `Format`, `Parse`, `Convert`), povoluje funkce pojmenované tím, co vrací, a otázky `Je…`/`Ma…`.
+Stávající metody se přejmenují, až se jejich kód v `B56` stěhuje; samotné přejmenování by jen zvětšilo diff bez užitku (rozhodnutí Jan 30. 10.).
+Třídy agend, kódy variant, klíče dat a názvy parametrů se nepřejmenovávají nikdy, visí na nich uložené šablony a volby.
+Pravidlo 6 zapisuje pracovní globály agend (`^||TiskAd`, `^||TiskMHD`, `^||TiskKnizni`, `^||TiskKnizniMhd`), tvar pro novou agendu a to, že pomocná třída z `B56` do nich napřímo nesahá.
+`NazvyMetodAgendTests` zastaví nový název s českým slovesem a hlídá, že seznam stávajících se jen zmenšuje; spadl na dočasně odebrané výjimce i na výjimce bez metody.
+Kód ani tisk se nemění.
+
+## 2026-10-30 (11) - Základ agend a agendy JŘ podle jednoho vzoru (`B194g` R6)
+
+Kdo bude psát další agendu, řídí se návodem v `cache-api.md` a stávajícími agendami; obojí si odporovalo.
+Opsaný vzorový kód v návodu skládal tabulky dat pod klíčem, který návrhář nečte, a končil bez ošetření chyb, což porušovalo pravidla 14-15 o pár řádků níž.
+Návod teď místo opsaného kódu odkazuje na `BaseAgenda.cls` a stručně říká, co je povinné a co volitelné, jaké parametry třídy agenda potřebuje a že musí být přímým potomkem základu.
+Schéma a parametry všech čtyř agend JŘ i výchozí metody základu ošetřují chyby stejně jako ostatní metody; chyba agendy tak skončí srozumitelnou hláškou, ne chybou spojení.
+Předpřipravené tabulky jsou v základu nepovinné s prázdným výchozím výsledkem, linkové agendy své prázdné kopie nemají; zrušit je, nebo napojit, rozhodne `B56`.
+`OsetreniChybAgendTests` hlídá vzor u každé metody agend; spadl na dočasně odebrané výjimce Faktur, které se nesjednocují - jsou ukázka z počátku a možná se smažou (rozhodnutí Jan 30. 10.).
+Opravené zastaralé komentáře (agendy z konfigurace aplikace, popisy nad cizí metodou, „kopie téhož" u převodu barvy) a odkazy na čísla řádků v `legacy-nahrada.md §4`.
+Výstup agend se nezměnil (snímek beze změny).
+Ověřeno: Caché testy návrháře 270/270, .NET testy 2534/2534, integrační testy 48/48.
+
+## 2026-10-30 (10) - Soupis kódu agend opsaného pod jinými jmény s rozhodnutím pro `B56` (`B194g` R2)
+
+Analýza z 5. 8. hledala opsaný kód podle stejného jména metody, takže kopie pod jinými jmény neviděla.
+Nová sonda `DuplicityAgendProbe` je změřila na šesti testovacích firmách (96 531 linek, 2,4 mil. spojů), ukázky jsou ze skutečných dat linek 320157 a 823955.
+Popis dopravce se tiskne jinak: vývěska AD dává údaje na řádky a u GW BUS vypíše adresu dvakrát, linkový JŘ vše na jeden řádek s adresou jednou; každý tvar odpovídá svému starému tisku a zůstává (rozhodnutí Jan 30. 10.).
+Rozsahy čísel spojů mají ve vývěsce a v Tabulce spojů jiné pravidlo, každé sedí na svůj případ; zůstávají.
+Platnost linky s příponou za dvojtečkou (0 linek) a omezení 14 a 15 bez data (0 z 319) se v `B56` sjednotí, tisk se nezmění.
+Barva „0;0;0" znamená u spojů AD „bez barvy" (2 185 160 z 2 189 806), u barvy linky a poznámek MHD černou (24 poznámek KV_DP); jde o tři zdroje, ne o kopii, a nesjednocují se.
+Soupis i postup `B56` (pojistky, snímek, pořadí kroků) jsou v `legacy-nahrada.md §4`; pracovní `konzistence-agend-jr.md` drží už jen R4-R7 a po nich se smaže.
+Kód ani tisk se nemění.
+
+## 2026-10-30 (9) - Kontrakt mezi prvky a agendami je zapsaný a hlídaný (`B194g` R3)
+
+Seznam zastávek, Minuty odjezdů, Poznámky, Tabulka spojů a navigace stránek čtou z dat agendy asi 80 položek podle jména a nikde nebylo zapsané, které musí agenda posílat a v jakém tvaru.
+Chybějící položka se projevila jen prázdným prvkem a jiný tvar shodil náhled (atributy zastávky, 8. 10.).
+`KontraktDat.cs` je teď drží na jednom místě: druh agendy (zastávkové, linkové, každá), kolekci, tvar (hodnota, pole hodnot, pole objektů) a u položky, která nechodí vždy, proč.
+`KontraktDatTests` hlídá, že kód návrháře čte z dat jen položky z kontraktu a každou z nich opravdu čte; při zápisu se tak našly tři čtené položky, které v soupisu chyběly (výlep stránky, aktuální zastávka v linkovém JŘ, „v rozsahu nepoznámkovat").
+Integrační `KontraktDatAgendTests` na dev serveru načte data linek všech agend a ověří, že agenda daného druhu povinné položky posílá v každém řádku a ve správném tvaru; běží v pre-push s ostatními integračními testy (asi 10 s).
+Co agenda vědomě nemá (vývěska MHD sloupky a varianty tras, linkový JŘ MHD tarifní čísla, sloupec MHD, směr a dopravce spoje), jsou výjimky s důvodem a test hlídá, že pořád platí.
+Při revizi se díra nenašla, všechny chybějící položky jsou záměr.
+Testy spadly na dočasně odebrané výjimce, změněném tvaru atributů zastávky (5 966 zastávek vývěsky AD), neplatné výjimce i na položce kontraktu, kterou nic nečte.
+Ověřeno: integrační testy 48/48, .NET testy návrháře 2532/2532.
+
+## 2026-10-30 (8) - Vývěska AD neposílá data, která nic nečte (`B194f`)
+
+Kontrola dat proti nabídce (G1) našla ve vývěsce AD tři položky, které nabídka nemá a návrhář nečte.
+Kolekce dopravců po provozovnách byla z nabídky skrytá od 1. 9. a provozovny vyhozené 4. 9. (`B112`), server ji ale posílal dál.
+Nastavení prázdninových značek pro editor sloupců (`NZ_KONFIG`, `NEVYPISOVAT_ZNACKY_SLOUPCU`) editor přestal číst 10. 8., kdy je nahradily hotové vzory sloupců.
+Agenda je přestala posílat (rozhodnutí Jan 30. 10.); šablona je použít nemohla, v nabídce dat nebyly.
+Výpočty, které je potřebují uvnitř (sloupce odjezdů, údaje prvního dopravce), zůstaly; zastaralé komentáře o kolekci jsou pryč.
+Snímek výstupu agend se změnil v 11 souborech vývěsky AD a všech 497 změněných stránek se po vyjmutí těch tří položek shoduje na bajt.
+Zlaté odtisky vývěsky AD mají nový součet, počty stránek, zastávek, odjezdů i poznámek jsou shodné.
+Test kolekce dopravců odpadl, ostatní testy dopravce hlídají skalární pole prvního dopravce.
+Tím je `B194f` (pojistky před `B56`) celé hotové.
+Ověřeno: Caché testy návrháře 270/270, .NET testy 2529/2529; tisk v aplikaci jsem neprocházel, data pro něj se kromě odebraných položek nezměnila.
+
+## 2026-10-30 (7) - Tlačítko formuláře funguje v každém okně, které ho ukazuje (`B194f` G5)
+
+Formulář prvku tlačítko jen ukáže a akci si každé okno píše samo; nic nehlídalo, že ji napsalo.
+Okno „Vlastnosti buňky" (Alt+Enter) tak ukazovalo „Nastavení celé tabulky" a na klik nereagovalo - tlačítko je určené pro panel, kde vrací z buňky na celou tabulku (náhrada Esc).
+Okno vlastností teď dostává akce tlačítek podle klíče a tlačítko bez akce skryje, takže v okně buňky už není (rozhodnutí Jan 30. 10.); v panelu zůstalo.
+Platí pro všechna okna tohoto typu (prvek, buňka, řádek, sekce, stránka), i pro tlačítka přidaná v budoucnu.
+Klíče tlačítek jsou v `TlacitkaFormulare`; `TlacitkaFormulareTests` hlídá, že sedí s formuláři a že panel a okna Seznamu zastávek, Tabulky z dat a Tabulky spojů svá tlačítka obsluhují (spadl na dočasně odebrané obsluze).
+Ověřeno: .NET testy 2529/2529 a v aplikaci (Jan): v okně buňky tlačítko není ani po změně pole, v panelu funguje, „Druhy poznámek" v okně Poznámek zůstaly.
+
+## 2026-10-30 (6) - Dohodnuté názvosloví i v nápovědách, hláškách a textech oken (`B194f` G4)
+
+Zakázané termíny se dosud kontrolovaly jen v popiscích, volbách a skupinách; nápovědy a texty oken nehlídalo nic a tudy se dřív vracela „nástupiště" (P7) a „engine" (E7).
+Seznam je rozdělený na dvě části.
+Názvosloví (označník, prvek, konečná, Minuty odjezdů, Poznámky, Tabulka spojů, dlouhá pomlčka…) platí ve všech textech pro uživatele.
+Tvary popisku (zkratky, „projetých", „Tučně") jen v popiscích, protože ve větě nápovědy je „tisk projetých zastávek" správně.
+`NazvosloviTextuTests` kontroluje názvosloví v textech Caché tříd návrháře (nápovědy, hlášky a legendy agend), v oknech (titulky, bubliny, tlačítka) a v textech v kódu (stavový řádek, hlášky, protokol importu).
+Ladicí výpisy a zadání pro AI model se nekontrolují, termín uvnitř jména třídy („RectangleElement") taky ne.
+„Tučně", „Podtržené" a „Přeškrtnuté" se v popiscích hledají i uvnitř textu („Aktuální: Tučně", E10).
+Měření našlo jediný skutečný prohřešek: popis migrace „rámeček elementu", který uživatel uvidí při selhání převodu šablony, je teď „rámeček prvku".
+Legenda atributu CIS „cílová zastávka pro tablo" je výjimka s důvodem: doslovný text číselníku starého modulu, jako „tisk stanoviště".
+Každá ze tří kontrol spadla na dočasně vloženém termínu (nápověda agendy, bublina okna, hláška stavového řádku).
+Ověřeno: .NET testy 2525/2525.
+
+## 2026-10-30 (5) - Stejný popisek v nabídce dat patří jednomu poli (`B194f` G3)
+
+Testy hlídaly jen jeden směr: stejné pole má ve všech agendách stejný popisek.
+Opačný směr ne, takže uživatel mohl ve dvou agendách vidět stejný název pro dvě různá pole a šablona z jedné agendy ve druhé vykreslila prázdno (odtud nálezy D1 a D3).
+`AgendaSchemaDriftTests.StejnyPopisek_PatriJednomuPoli` to teď hlídá; před úpravou spadl na „Číslo aktuální zastávky".
+Vývěska MHD v tom poli posílá číslo i s označníkem („101-A"), proto má nově popisek „Číslo a označník aktuální zastávky".
+Vývěska AD a linkové JŘ nesou totéž číslo zastávky pod dvěma klíči; je to zapsaná výjimka a sjednocení klíče s převodem šablon případně přijde v `B56` (rozhodnutí Jan 30. 10.).
+Hotové šablony se nemění, klíč zůstal; snímek výstupu agend se změnil jen v tomto popisku.
+Ověřeno: popisek voláním `GetSchema` na serveru, .NET testy 2521/2521, Caché testy návrháře 271/271.
+
+## 2026-10-30 (4) - Data agendy odpovídají její nabídce dat (`B194f` G1)
+
+Uživatel v návrháři vybírá pole z nabídky dat agendy.
+Pole, které agenda nabízí a v datech nepošle, by vytisklo prázdno, a nic to dosud nehlídalo.
+`KontraktAgendTest.TestDataOdpovidajiNabidce` pro každou agendu z registru načte data linek testovacích sad a porovná je s nabídkou oběma směry.
+Ukázková data agend jsou záměrně prázdná („vyberte linku"), proto se ověřuje na skutečných linkách.
+Položky, které data posílají mimo nabídku, mají v seznamu `PolozkyMimoNabidku` druh: čte je prvek, panel parametrů, posílají se kvůli starým šablonám, nebo je nečte nic.
+.NET test `PolozkyMimoNabidkuTests` hlídá, že položku označenou „čte ji prvek" kód návrháře opravdu čte.
+Měření našlo tři položky, které nečte nic (dopravci po provozovnách, dvě nastavení prázdninových značek); jestli je přestat posílat, rozhodne Jan.
+Agenda bez linky s daty test shodí, takže nová agenda bez pokrytí neprojde.
+Definice parametru smí mít jen klíče, které návrhář čte: Faktury posílaly výchozí hodnotu pod `default` a panel ji nenastavil, opraveno na `defaultValue`.
+Seznam linek sdílí s testem i snímek výstupu agend; snímek se změnil jen v parametrech Faktur.
+Obě nové kontroly spadly na dočasně vyřazené položce a výjimce, oprava Faktur ověřena voláním `GetParameters` na serveru.
+Ověřeno: Caché testy návrháře 271/271 (sada trvá o 13 s déle), .NET testy 2520/2520.
+
+## 2026-10-30 (3) - Testy poznají linku, která zmizela z testovacích dat
+
+Z dat dev serveru zmizely linky CB_GWBUS 0320118 a 0320113 a všech 268 Caché testů dál hlásilo úspěch.
+Test linku, kterou v datech nenajde, přeskočí stejně jako firmu, která na serveru není, takže potichu přestalo běžet všechno, co na nich stálo.
+Linkový JŘ AD tím přišel o jedinou linku s lichými tarifními čísly, stálými značkami a poznámkami linky.
+Porovnání zón se starým modulem pro CB_GWBUS neběželo a snímek výstupu agend před `B56` u 0320118 držel jen chybovou hlášku.
+Nový `TestovaciLinkyTest` projde zdrojáky testů na serveru a u každé linky, jejíž firma na serveru je, ověří, že je v datech.
+Druhý test v něm hlídá, že hledání ve zdrojácích najde linky obou sad.
+Před výměnou linek spadl právě na ty tři výskyty.
+Za 0320118 je v obou sadách 0320157, vybraná měřením sond profilů linek.
+Ve vývěsce nese všechno kromě „hodně sloupců", ten dál drží CB_CSADAD 0330530.
+Test zón jede na 0320150, protože na její první stránce je dosažitelná celá trasa.
+U 0320157 vývěska nedosažitelné zastávky vynechává (#7959), takže se od starého modulu lišit má.
+Sonda `LinkovyJrSadaTest.Profily` umí měřit jen jednu skupinu linek (`SKU`).
+Snímek výstupu agend je sejmutý znovu (45 souborů, druhý běh bajtově shodný); ten z 29. 10. na disku nebyl.
+Ověřeno: Caché testy návrháře 270/270, .NET testy 2517/2517.
+
+## 2026-10-30 (2) - PDF z porovnání linek do zvolené složky (HD 13492)
+
+Zákazník KIDS své PDF z porovnání linek našel jen v dočasné složce, protože se mu neotevřelo v prohlížeči.
+Okno Porovnání linek v modulu JŘ (repo EDISON) má novou skupinu Výstup s polem „Složka pro PDF".
+Výchozí hodnota je `%TEMP%\EDISON\TemplateDesigner`, takže ostatní uživatelé nic nepoznají.
+Okno si složku pamatuje po uživateli a firmě (`^JRR("PorovnaniLinekSlozka",uživatel)`) a cestu se středníkem odmítne.
+Modul JŘ ji pošle návrháři v klíči `Slozka`, návrhář rozbalí proměnné prostředí a PDF uloží tam.
+Do složky, kam nejde zapisovat, návrhář nic nenačítá a řekne to hned.
+Starší návrhář klíč ignoruje a uloží PDF jako dřív.
+Ověřeno voláním okna na dev serveru (výchozí hodnota, paměť, středník, prázdná hodnota), skutečným spuštěním TemplateDesigner.exe s argumenty nového modulu JŘ (PDF ve zvolené složce i v `%TEMP%`) a testy `SpusteniPdfTests`.
+Klikání v okně modulu JŘ zatím neověřené.
+
+## 2026-10-30 - Spuštění do PDF řekne, že se návrhář nespojil se serverem (HD 13774)
+
+Když se návrhář po spuštění z porovnání linek v modulu JŘ nespojil se serverem, hlásil „Spuštění neurčuje linku."
+U zákazníka GW mu doma zablokoval spojení firewall, starý EDISON přitom fungoval, a z hlášky to nešlo poznat.
+Registr agend chybu spojení tiše spolkl, rozdílová agenda pak chyběla a návrhář hledal linku pod špatným klíčem.
+Okno průběhu teď na seznam agend počká a při výpadku spojení napíše, že se návrhář nespojil se serverem EDISON a co předat správci sítě (povolit TemplateDesigner.exe ve firewallu nebo antiviru).
+Hlášku čte provoz, proto v ní není adresa serveru ani text chyby od Windows; obojí jde do telemetrie.
+Chyba serveru jde jako chyba programu, server bez agendy řekne, kterou agendu nezná.
+Ve spuštění do PDF zároveň zmizel limit 3 s na seznam agend (hlavní okno ho má dál): pomalý server při studeném startu dřív vedl k hlášce „Návrhář není připojený k databázi."
+Ověřeno skutečným spuštěním TemplateDesigner.exe se serverem 127.0.0.1:1 (před opravou hláška o lince, po ní o serveru) a testy `SpusteniPdfTests`.
+
+## 2026-10-29 (6) - Snímek výstupu všech agend před sloučením kódu (`B56`)
+
+Pojistka pro `B56`: testy jedou na pár linkách s výchozími parametry a drobnou změnu výtisku po přesunu kódu
+by nepoznaly. Sonda `SnimekAgendProbe` (seznam volání se správnou firmou) a `SnimekAgendNaostro` (uloží
+a porovná) teď berou celý výstup všech agend - schéma, parametry a ukázku každé agendy z registru a data
+27 linek ze sad testů. První běh snímek uloží, každý další porovná bajt po bajtu a vypíše soubor a uzel,
+který se liší. Bez proměnné `TD_SNIMEK_AGEND` nic nedělá (výstup závisí na datech dev serveru). Sejmuto
+29. 10., dva běhy po sobě shodné. Test porovnání `Porovnani_PoznaKazdyRozdil`.
+
+## 2026-10-29 (5) - Stejnojmenný parametr je ve všech agendách týž (`B194f` G2)
+
+Parametry, které má víc agend, jsou opsané (zastávkové JŘ AD a MHD, linkové AD a MHD). Kontrola dosud
+porovnávala jen popisek, takže rozjetá výchozí hodnota nebo volby prošly a uživatel viděl totéž nastavení
+v každé agendě jinak. `KontraktAgendTest.TestSdileneParametryShodne` vezme parametry všech agend z výstupu
+serveru a u stejného jména porovná popisek, typ, skupinu, výchozí hodnotu, volby a příznak načtení dat.
+- Dnes: 20 sdílených parametrů, 16 shodných (všech 7 společných parametrů zastávkových JŘ - podklad pro
+  sloučení v `B56` R5), 4 vědomé rozdíly zapsané v testu s důvodem: výchozí tvar názvu zastávky (parita se
+  starými moduly), počet stran a zastávky bez zastavení (MHD nemá nastavení u linky), skupina barev spojů
+  (nese název prvku).
+- Přehled vypíše `KontraktAgendTest.Prehled`. Caché sada 268/268.
+
+## 2026-10-29 (4) - Zlatý odtisk linkového JŘ MHD včetně hlavičky (`B194f` G8)
+
+`LinkovyJrMhdGoldTest` hlídá celý výstup linkového JŘ MHD (stránky i hlavičku) na sedmi linkách
+z `LinkovyJrMhdTest.LINKY` s výchozími parametry. Hlavičku (dopravce, typ JŘ, výběr linek) bere linkový
+MHD z vývěsky MHD a porovnání se starým modulem kryje jen tabulku - přesun těch metod v `B56` by se
+jinak neprojevil v žádném testu. Odtisk sejmutý na dev serveru, dvě volání po sobě daly totéž. Digest
+hlídá změnu proti včerejšku, ne paritu se starým modulem (R6). Caché sada 267/267.
+
+## 2026-10-29 (3) - Kontrola polí agend vidí rozšíření v porovnání verzí a přeskakuje komentáře (`B194f` G7)
+
+Offline kontrola nabídky dat (`AgendaSchemaDriftTests`) nečetla pole, která porovnání verzí přidává do kolekcí
+linkového JŘ (`VERZE` u spojů, `TC_PUVODNI` a `ZONY_PUVODNI` u zastávek), a naopak by počítala i pole
+v zakomentovaném řádku. Teď je vidí a jejich popisky prošly pravidly; pojistka parseru hlídá, že je najde.
+Zbytek G7 kryje G1 (pořadí „Obecné" první) a G2 (parametry se jménem skládaným za běhu).
+
+## 2026-10-29 (2) - Test kontraktu všech agend z registru (`B194f` G1, malá podoba)
+
+`KontraktAgendTest` projde všechny agendy, které najde registr (dnes šest včetně porovnání verzí
+a Faktur), místo ručního výčtu - novou agendu pokryje sám. Hlídá:
+- schéma, parametry a ukázková data bez chyby a jako platný JSON,
+- jedinečný kód agendy a známý druh prvků (zastávkové / linkové / žádné),
+- výchozí volbu výběru mezi volbami a „Obecné" jako první skupinu parametrů (u vývěsek a linkového MHD
+  skládají parametry pomocné metody, které offline kontrola nevidí).
+
+Caché sada `ALVA.TemplateDesigner.Tests` 266/266.
+
+## 2026-10-29 - Testy linkových JŘ hlídají chybu agendy tam, kam ji server píše (`B194f` G7)
+
+Kontrola „agenda proběhla bez chyby" v `LinkovyJrSmokeTest` (data linek a schéma, parametry, ukázka obou
+linkových agend) četla `^||ML("OUT","ERR")`, kam `$$$CatchErrRest` nic nezapisuje - chyba je v `^||ML("ERR")`.
+Test proto prošel, i když agenda spadla. Teď čte `^||ML("ERR")` a v hlášce ukáže text chyby. Totéž v sondě
+`AdSloupekProbe`, která chybu po přečtení smaže, aby se nevrátila jako chyba sondy. Pojistka před `B56`:
+přesun kódu, který agendu rozbije, se teď v testu ukáže. Caché sada `ALVA.TemplateDesigner.Tests` 263/263.
+
 ## 2026-10-28 (28) - Popisky jednoduchých prvků podle pravidel, obdélník kreslí obrys rámečkem
 
 Stránka, Sekce, Text, Obdélník, Čára, Obrázek a Kód se řídí stejnými pravidly popisků jako tabulky (rozhodnutí Jan 28. 10., `ux-conventions §8`).

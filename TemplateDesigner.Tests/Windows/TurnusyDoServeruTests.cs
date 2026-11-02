@@ -28,25 +28,17 @@ public class TurnusyDoServeruTests
     public void ZapnutaVolba_JdeNaServer()
     {
         var zapnuto = TemplateDesignerViewModel.ComposeGetDataParams(
-            new Dictionary<string, object?>(), "LINKA_ID", "42", null, null, true, null);
+            new Dictionary<string, object?>(), "LINKA_ID", "42", null, new TemplateDataInputs(null, true, ""));
         var vypnuto = TemplateDesignerViewModel.ComposeGetDataParams(
-            new Dictionary<string, object?>(), "LINKA_ID", "42", null, null, false, null);
+            new Dictionary<string, object?>(), "LINKA_ID", "42", null, new TemplateDataInputs(null, false, ""));
 
         Assert.Equal("true", zapnuto["TURNUSY_KE_SPOJUM"]);
         Assert.Equal("false", vypnuto["TURNUSY_KE_SPOJUM"]);
     }
 
-    /// <summary>Přepnutí volby musí změnit snapshot - z něj se pozná, že je nutný re-fetch dat.</summary>
-    [Fact]
-    public void PrepnutiVolby_ZmeniSnapshot()
-    {
-        Assert.NotEqual(
-            TemplateDesignerViewModel.ComposeWireSnapshot(null, false, "cs"),
-            TemplateDesignerViewModel.ComposeWireSnapshot(null, true, "cs"));
-    }
-
     /// <summary>
     /// Volbu hlásí šablona, když ji má <b>některý</b> prvek - z jednoho prvku se pozná celá sestava.
+    /// Přepnutí musí změnit údaje ze šablony, podle nich se pozná, že je nutné znovu načíst data.
     /// </summary>
     [Fact]
     public void SablonaHlasiVolbuPodlePrvku()
@@ -55,10 +47,12 @@ public class TurnusyDoServeruTests
         var sekce = vm.State.CurrentTemplate.Sections[0];
         var prvek = new LineTableElement();
         sekce.Elements.Add(prvek);
+        var pred = vm.CurrentDataInputs();
 
-        Assert.False(vm.CurrentTurnusyKeSpojum(), "prvek turnusy nechce, šablona je hlásit nemá");
+        Assert.False(pred.TurnusyKeSpojum, "prvek turnusy nechce, šablona je hlásit nemá");
 
         prvek.TurnusyKeSpojum = true;
-        Assert.True(vm.CurrentTurnusyKeSpojum(), "prvek turnusy chce, šablona to musí hlásit");
+        Assert.True(vm.CurrentDataInputs().TurnusyKeSpojum, "prvek turnusy chce, šablona to musí hlásit");
+        Assert.NotEqual(pred, vm.CurrentDataInputs());
     }
 }

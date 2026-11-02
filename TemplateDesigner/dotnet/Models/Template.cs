@@ -80,6 +80,13 @@ public class Template
     /// </summary>
     public string? CultureCode { get; set; }
 
+    /// <summary>Kultura podle <see cref="CultureCode"/>; bez kódu nebo s neznámým kódem čeština.</summary>
+    public System.Globalization.CultureInfo GetCulture()
+    {
+        try { return System.Globalization.CultureInfo.GetCultureInfo(CultureCode ?? "cs-CZ"); }
+        catch (System.Globalization.CultureNotFoundException) { return System.Globalization.CultureInfo.GetCultureInfo("cs-CZ"); }
+    }
+
     /// <summary>
     /// Výchozí styl textu pro celou šablonu - kořen kaskády (dědí ho všechny elementy/buňky,
     /// které styl nepřepíší). Null = zapečené defaulty (Arial). Aktuálně se z UI nastavuje jen

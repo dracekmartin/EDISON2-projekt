@@ -15,8 +15,7 @@ namespace TemplateDesigner.Models.Elements;
 /// render přes `Rendering/CellRenderer`. 2-tabový editor: „Obecné" (EDInputForm - DataSource + styl)
 /// + „Sloupce" (Field-mapping grid).
 ///
-/// Statická (Fixed) tabulka je dočasně mimo (třída <see cref="TableElement"/> zůstala dormant) -
-/// doděláme ji jako samostatný element až podle poptávky.
+/// Pevná tabulka, kterou uživatel vyplňuje sám, je samostatný prvek <see cref="TableElement"/>.
 /// </summary>
 public class DynamicTableElement : TemplateElement, IRowHighlightable
 {
@@ -115,6 +114,9 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     /// <summary>Parent kaskády pro per-column header override.</summary>
     public ResolvedTextStyle ResolveColumnHeaderParent() =>
         (HeaderStyle ?? new TextStyle()).Resolve(TableStyleDefaults.Header);
+
+    public override IEnumerable<StyleZone> ResolvedStyleZones() =>
+        [new("HeaderStyle", ResolveColumnHeaderParent()), new("DataStyle", ResolveColumnDataParent())];
 
     /// <summary>Parent kaskády pro per-column data override.</summary>
     public ResolvedTextStyle ResolveColumnDataParent() =>
@@ -458,17 +460,17 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         new StringPropertyDescriptor
         {
             Label = "Zdroj dat",
-            Group = "Tabulka",
+            Group = "Data",
             Get   = () => DataSource ?? "",
             Set   = v => DataSource = string.IsNullOrWhiteSpace(v) ? null : v
         },
         new FloatPropertyDescriptor
         {
-            Label = "Výška řádku", Group = "Tabulka",
+            Label = "Výška řádku", Group = "Datové buňky",
             Get   = () => RowHeight, Set = v => RowHeight = v,
             Min   = 1, Max = 50, Unit = "mm"
         },
-        new BoolPropertyDescriptor { Label = "Záhlaví sloupců", Group = "Tabulka", Get = () => ShowHeader, Set = v => ShowHeader = v },
+        new BoolPropertyDescriptor { Label = "Záhlaví sloupců", Group = "Záhlaví", Get = () => ShowHeader, Set = v => ShowHeader = v },
         new FloatPropertyDescriptor
         {
             Label = "Nejmenší výška", Group = "Záhlaví",
@@ -482,55 +484,55 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         // datum nebo text pozná RowSorter z hodnot.
         new SuggestStringPropertyDescriptor
         {
-            Label = "Řadit podle", Group = "Tabulka",
+            Label = "Řadit podle", Group = "Data",
             Get = () => SortField ?? "", Set = v => SortField = string.IsNullOrWhiteSpace(v) ? null : v,
             GetSuggestions = SortableColumns
         },
         new EnumPropertyDescriptor
         {
-            Label = "Směr řazení", Group = "Tabulka",
+            Label = "Směr řazení", Group = "Data",
             VisibleWhen = () => !string.IsNullOrWhiteSpace(SortField),
             Get = () => SortDescending, Set = v => SortDescending = (bool)v,
             Options = [("Vzestupně", (object)false), ("Sestupně", (object)true)]
         },
         new SuggestStringPropertyDescriptor
         {
-            Label = "Potom podle", Group = "Tabulka",
+            Label = "Potom podle", Group = "Data",
             VisibleWhen = () => !string.IsNullOrWhiteSpace(SortField),
             Get = () => ThenByField ?? "", Set = v => ThenByField = string.IsNullOrWhiteSpace(v) ? null : v,
             GetSuggestions = SortableColumns
         },
         new EnumPropertyDescriptor
         {
-            Label = "Směr druhého řazení", Group = "Tabulka",
+            Label = "Směr druhého řazení", Group = "Data",
             VisibleWhen = () => !string.IsNullOrWhiteSpace(SortField) && !string.IsNullOrWhiteSpace(ThenByField),
             Get = () => ThenByDescending, Set = v => ThenByDescending = (bool)v,
             Options = [("Vzestupně", (object)false), ("Sestupně", (object)true)]
         },
         new ColorPropertyDescriptor
         {
-            Label = "Střídání řádků: Barva pozadí", Group = "Tabulka",
+            Label = "Střídání řádků: Barva pozadí", Group = "Datové buňky",
             Get   = () => AlternatingRowColor ?? "#00FFFFFF",
             Set   = v => AlternatingRowColor = v == "#00FFFFFF" ? null : v
         },
         new FloatPropertyDescriptor
         {
-            Label = "Nejméně řádků", Group = "Tabulka",
+            Label = "Nejméně řádků", Group = "Data",
             Get   = () => MinRows, Set = v => MinRows = (int)Math.Max(0, v),
             Min   = 0, Max = 200, Format = "0"
         },
         new FloatPropertyDescriptor
         {
-            Label = "Nejvýš řádků", Group = "Tabulka",
+            Label = "Nejvýš řádků", Group = "Data",
             Get   = () => MaxRows, Set = v => MaxRows = (int)Math.Max(0, v),
             Min   = 0, Max = 500, Format = "0"
         },
 
-        new BoolPropertyDescriptor  { Label = "Tučné záhlaví",       Group = "Záhlaví",      Get = () => HeaderStyle?.Bold ?? true,                    Set = v => Header().Bold = v },
-        new ColorPropertyDescriptor { Label = "Barva pozadí záhlaví",      Group = "Záhlaví",      Get = () => HeaderStyle?.BackgroundColor ?? "#FFE8E8E8",  Set = v => Header().BackgroundColor = v },
-        new ColorPropertyDescriptor { Label = "Barva textu záhlaví", Group = "Záhlaví",      Get = () => HeaderStyle?.TextColor ?? "#FF333333",        Set = v => Header().TextColor = v },
-        new ColorPropertyDescriptor { Label = "Barva pozadí buněk",        Group = "Datové buňky", Get = () => DataStyle?.BackgroundColor ?? "#00FFFFFF",    Set = v => Data().BackgroundColor = v },
-        new ColorPropertyDescriptor { Label = "Barva textu buněk",   Group = "Datové buňky", Get = () => DataStyle?.TextColor ?? "#FF222222",          Set = v => Data().TextColor = v },
+        new BoolPropertyDescriptor  { Label = "Tučné záhlaví",       Group = "Záhlaví",      Get = () => ResolveColumnHeaderParent().Bold,                    Set = v => Header().Bold = v },
+        new ColorPropertyDescriptor { Label = "Barva pozadí záhlaví",      Group = "Záhlaví",      Get = () => ResolveColumnHeaderParent().BackgroundColor,  Set = v => Header().BackgroundColor = v },
+        new ColorPropertyDescriptor { Label = "Barva textu záhlaví", Group = "Záhlaví",      Get = () => ResolveColumnHeaderParent().TextColor,        Set = v => Header().TextColor = v },
+        new ColorPropertyDescriptor { Label = "Barva pozadí buněk",        Group = "Datové buňky", Get = () => ResolveColumnDataParent().BackgroundColor,    Set = v => Data().BackgroundColor = v },
+        new ColorPropertyDescriptor { Label = "Barva textu buněk",   Group = "Datové buňky", Get = () => ResolveColumnDataParent().TextColor,          Set = v => Data().TextColor = v },
 
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
 

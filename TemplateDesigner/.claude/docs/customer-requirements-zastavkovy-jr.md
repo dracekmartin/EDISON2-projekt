@@ -190,10 +190,14 @@ odpovědi na případné znovuotevření/dotaz:
 - **Oddělená barva a tloušťka vodorovných × svislých čar mřížky** (dřív `L9-R3`, z roadmapy
   odstraněno 31. 8. - rozhodnutí Jan). Dnes má mřížka jednu barvu, tloušťku i styl pro obojí;
   zapnout/vypnout jednotlivé druhy čar už jde (`L10`, `L15`). ⚠️ **Nikdo o rozdělení nepožádal**
-  a vzor, kvůli kterému vlna `L9` vznikla (IDZK 940), ho nepotřebuje - má jen svislé čáry jednou
-  barvou, což umí. Kdyby se poptávka objevila, ví se rovnou i tvar řešení: `GridStyle` je sdílený
+  a vzor, kvůli kterému vlna `L9` vznikla (IDZK 940), ho nepotřebuje - má tečkované svislé čáry
+  mezi spoji, střídavé podbarvení řádků a vodorovné čáry jen na pár místech, což jde nastavit jedním
+  stylem čar (přečteno z PDF vzoru 1. 11.). Kdyby se poptávka objevila, ví se rovnou i tvar řešení: `GridStyle` je sdílený
   se všemi tabulkovými prvky, takže se to musí udělat pro všechny naráz, jinak se dvě tabulky
   v téže šabloně nastavují jinak (rozhodnuto 26. 8.).
+  Širší návrh je bývalé `B155` (z roadmapy vyřazeno 1. 11.): čtyři druhy čar (mezi řádky, mezi sloupci,
+  pod záhlavím, mezi skupinami sloupců) s vlastním vzhledem zadávaným kaskádou, které pohltí
+  „Popisné sloupce bez vnitřních čar". Detail `elementy-architektura.md` §Návrh jemnější mřížky.
 
 Není to nedodělek, ale práce, která se vyplatí až s konkrétním zákazníkem - v aktivní roadmapě
 jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do hodiny, M = půl dne.
@@ -205,8 +209,6 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
   tiše a jen tam, kde se obojí sejde na jedné vývěsce
 - **Tiskový parametr „Rozdělení sloupců" pro MHD agendu** (M) - sjednocení s AD, kde už je
   (MHD SMO fáze 3)
-- **Parita variant tras + písmen u odjezdů pro MHD agendu** (S–M) - AD hotové 27. 7. (#13048 bod 5),
-  MHD až u zákazníka, který to bude chtít
 - **MHD zdroj označníku pro samostatné stránky per označník** (S–M) - AD hotové, dtto
 - **Exportní parametry per šablona** (S–M) - název souboru / členění / imposice jsou dnes per agenda;
   převod na šablonu má smysl, až někdo bude mít dvě šablony téže agendy s jiným exportem
@@ -841,7 +843,7 @@ Víkendový je až třetí (`NacistSkupinyDnu`) a nastaví se na 1 bez jakékoli
    ✅ **HOTOVO 2026-08-03 (#12997):** JŘ modul umí od 3. 8. **víc barev na linku** (Petr Šmíd,
    `^JRL(sku,lin,"PATCH","BARVA")`); modul jim význam nedává, klient první používá jako text a druhou
    jako pozadí - přesně jak si to představoval. Agenda je vydává jako `BARVA_LINKY` / `BARVA_LINKY_2`
-   (`ZastavkoveJrAd.BarvaLinky`) a **jdou napsat do každého barevného pole šablony** místo pevné barvy,
+   (`Jr.DataAd.BarvaLinky`) a **jdou napsat do každého barevného pole šablony** místo pevné barvy,
    takže jedna šablona obslouží všechny linky. Nápovědu k tomu nese barevné pole samo.
    - **Záměrně bez mezikroku v paletě** (volba „barva linky" jako položka color pickeru) - přidal by klik
      všem uživatelům kvůli menšině případů; místo toho se placeholder píše do pole (`ColorPickerHelper.cs:35`).

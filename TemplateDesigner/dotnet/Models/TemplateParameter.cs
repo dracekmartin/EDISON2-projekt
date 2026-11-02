@@ -25,6 +25,23 @@ public class TemplateParameter
     /// <summary>Možné hodnoty pro typ "enum".</summary>
     public List<string>? Options { get; set; }
 
+    /// <summary>Stabilní klíč ke každé volbě (stejné pořadí jako <see cref="Options"/>), prázdný = volba bez klíče.
+    /// Dnes klíč vzoru sloupců u „Rozdělení sloupců" - klient podle něj najde vzor v datech a popisky
+    /// vzorů neopisuje. Aditivní klíč kontraktu (R3): starší server ho neposílá, pak je null.</summary>
+    public List<string>? OptionKeys { get; set; }
+
+    /// <summary>Co se u volby zobrazí (stejné pořadí jako <see cref="Options"/>), když se liší od uloženého
+    /// textu. Text volby je zamčený, protože se ukládá; popisek jde přejmenovat (dnes „Rozdělení sloupců",
+    /// tatáž volba se ve vývěsce i linkovém JŘ jmenuje stejně). Aditivní klíč (R3), starší server ho neposílá.</summary>
+    public List<string>? OptionLabels { get; set; }
+
+    /// <summary>Popisek volby pro uživatele: ze serveru, jinak samotný text volby.</summary>
+    public string OptionLabel(string option)
+    {
+        int i = Options?.IndexOf(option) ?? -1;
+        return i >= 0 && OptionLabels is { } popisky && i < popisky.Count && popisky[i].Length > 0 ? popisky[i] : option;
+    }
+
     /// <summary>Skupina pro vizuální seskupení v UI (např. „Obsah", „Sloupce a časová osa").
     /// Null/prázdné = bez skupiny. Aditivní klíč kontraktu (R3) - starší server ho neposílá.</summary>
     public string? Group { get; set; }

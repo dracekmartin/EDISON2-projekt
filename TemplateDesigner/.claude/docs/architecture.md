@@ -3,7 +3,7 @@
 **Struktura složek repozitáře:**
 ```
 TemplateDesigner/
-├── CACHE/                    - Caché ObjectScript kód (AgendaAPI, ZastavkoveJrMhdAPI, TemplateDesignerFAKTURY)
+├── CACHE/                    - Caché ObjectScript kód (agendy a jejich pomocné třídy, API, EDList, EDInputForm, testy)
 │   ├── .project              - "ALVA_TEMPLATE_DESIGNER"
 │   └── ALVA/TemplateDesigner/API/
 ├── dotnet/                   - veškerý .NET/WPF zdrojový kód + .csproj
@@ -32,9 +32,7 @@ TemplateDesigner/
 /Serialization
   TemplateSerializer.cs             - JSON ukládání a načítání šablony + sekcí
   SectionTemplateManager.cs         - správa custom šablon sekcí (file-based V1, připraveno na DB V2)
-  JsonFileDataSchemaProvider.cs     - načítání *.schema.json ze složky schemas/
-  CacheAgendaProvider.cs            - IDataSchemaProvider + ITableTemplateProvider přes MLRest/AgendaAPI
-  CompositeDataSchemaProvider.cs    - Caché primary + JSON fallback
+  CacheAgendaProvider.cs            - IDataSchemaProvider přes MLRest (metody agend)
 
 /Config
   AppSettings.cs            - POCO konfigurace + static Load() z templatedesigner.appsettings.json
@@ -74,9 +72,6 @@ TemplateDesigner/
   PdfToTemplateConverter.cs - heuristická konverze extrahovaných dat → elementy
   AiGuidedScheduleBuilder.cs / AiVisionImportPipeline.cs - AI-řízený import JŘ (rasterizace → Vision → přesné elementy z PdfPig)
   ExtractedData.cs / EnrichedImportResult.cs - mezistruktury pipeline
-
-/schemas
-  *.schema.json             - schémata agend (offline fallback); kopírováno do output dir
 
 /section-templates (runtime)
   *.json                    - custom šablony sekcí (uložené uživatelem); vedle .exe
@@ -157,8 +152,8 @@ na uložené `PrintBehavior` + `Role` - formát šablony se nemění a starší 
   místo opakované sekci, kterou podmínka na stránce schová. Jedno `=` je rovnost.
 - **„Pod obsahem" + „Jen poslední"** (jen staré šablony, formulář to nenabízí) se sází jako obsah
   na konci.
-- **Pole bez účinku formulář schová** (`MainWindow.ViditelnostPoleSekce`) - do `B18` pravidla
-  drží návrhář, formulář z Caché viditelnost neumí.
+- **Pole bez účinku formulář schová** (`MainWindow.ViditelnostPoleSekce`) - pravidla drží návrhář,
+  formulář z Caché viditelnost neumí (deklarativní pravidla formuláře Jan 30. 10. zamítl).
 - **Výška sekce je nejmenší** - `max(zadaná, obsah)`.
 
 **Pořadí priority, když se nastavení tlučou:** výslovný pokyn k sekci (nová stránka, typ) >
@@ -168,16 +163,6 @@ upozornění vpravo dole (`SazbaHlaseni`, `B178`).
 
 Podmínka, kterou nejde přečíst, se dál tiskne (fail-open), ale hlásí se jako upozornění.
 `Section.RowHeight` čte jen škálování šablony.
-
-### Úprava vysázené stránky před tiskem - nápad (`B171`, Jan 21. 9., bez poptávky)
-
-Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší.
-Nápad: sázecí engine by uložil vysázené stránky jako dokument, kde jsou pořád prvky se souřadnicemi (`LayoutResult`), a nad ním by šlo u jedné stránky prvek posunout nebo zvětšit, teprve pak PDF.
-Umí to FastReport a Stimulsoft, Acrobat totéž nad hotovým PDF.
-
-⚠️ **Data se znovu nevysází** - roztažený prvek dá bílé místo, ne víc textu, a úprava platí jen pro ten jeden tisk.
-Levnější cesty k témuž: nechat prvek při přetečení narůst do volného místa pod sebou místo zmenšení písma, a přiřadit lince vlastní šablonu (index dnes jen podle agendy, chybí i dávkový tisk).
-Tohle vytáhnout, až se ukáže, že obojí nestačí.
 
 ### Import z PDF - jak funguje a kam směřuje (`B179`, 2. 10.)
 
@@ -196,7 +181,7 @@ výsledku; **(2)** import nejdřív sám rozdělí stránku z PDF na bloky, mode
 s očíslovanými bloky a jen je pojmenuje, polohy bere import z PDF; **(3)** tabulka spojů měřená
 z PDF celá (hranice popisných sloupců, šířka sloupce spoje, písma záhlaví a buněk).
 
-**Stav (roadmapa `B179`):** krok (1) je hotový 2. 10. (`PdfImport/Kvalita/`, výchozí stav v changelogu), (2) a (3) čekají.
+**Stav (`B179`, od 31. 10. v archivu roadmapy):** krok (1) je hotový 2. 10. (`PdfImport/Kvalita/`, výchozí stav v changelogu), (2) a (3) čekají, až bude import zase aktuální (Jan 31. 10.).
 Import funguje, ale není použitelný, protože polohy tabulky a poznámek jsou odhad modelu.
 Od 9. 10. je to **jen interní nástroj** (`dev.pdfImport` v lokálním configu): převody předloh dělá M-line a dál se pokračuje, až se při nich ukáže, že import šetří čas.
 
@@ -242,7 +227,8 @@ přímo - volá callback `RequestCanvasRefresh`.
 - ObservableCollections pro binding (Sections, SchemaGroups, PreviewParameters)
 - Bindovatelné properties (ShowGrid, SnapToGrid, CanUndo, CanRedo, StatusText, ...)
 
-**V `MainWindow.xaml.cs` (musí zůstat - neodstranitelná vazba na WPF/SkiaSharp):**
+**V kódu okna `MainWindow.*.cs` (musí zůstat - neodstranitelná vazba na WPF/SkiaSharp; od 30. 10. rozdělený
+do částí podle oblastí, přehled v `MainWindow.xaml.cs`):**
 - `PaintSurface` eventy (SkiaSharp constraint)
 - Mouse state machine (`_mouseMode`, drag, resize, rubber band)
 - `UpdateCanvasSize()` - čte `skCanvas.ActualWidth/Height`
@@ -365,7 +351,7 @@ _vm.RequestExportPdf          = filePath => _previewCanvas.RenderToPdf(filePath,
 - `DesignerCanvas` - čte stav při každém `Render()`
 - `PreviewCanvas` - čte šablonu a zoom
 - `TemplateDesignerViewModel` - mění stav (výběr, zoom, undo/redo)
-- `MainWindow.xaml.cs` - čte při mouse state machine
+- `MainWindow.Mouse.cs` - čte při mouse state machine
 
 Záměrně bez INotifyPropertyChanged - změny se projeví při příštím `InvalidateVisual()`,
 ne automaticky. Undo/Redo a všechny commands jdou přes `DesignerState.Execute(cmd)`.

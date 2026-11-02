@@ -37,7 +37,9 @@ Věci, které se z kódu nepoznají a jejichž porušení něco rozbije uživate
   použitá zveřejněná agenda téže varianty (AD / MHD), napoprvé ta ze shellu (`StartovniAgenda`, Jan 27. 10.). Za kódem smí stát `;KLÍČ=hodnota` (wire jména agendy, `Config/LaunchInput`):
   s klíčem instance (`LINKA_ID`) TD otevře šablonu agendy (nejnovější vlastní firmy, jinak systémovou),
   vybere linku a nastaví parametry; s `Vystup=PDF` okno neotevře, PDF vyrobí cestou tisku a ukáže ve
-  výchozím prohlížeči. Šablonu pro PDF bere jen z `LaunchTemplates/` v exe, **ne z databáze** - tak
+  výchozím prohlížeči. Uloží ho do složky z klíče `Slozka` (volí ji okno Porovnání linek v ISYJR2, smí
+  obsahovat `%TEMP%`; chybí = `%TEMP%\EDISON\TemplateDesigner`). `Vystup` musí zůstat poslední: cesta
+  končící `\` těsně před uzavírací uvozovkou argumentu by ji zrušila. Šablonu pro PDF bere jen z `LaunchTemplates/` v exe, **ne z databáze** - tak
   spouští rozdílový JŘ porovnání linek v ISYJR2 (repo EDISON, `TiskJRHelper.OpenRozdilovyJR`) a jeho
   šablona se v návrháři nenabízí (Jan 23. 10.). Starší TD vstup nepozná, ISYJR2 ho smí posílat až s novým TD.
   Bez argumentů běží TD standalone. Obecný kontrakt (`EdisonLaunchArgs`,
@@ -84,7 +86,7 @@ s UI. Tímhle se odhalilo tiše zapnuté rozdělení vývěsky.
   zastávky = vždy **„označník"** (ne nástupiště/stanoviště/sloupek); kanonické termíny viz
   `ux-conventions.md §8`, wire názvy polí (`NASTUPISTE`) se nemění
 - **Žádné dlouhé pomlčky (em dash)** - v kódu, komentářích, UI textech, dokumentaci i odpovědích
-  vždy běžná pomlčka „-" (rozhodnutí Jan 2026-07-28; UI labely hlídá drift test)
+  vždy běžná pomlčka „-" (rozhodnutí Jan 2026-07-28; popisky i ostatní UI texty hlídají drift testy)
 - Každá akce uživatele = `IDesignerCommand` (undo/redo podporováno)
 - Pozice elementů jsou **relativní k sekci**, jednotky = **milimetry**
 - `Height = null` = dynamická výška (print engine počítá); `IsLocked = true` = nelze editovat

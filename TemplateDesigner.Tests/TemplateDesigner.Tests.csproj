@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TemplateDesigner\dotnet\TemplateDesigner.csproj" />
+    <ProjectReference Include="..\EDTesting\dotnet\EDTesting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

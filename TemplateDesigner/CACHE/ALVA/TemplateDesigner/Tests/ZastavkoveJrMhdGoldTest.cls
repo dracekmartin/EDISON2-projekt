@@ -37,7 +37,13 @@ Method TestGold1001()
 	// počty beze změny.
 	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích (ADRESA, TELEFON, EMAIL, ICO
 	// _DOPRAVCE) jako ve všech agendách JŘ. Jen md5, počty beze změny.
-	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=aM2OsDckjrmDwloemdcWXw==")
+	// Re-baseline 2026-10-30 (`B56` S7): číslo linky podle licence jde jako číslo a veřejné označení jako text,
+	// jako ve všech agendách JŘ (`KontraktAgendTest.TestTypyCislaLinky`). Jen md5, počty beze změny.
+	// Re-baseline 2026-10-30 (`B56` S12): hlavičku linky skládá `Jr.DataMhd.AddHlavickaLinky`, změnilo se jen
+	// pořadí položek. Jen md5, počty beze změny; snímek porovnaný podle obsahu jiný rozdíl nemá.
+	// Re-baseline 2026-10-30: varianty tras jako ve vývěsce AD (VARIANTY_TRAS, u zastávek TRASA_MIN
+	// a NASTUPISTE_VARIANT, písmeno u minuty). Jen md5, počty beze změny; varianty hlídá ZastavkoveJrMhdVariantyTest.
+	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=vTkHDjcygiPCzXEOMC8V/Q==")
 }
 
 Method TestGold1003()
@@ -48,7 +54,10 @@ Method TestGold1003()
 	// Re-baseline 2026-10-24: pole NAZEV_DOPRAVCE - viz gold 1001. Jen md5.
 	// Re-baseline 2026-10-27: pole VYCHOZI_ZASTAVKA - viz gold 1001. Jen md5.
 	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích - viz gold 1001. Jen md5.
-	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=mYIDuT7vH0nWQLAwLxcj/Q==")
+	// Re-baseline 2026-10-30 (`B56` S7): typ čísla a označení linky - viz gold 1001. Jen md5.
+	// Re-baseline 2026-10-30 (`B56` S12): pořadí položek hlavičky - viz gold 1001. Jen md5.
+	// Re-baseline 2026-10-30: varianty tras - viz gold 1001. Jen md5.
+	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=p4zab7dGRplyB4egEjHWig==")
 }
 
 Method TestGold1006()
@@ -59,7 +68,10 @@ Method TestGold1006()
 	// Re-baseline 2026-10-24: pole NAZEV_DOPRAVCE - viz gold 1001. Jen md5.
 	// Re-baseline 2026-10-27: pole VYCHOZI_ZASTAVKA - viz gold 1001. Jen md5.
 	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích - viz gold 1001. Jen md5.
-	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=oQCenOGLg/YUCCud+5oMdw==")
+	// Re-baseline 2026-10-30 (`B56` S7): typ čísla a označení linky - viz gold 1001. Jen md5.
+	// Re-baseline 2026-10-30 (`B56` S12): pořadí položek hlavičky - viz gold 1001. Jen md5.
+	// Re-baseline 2026-10-30: varianty tras - viz gold 1001. Jen md5.
+	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=jg1MMjPanJMb+5H/khjYUA==")
 }
 
 /// `B194a` C3: přestup na vlak (CB_DP, zastávka Nádraží linky 11350) má v seznamu zastávek i v poznámkách
@@ -94,6 +106,44 @@ Method TestPrestupNaVlakPismenem()
 	do $$$AssertTrue($data(poznamky("L/prestup")) && ($order(poznamky(""))="L/prestup") && ($order(poznamky(""),-1)="L/prestup"), "poznámka přestupu: L s kategorií prestup")
 }
 
+/// Odjezd přesně v 0:00 je na vývěsce (noční linka 53, z Nádraží v obou směrech, pracovní dny i volno).
+/// Do 30. 10. ho vývěska vynechávala stejně jako starý tisk: čas spoje se hledal jako maximum od prázdného
+/// začátku a 0 není větší než nic. Na další zastávce přitom vývěska ukazovala 0:01.
+Method TestOdjezdVPulnoc()
+{
+	set db = ..#GOLDDB
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru")
+		quit
+	}
+	do ##class(ALVA.TemplateDesigner.Tests.MhdLegacyOracle).SetupOur(.sys, ..#GOLDIDFA, db)
+	kill ^||ML
+	set ^||ML("IN","LINKA_ID") = "1023"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
+	kill pulnoc
+	set stranek = 0, p = ""
+	for {
+		set p = $order(^||ML("OUT",p), 1, json)
+		quit:p=""
+		continue:'$isvalidnum(p)
+		set page = ##class(%DynamicObject).%FromJSON(json)
+		continue:page.values.%Get("POPIS_ZASTAVKA")'="Nádraží"
+		set stranek = stranek + 1
+		set io = page.rows.%Get("ODJEZDY").%GetIterator()
+		while io.%GetNext(.ko, .o) {
+			set:(+o.%Get("HODINA")=0)&&(+o.%Get("MINUTA")=0) pulnoc(page.values.%Get("SMER")_"/"_o.%Get("SKUPINA_DNU_ID")) = ""
+		}
+	}
+	set nalez = "", k = ""
+	for {
+		set k = $order(pulnoc(k))
+		quit:k=""
+		set nalez = nalez_" "_k
+	}
+	do $$$AssertEquals(stranek, 2, "linka 53 má vývěsku Nádraží v obou směrech")
+	do $$$AssertEquals(nalez, " T/1 T/2 Z/1 Z/2", "odjezd 0:00 z Nádraží (směr/skupina dnů)")
+}
+
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:
 ///   namespace chybí        → skip (jiný server, legitimní)
 ///   namespace je, linka ne  → FAIL (gold data zmizela / rozbitý fixture)
@@ -102,7 +152,7 @@ Method AssertLine(lin As %String, expected As %String)
 {
 	set db = ..#GOLDDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - gold "_lin_" přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru - gold "_lin_" přeskočen")
 		quit
 	}
 	set idfa = ..#GOLDIDFA

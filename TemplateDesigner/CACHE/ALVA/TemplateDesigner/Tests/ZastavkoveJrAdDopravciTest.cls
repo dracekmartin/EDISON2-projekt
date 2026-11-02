@@ -1,9 +1,9 @@
 Include %occInclude
 
-/// %UnitTest pro rozložené údaje dopravce - skalární pole (NAZEV_DOPRAVCE…) a kolekci DOPRAVCI.
+/// %UnitTest pro rozložené údaje dopravce - skalární pole (NAZEV_DOPRAVCE…) prvního dopravce linky.
 ///
 /// Vznikly proto, že slepený POPIS_DOPRAVCE dával adresu dvakrát: bral sídlo z provozovny a ulici
-/// z firmy (#13158). Šablona si teď v tabulce z dat vybere jen to, co chce.
+/// z firmy (#13158). Kolekce dopravců po provozovnách se do dat neposílá (od 30. 10., `B112`).
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdDopravciTest Extends ALVA.EDTesting.MLTestCase
 {
 
@@ -15,92 +15,83 @@ Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdDopravciTest Extends ALVA.EDTest
 /// Kdo vezme první, tomu na vývěsce zmizí PSČ a obec - a nikdo si toho nevšimne, protože ulice tam
 /// je. Test proto porovnává s tím, co nese slepený POPIS_DOPRAVCE, tedy s tvarem, který zákazník
 /// dnes reálně vidí.
+/// Pravidlo „pole 10, pole 2 jen jako záloha" na záznamu číselníku pod jedinečným klíčem, který test po sobě smaže.
+Method TestAdresaZPlnehoPoleCiselniku()
+{
+	set db = $namespace, fa = "TDTEST"_$translate($system.Util.CreateGUID(), "-")
+	try {
+		set firma = "", $piece(firma, "~", 1) = "Dopravce", $piece(firma, "~", 2) = "Hálkova 781/9"
+		set $piece(firma, "~", 10) = "Hálkova 781/9, 370 04, České Budějovice"
+		set ^[db]JRSET("DOP", fa) = firma
+		do ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DopravceUdaje(db, fa, "", .udaje)
+		do $$$AssertEquals($get(udaje("ADRESA")), "Hálkova 781/9, 370 04, České Budějovice", "plné pole 10 má přednost")
+		set $piece(firma, "~", 10) = ""
+		set ^[db]JRSET("DOP", fa) = firma
+		do ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DopravceUdaje(db, fa, "", .udaje)
+		do $$$AssertEquals($get(udaje("ADRESA")), "Hálkova 781/9", "bez pole 10 záloha z pole 2")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]JRSET("DOP", fa)
+}
+
+/// U provozovny bez vlastní adresy je adresa firmy celá i ve slepeném POPIS_DOPRAVCE, jinak by se
+/// rozcházelo pole s popisem. Provozovna s vlastní ulicí (CB_CSADAD „prov.Písek, Nádražní 2294") má
+/// v popisu svou adresu a firmu tam nečekáme - to by byla zdvojená adresa z #13158.
+/// Na linkách sady (testovací namespace linky AD nemá; do 30. 10. tu test na „první lince namespace"
+/// hlásil úspěch, aniž co ověřil, a jeho předpoklad na reálných datech neplatil).
 Method TestAdresaDopravceNesePlnyTvarJakoStaryPopis()
 {
-	do ..SetupSys(.sys)
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrvniLinka($namespace, .sku, .lin)
-	if lin = "" {
-		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL - test přeskočen")
-		quit
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).LinkyNaServeru(.linky)
+	if '$get(linky) { do $$$AssertSkipped("žádná firma sady není na tomto serveru")  quit }
+	set overeno = 0
+	for i = 1:1:linky {
+		set db = $piece(linky(i), "~", 1), sku = $piece(linky(i), "~", 2), lin = $piece(linky(i), "~", 3)
+		set dopravci = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BuildDopravci(db, sku, lin)
+		continue:dopravci.%Size()=0
+		set prvni = dopravci.%Get(0)
+		do $$$AssertNotEquals(prvni.NAZEV, "", db_" "_lin_": dopravce má název")
+		continue:(prvni.ADRESA="")||(prvni."PROVOZOVNA_ADRESA"'="")
+		set overeno = overeno + 1
+		set popis = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PopisDopravce(db, sku, lin)
+		do $$$AssertTrue((popis [ prvni.ADRESA), db_" "_lin_": adresa """_prvni.ADRESA_""" musí být celá v POPIS_DOPRAVCE ("_popis_")")
 	}
-
-	kill udaje
-	set dopravci = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildDopravci($namespace, sku, lin)
-	if dopravci.%Size() = 0 {
-		do $$$AssertTrue(1, "Linka "_sku_"/"_lin_" nemá v datech dopravce - test přeskočen")
-		quit
-	}
-
-	set prvni = dopravci.%Get(0)
-	set popis = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PopisDopravce($namespace, sku, lin)
-
-	do $$$AssertNotEquals(prvni.NAZEV, "", "dopravce má název")
-	// Adresa ze samostatného pole musí být v tom starém slepeném bloku obsažená celá - jinak jsme
-	// vzali kratší variantu z číselníku a zákazníkovi zmizelo PSČ a obec.
-	if prvni.ADRESA '= "" {
-		do $$$AssertTrue((popis [ prvni.ADRESA), "adresa """_prvni.ADRESA_""" musí být celá v POPIS_DOPRAVCE ("_popis_")")
-	}
+	do $$$AssertTrue(overeno > 0, "aspoň jedna linka sady má dopravce s adresou firmy v popisu - jinak test nic neověří")
 }
 
-/// Kolekce nese jeden řádek na dopravce a provozovnu, a všechna pole jsou přítomná i prázdná -
-/// chybějící klíč by v šabloně vypadal jako neznámé pole.
-Method TestKolekceMaVsechnaPoleIKdyzJsouPrazdna()
+/// Skalární pole nesou prvního dopravce linky, toho, kterého vrací `BuildDopravci` jako první.
+/// Na linkách sady, stejně jako test výš.
+Method TestSkalarniPoleOdpovidajiPrvnimuDopravci()
 {
-	do ..SetupSys(.sys)
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrvniLinka($namespace, .sku, .lin)
-	if lin = "" {
-		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL - test přeskočen")
-		quit
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).LinkyNaServeru(.linky)
+	if '$get(linky) { do $$$AssertSkipped("žádná firma sady není na tomto serveru")  quit }
+	set sDopravcem = 0
+	for i = 1:1:linky {
+		set db = $piece(linky(i), "~", 1), sku = $piece(linky(i), "~", 2), lin = $piece(linky(i), "~", 3)
+		set vals = ##class(%DynamicObject).%New()
+		do ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DopravceSkalary(db, sku, lin, vals)
+		set dopravci = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BuildDopravci(db, sku, lin)
+		if dopravci.%Size() = 0 {
+			// Bez dopravce musí pole existovat a být prázdná, ne chybět.
+			do $$$AssertEquals(vals.%Get("NAZEV_DOPRAVCE"), "", db_" "_lin_": bez dopravce je název prázdný, ne chybějící")
+			continue
+		}
+		set sDopravcem = sDopravcem + 1
+		set prvni = dopravci.%Get(0)
+		do $$$AssertEquals(vals.%Get("NAZEV_DOPRAVCE"), prvni.NAZEV, db_" "_lin_": NAZEV_DOPRAVCE = první dopravce")
+		do $$$AssertEquals(vals.%Get("ADRESA_DOPRAVCE"), prvni.ADRESA, db_" "_lin_": ADRESA_DOPRAVCE = první dopravce")
+		do $$$AssertEquals(vals.%Get("ICO_DOPRAVCE"), prvni.ICO, db_" "_lin_": ICO_DOPRAVCE = první dopravce")
 	}
-
-	set dopravci = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildDopravci($namespace, sku, lin)
-	if dopravci.%Size() = 0 {
-		do $$$AssertTrue(1, "Linka "_sku_"/"_lin_" nemá v datech dopravce - test přeskočen")
-		quit
-	}
-
-	set prvni = dopravci.%Get(0)
-	// Fax se vědomě nevystavuje - na vývěsce nemá co dělat (rozhodnutí Jan 1. 9.).
-	set ocekavane = $listbuild("NAZEV","ADRESA","TELEFON","EMAIL","ICO","PROVOZOVNA_NAZEV","PROVOZOVNA_ADRESA","PROVOZOVNA_TELEFON","PROVOZOVNA_MISTO")
-	for i = 1:1:$listlength(ocekavane) {
-		set klic = $listget(ocekavane, i)
-		do $$$AssertTrue(prvni.%IsDefined(klic), "kolekce DOPRAVCI má pole "_klic)
-	}
+	do $$$AssertTrue(sDopravcem > 0, "aspoň jedna linka sady má dopravce - jinak test nic neověří")
 }
 
-/// Skalární pole se nesmí rozejít s prvním řádkem kolekce - jinak by v textu stálo něco jiného
-/// než v tabulce z týchž dat.
-Method TestSkalarniPoleOdpovidajiPrvnimuRadkuKolekce()
-{
-	do ..SetupSys(.sys)
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrvniLinka($namespace, .sku, .lin)
-	if lin = "" {
-		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL - test přeskočen")
-		quit
-	}
-
-	set vals = ##class(%DynamicObject).%New()
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).DopravceSkalary($namespace, sku, lin, vals)
-
-	set dopravci = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildDopravci($namespace, sku, lin)
-	if dopravci.%Size() = 0 {
-		// Bez dopravce musí pole existovat a být prázdná, ne chybět.
-		do $$$AssertEquals(vals.%Get("NAZEV_DOPRAVCE"), "", "bez dopravce je název prázdný, ne chybějící")
-		quit
-	}
-
-	set prvni = dopravci.%Get(0)
-	do $$$AssertEquals(vals.%Get("NAZEV_DOPRAVCE"), prvni.NAZEV, "NAZEV_DOPRAVCE = první řádek kolekce")
-	do $$$AssertEquals(vals.%Get("ADRESA_DOPRAVCE"), prvni.ADRESA, "ADRESA_DOPRAVCE = první řádek kolekce")
-	do $$$AssertEquals(vals.%Get("ICO_DOPRAVCE"), prvni.ICO, "ICO_DOPRAVCE = první řádek kolekce")
-}
-
-/// Skalární pole musí být ve schématu, kolekce naopak NESMÍ.
+/// Skalární pole musí být ve schématu, kolekce dopravců naopak NESMÍ (v datech ji hlídá
+/// `KontraktAgendTest.TestDataOdpovidajiNabidce`).
 ///
-/// ⚠️ Kolekce je **vědomě skrytá** (rozhodnutí Jan 1. 9.): řádek na dopravce × provozovnu nutně
-/// opakuje údaje firmy, takže tři provozovny daly třikrát týž telefon pod sebou - a tabulka z dat
-/// deduplikaci neumí. Vyměnila by tedy jednu duplicitu za druhou. Kdyby se kolekce do schématu
-/// vrátila bez vyřešené hierarchie „dopravce → provozovny", spadne tenhle test - a to je záměr.
+/// ⚠️ Kolekce je **vědomě pryč** (rozhodnutí Jan 1. 9., provozovny vyhozené 4. 9.): řádek na dopravce
+/// × provozovnu nutně opakuje údaje firmy, takže tři provozovny daly třikrát týž telefon pod sebou -
+/// a tabulka z dat deduplikaci neumí. Kdyby se kolekce vrátila bez vyřešené hierarchie „dopravce →
+/// provozovny", spadne tenhle test - a to je záměr.
 Method TestSchemaNabiziSkalarniPoleAleNeKolekci()
 {
 	do ..SetupSys(.sys)

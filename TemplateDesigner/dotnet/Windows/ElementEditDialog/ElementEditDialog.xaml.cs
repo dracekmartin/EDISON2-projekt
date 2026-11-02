@@ -66,11 +66,12 @@ public partial class ElementEditDialog : Window
     public Action<IEnumerable<Item>?>? UpravaPoli { get; set; }
 
     /// <summary>
-    /// Tlačítko ve formuláři (klíč „__…"): host otevře svůj editor a vrátí vratný příkaz, nebo null.
-    /// Příkaz se provede až s Uložit, takže Storno zahodí i změnu z editoru; opakovaný klik nahradí
-    /// předchozí příkaz téhož tlačítka.
+    /// Akce tlačítek formuláře podle klíče (<see cref="Models.TlacitkaFormulare"/>): host otevře svůj editor
+    /// a vrátí vratný příkaz, nebo null. Tlačítko bez akce okno neukáže. Příkaz se provede až s Uložit,
+    /// takže Storno zahodí i změnu z editoru; opakovaný klik nahradí předchozí příkaz téhož tlačítka.
     /// </summary>
-    public Func<string, IDesignerCommand?>? AkceTlacitka { get; set; }
+    public IReadOnlyDictionary<string, Func<IDesignerCommand?>> AkceTlacitek { get; set; } =
+        new Dictionary<string, Func<IDesignerCommand?>>();
 
     private readonly Dictionary<string, IDesignerCommand> _prikazyTlacitek = [];
 
@@ -90,15 +91,15 @@ public partial class ElementEditDialog : Window
         TheForm.FieldChanged += _ => PouzijViditelnost();
         TheForm.ButtonClicked += key =>
         {
-            if (AkceTlacitka?.Invoke(key) is { } prikaz) _prikazyTlacitek[key] = prikaz;
+            if (AkceTlacitek.TryGetValue(key, out var akce) && akce() is { } prikaz) _prikazyTlacitek[key] = prikaz;
         };
         ElementFormBinder.HookFontWeightRefresh(TheForm);
     }
 
     private void PouzijViditelnost()
     {
-        if (ViditelnostPole is null) return;
-        ElementFormBinder.PouzijViditelnost(TheForm.Items, ViditelnostPole);
+        if (ViditelnostPole is not null) ElementFormBinder.PouzijViditelnost(TheForm.Items, ViditelnostPole);
+        ElementFormBinder.SkrytTlacitkaBezAkce(TheForm.Items, AkceTlacitek.Keys);
     }
 
     private void OnFormInitialized()

@@ -25,7 +25,8 @@ Method TestAdVraciOcekavaneKolekce()
 		set db = $piece(jadro(i),"~",1), sku = $piece(jadro(i),"~",2), lin = $piece(jadro(i),"~",3)
 		continue:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
 		set overeno = overeno + 1
-		do $$$AssertEquals($get(^||ML("OUT","ERR")), "", "GetData "_db_" "_lin_" nesmí vrátit chybu")
+		// Chybu agendy zapisuje $$$CatchErrRest do ^||ML("ERR"), ne do OUT - kontrola OUT prošla vždy.
+		do $$$AssertEquals($get(^||ML("ERR")), "", "GetData "_db_" "_lin_" nesmí vrátit chybu: "_$get(^||ML("ERR")))
 		set key = ""
 		for  {
 			set key = $order(^||ML("OUT", key))
@@ -41,7 +42,7 @@ Method TestAdVraciOcekavaneKolekce()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z jádra sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z jádra sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(chybi, "", "ve výstupu chybí kolekce: "_chybi)
@@ -56,8 +57,14 @@ Method TestAdObeCislaLinky()
 	set db = $namespace, sku = "TDTEST"_$translate($system.Util.CreateGUID(), "-")
 	try {
 		set ^[db]JRL(sku, "0380715", "MhD", "SeT_MhD") = "15~Titulek"
-		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).LokalniOznaceniLinkyAd(db, sku, "0380715"), "15", "z MHD nastavení linky")
-		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).LokalniOznaceniLinkyAd(db, sku, "0380716"), "716", "bez nastavení znaky 5-7 čísla linky")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).LokalniOznaceniLinky(db, sku, "0380715"), "15", "z MHD nastavení linky")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).LokalniOznaceniLinky(db, sku, "0380716"), "716", "bez nastavení znaky 5-7 čísla linky")
+		// `B56` S7: hlavička AD z jedné metody - číslo podle licence jako číslo, označení jako text, i když vypadá jako číslo
+		set vals = ##class(%DynamicObject).%New()
+		do ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).AddHlavickaLinky(db, sku, "0380715", vals)
+		do $$$AssertEquals(vals.%Get("CISLO_LINKY"), 380715, "licenční číslo")
+		do $$$AssertEquals(vals.%GetTypeOf("CISLO_LINKY"), "number", "licenční číslo je číslo")
+		do $$$AssertEquals(vals.%GetTypeOf("LOKALNI_OZNACENI_LINKY"), "string", "veřejné označení je text")
 	} catch ex {
 		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
 	}
@@ -68,7 +75,7 @@ Method TestAdObeCislaLinky()
 	try {
 		for objekt = $listbuild(1, "VÝLUKOVÝ"), $listbuild(2, "NÁVRH"), $listbuild(0, "") {
 			set ^[db]JRL(sku, "0380715", "PATCH", "OBJ") = $list(objekt, 1)
-			do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).TypJrLinkyAd(db, sku, "0380715"), $list(objekt, 2), "razítko pro OBJ="_$list(objekt, 1))
+			do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TypJrLinky(db, sku, "0380715"), $list(objekt, 2), "razítko pro OBJ="_$list(objekt, 1))
 		}
 	} catch ex {
 		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
@@ -88,7 +95,7 @@ Method TestAdObeCislaLinky()
 		set overeno = overeno + 1
 		set hodnoty = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1)).values
 		do $$$AssertEquals(hodnoty.%Get("CISLO_LINKY"), +lin, db_" "_lin_": licenční číslo")
-		do $$$AssertEquals(hodnoty.%Get("LOKALNI_OZNACENI_LINKY"), ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).LokalniOznaceniLinkyAd(db, sku, lin), db_" "_lin_": veřejné označení jako vývěska")
+		do $$$AssertEquals(hodnoty.%Get("LOKALNI_OZNACENI_LINKY"), ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).LokalniOznaceniLinky(db, sku, lin), db_" "_lin_": veřejné označení jako vývěska")
 		do $$$AssertTrue(hodnoty.%Get("LOKALNI_OZNACENI_LINKY") '= "", db_" "_lin_": veřejné označení není prázdné")
 	}
 	if 'overeno do $$$AssertSkipped("žádná firma z jádra sady není na tomto serveru")
@@ -131,7 +138,7 @@ Method ProjdiKontrakt(ByRef sys, trida As %String, popis As %String)
 	for metoda = "GetSchema", "GetParameters", "GetMockData" {
 		kill ^||ML
 		do $classmethod(trida, metoda, .sys)
-		do $$$AssertEquals($get(^||ML("OUT","ERR")), "", popis_" "_metoda_" nesmí vrátit chybu")
+		do $$$AssertEquals($get(^||ML("ERR")), "", popis_" "_metoda_" nesmí vrátit chybu: "_$get(^||ML("ERR")))
 		set json = $get(^||ML("OUT", 1))
 		do $$$AssertNotEquals(json, "", popis_" "_metoda_" musí něco vrátit")
 		// Neplatný JSON by na klientu skončil výjimkou při parsování, ne čitelnou hláškou.
@@ -149,9 +156,16 @@ Method ProjdiKontrakt(ByRef sys, trida As %String, popis As %String)
 /// dokud to někdo nezkusil v aplikaci. Test kontroluje **tvar** odpovědi, ne počet.
 Method TestVyberInstanciMaCisloINazev()
 {
-	do ..SetupSys(.sys)
+	// Každá agenda nad firmou se svými daty: testovací namespace nemá linky AD ani MHD a do 30. 10. se
+	// tu kvůli tomu nic neověřilo (`B56` S13). AD = firma sady, MHD = CB_DP.
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).LinkyNaServeru(.linky)
+	set firmaAd = $piece($get(linky(1)), "~", 1)
 	set chybi = "", overeno = 0
-	for trida = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd", "ALVA.TemplateDesigner.Agendy.LinkovyJrMhd", "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd" {
+	for trida = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd", "ALVA.TemplateDesigner.Agendy.LinkovyJrMhd", "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd", "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" {
+		set firma = $select(trida [ "Mhd":"CB_DP", 1:firmaAd)
+		continue:(firma="")||'##class(%SYS.Namespace).Exists(firma)
+		do ##class(ALVA.EDTesting.MLTestCase).SetupSys(.sys, $select(trida [ "Mhd":firma, 1:"CB_DP"))
+		set sys("U","DATA") = firma
 		kill ^||ML
 		set ^||ML("IN","search") = ""
 		set ^||ML("IN","limit") = 5
@@ -168,7 +182,7 @@ Method TestVyberInstanciMaCisloINazev()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná agenda na tomto serveru nevrátila instance - přeskočeno")
+		do $$$AssertSkipped("žádná agenda na tomto serveru nevrátila instance - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(chybi, "", "výběr instancí vrací prázdná pole (seznam by byl prázdný): "_chybi)

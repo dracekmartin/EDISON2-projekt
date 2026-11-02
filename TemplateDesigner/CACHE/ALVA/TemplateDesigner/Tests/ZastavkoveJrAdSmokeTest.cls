@@ -1,8 +1,8 @@
 Include %occInclude
 
-/// Strukturální smoke test GetData agendy ZastavkoveJrAd nad ŽIVÝMI daty (^JRL v MLINE).
-/// Linku hledá dynamicky přes PrvniLinka (žádná hardcoded gold linka) a assertuje
-/// STRUKTURU wire formátu, ne konkrétní hodnoty - přežije editace JŘ dat.
+/// Strukturální smoke test GetData agendy ZastavkoveJrAd nad ŽIVÝMI daty firem ze sady
+/// (`ZastavkoveJrAdSadaTest.LinkyNaServeru`) a assertuje STRUKTURU wire formátu, ne konkrétní
+/// hodnoty - přežije editace JŘ dat.
 /// Přesné 1:1 porovnání (zmrazený digest) = ZastavkoveJrAdGoldTest (AD) / ZastavkoveJrMhdGoldTest (MHD).
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSmokeTest Extends ALVA.EDTesting.MLTestCase
 {
@@ -15,7 +15,7 @@ Method TestMaxSloupcuVariantOrizneNaPrvniN()
 {
 	set db = "CB_CSADAD", max = 2
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdLegacyTest).SetupSysFor(.sys, db)
@@ -54,14 +54,16 @@ Method TestMaxSloupcuVariantOrizneNaPrvniN()
 	do $$$AssertEquals(cizichPismen, 0, "odjezdy bez písmene netištěného sloupce")
 }
 
+/// Na první lince sady, jejíž firma je na serveru - testovací namespace linky AD nemá a do 30. 10. tu
+/// test na „první lince namespace" hlásil úspěch, aniž co ověřil (`B56` S13).
 Method TestGetDataVraciValidniStrankyProPrvniLinku()
 {
-	do ..SetupSys(.sys)
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrvniLinka($namespace, .sku, .lin)
-	if lin = "" {
-		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL - smoke přeskočen")
-		quit
-	}
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).LinkyNaServeru(.linky)
+	if '$get(linky) { do $$$AssertSkipped("žádná firma sady není na tomto serveru")  quit }
+	set db = $piece(linky(1), "~", 1), sku = $piece(linky(1), "~", 2), lin = $piece(linky(1), "~", 3)
+	do ##class(ALVA.EDTesting.MLTestCase).SetupSys(.sys, "CB_DP")
+	set sys("U","DATA") = db
+	kill ^||ML
 
 	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
 	set ^||ML("IN","LINKA_ID") = lin
@@ -83,10 +85,11 @@ Method TestGetDataVraciValidniStrankyProPrvniLinku()
 	do $$$AssertTrue($isobject(page.rows.%Get("ODJEZDY")), "ODJEZDY existují")
 	do $$$AssertTrue($isobject(page.rows.%Get("POZNAMKY")), "POZNAMKY existují")
 
-	// Kontrakt řádků: zastávka nese ID/POPIS/CAS_JIZDY, odjezd HODINA/MINUTA + vazby
+	// Kontrakt řádků: zastávka nese ID a NAZEV_ZASTAVKY, odjezd HODINA/MINUTA + vazby. Do 30. 10. se tu
+	// čekalo POPIS, který řádek dávno nenese - test běžel naprázdno a nikdo to neviděl (`B56` S13).
 	set z = zastavky.%Get(0)
 	do $$$AssertNotEquals(z.%Get("ID"), "", "zastávka má ID")
-	do $$$AssertNotEquals(z.%Get("POPIS"), "", "zastávka má POPIS")
+	do $$$AssertNotEquals(z.%Get("NAZEV_ZASTAVKY"), "", "zastávka má název")
 	set odjezdy = page.rows.%Get("ODJEZDY")
 	if odjezdy.%Size() > 0 {
 		set o = odjezdy.%Get(0)
@@ -95,6 +98,35 @@ Method TestGetDataVraciValidniStrankyProPrvniLinku()
 		do $$$AssertNotEquals(o.%Get("ZASTAVKA_ID"), "", "odjezd má vazbu na zastávku")
 		do $$$AssertNotEquals(o.%Get("SKUPINA_DNU_ID"), "", "odjezd má vazbu na skupinu dnů")
 	}
+}
+
+/// Titulek je jen to, co je u linky v nastavení zastávkového tisku (`MhD,SeT_MhD` kus 2). Starý tisk za
+/// prázdný dosadil „Městská hromadná doprava...", ten by ale dostalo 97 % linek včetně regionálních
+/// (`B56` S7, Jan 30. 10.). Ověřuje se na linkách sady (testovací namespace linky AD nemá): každá vrátí
+/// titulek přesně z nastavení, a aspoň jedna ho nemá - jinak by test náhradní text nepoznal.
+Method TestTitulekBezNahradnihoTextu()
+{
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).Sada(.sada)
+	set overeno = 0, bezTitulku = 0
+	for i = 1:1:$get(sada) {
+		set db = $piece(sada(i), "~", 1), sku = $piece(sada(i), "~", 2), lin = $piece(sada(i), "~", 3)
+		continue:'##class(%SYS.Namespace).Exists(db)
+		do ##class(ALVA.EDTesting.MLTestCase).SetupSys(.sys, "CB_DP")
+		set sys("U","DATA") = db
+		kill ^||ML
+		set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+		set ^||ML("IN","LINKA_ID") = lin
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+		continue:'$data(^||ML("OUT",1))
+		set titulek = $piece($get(^[db]JRL(sku, lin, "MhD", "SeT_MhD")), "~", 2)
+		set overeno = overeno + 1, bezTitulku = bezTitulku + (titulek = "")
+		set values = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1)).values
+		do $$$AssertTrue(values.%IsDefined("TITULEK"), db_" "_lin_": titulek je v datech i bez nastavení")
+		do $$$AssertEquals(values.%Get("TITULEK"), titulek, db_" "_lin_": titulek jen z nastavení linky")
+	}
+	kill ^||ML
+	if 'overeno { do $$$AssertSkipped("žádná firma sady není na tomto serveru")  quit }
+	do $$$AssertTrue(bezTitulku > 0, "aspoň jedna linka sady je bez titulku - jinak test náhradní text nepozná")
 }
 
 Method TestGetDataBezLinkyNevraciStranky()
@@ -113,8 +145,9 @@ Method TestGetDataNeexistujiciLinka()
 }
 
 /// Parametry variant tras se v návrháři ukážou, jen když šablona tiskne sloupec Varianty tras
-/// (rozhodnutí Jan 5. 10.). Závislost musí nést právě ty parametry, které bez sloupce nic nedělají:
-/// bez ní by parametr svítil naprázdno, u jiného parametru by ho návrhář schoval.
+/// (rozhodnutí Jan 5. 10.), Čas jízdy podle nastavení linky jen se sloupcem Čas (`B144`). Závislost
+/// musí nést právě ty parametry, které bez sloupce nic nedělají: bez ní by parametr svítil naprázdno,
+/// u jiného parametru by ho návrhář schoval.
 Method TestParametryVariantJenSeSloupcemVariant()
 {
 	do ..SetupSys(.sys)
@@ -124,8 +157,8 @@ Method TestParametryVariantJenSeSloupcemVariant()
 	set nalezeno = 0
 	set iter = params.%GetIterator()
 	while iter.%GetNext(.i, .p) {
-		set cekano = $select($listfind(variantni, p.name): "CAS_JIZDY_VARIANTY", 1: "")
-		set:cekano'="" nalezeno = nalezeno + 1
+		set cekano = $select($listfind(variantni, p.name): "CAS_JIZDY_VARIANTY", p.name="CAS_JIZDY_PODLE_LINKY": "CAS_JIZDY", 1: "")
+		set:$listfind(variantni, p.name) nalezeno = nalezeno + 1
 		do $$$AssertEquals(p.%Get("visibleWhenColumn"), cekano, p.name_": závislost na sloupci variant")
 	}
 	do $$$AssertEquals(nalezeno, $listlength(variantni), "všechny parametry variant jsou v GetParameters")

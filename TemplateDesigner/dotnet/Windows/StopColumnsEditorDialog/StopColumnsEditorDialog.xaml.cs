@@ -14,7 +14,7 @@ public partial class StopColumnsEditorDialog : Window
     /// ho jen otevření vlastností prvku z plátna - jinde se filtr nepamatuje.</summary>
     public string SearchMemoryKey { get => GeneralForm.SearchMemoryKey; set => GeneralForm.SearchMemoryKey = value; }
 
-    private const string GeneralSchemaClass = "ALVA.TemplateDesigner.EDInputForm.StopListElementEdit";
+    private static readonly string GeneralSchemaClass = Models.ElementCatalog.FormClass(Models.ElementTypes.StopList);
 
     private readonly StopColumnsEditorDialogViewModel _vm;
     private readonly StopListElement _element;
@@ -59,7 +59,7 @@ public partial class StopColumnsEditorDialog : Window
 
     private void OnGeneralButtonClicked(string key)
     {
-        if (key != "__highlightRules") return;
+        if (key != Models.TlacitkaFormulare.ZvyrazneniRadku) return;
         var current = ResultHighlightRules ?? _element.HighlightRules;   // reopen ukáže rozeditovaná pravidla
         var dlg = new HighlightRulesEditorDialog(current) { Owner = this };
         if (dlg.ShowDialog() == true)

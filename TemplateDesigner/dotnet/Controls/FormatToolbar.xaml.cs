@@ -16,7 +16,18 @@ public partial class FormatToolbar : UserControl
     private BoolPropertyDescriptor? _bold, _italic, _underline, _strikethrough;
     private EnumPropertyDescriptor? _hAlign, _vAlign;
 
-    public FormatToolbar() => InitializeComponent();
+    public FormatToolbar()
+    {
+        InitializeComponent();
+        BtnAlignLeft.ToolTip    = AlignmentLabels.Label(TextHorizontalAlignment.Left);
+        BtnAlignCenter.ToolTip  = AlignmentLabels.Label(TextHorizontalAlignment.Center);
+        BtnAlignRight.ToolTip   = AlignmentLabels.Label(TextHorizontalAlignment.Right);
+        BtnAlignJustify.ToolTip = AlignmentLabels.Label(TextHorizontalAlignment.Justify);
+        BtnVAlignTop.ToolTip    = AlignmentLabels.Label(TextVerticalAlignment.Top);
+        // „Na střed" je i vodorovně - bez upřesnění by dvě tlačítka vedle sebe měla stejnou bublinu.
+        BtnVAlignMiddle.ToolTip = $"{AlignmentLabels.Label(TextVerticalAlignment.Middle)} (svisle)";
+        BtnVAlignBottom.ToolTip = AlignmentLabels.Label(TextVerticalAlignment.Bottom);
+    }
 
     public void SetContext(Action<IDesignerCommand> execute, Action invalidate)
     {
@@ -39,20 +50,15 @@ public partial class FormatToolbar : UserControl
             {
                 foreach (var d in descriptors)
                 {
-                    if (d is BoolPropertyDescriptor b && b.Group == "Font")
-                        switch (b.Label)
-                        {
-                            case "Tučné":       _bold          = b; break;
-                            case "Kurzíva":     _italic        = b; break;
-                            case "Podtržení":   _underline     = b; break;
-                            case "Přeškrtnutí": _strikethrough = b; break;
-                        }
-                    else if (d is EnumPropertyDescriptor e && e.Group == "Zarovnání")
-                        switch (e.Label)
-                        {
-                            case EnumPropertyDescriptor.LabelZarovnaniVodorovne: _hAlign = e; break;
-                            case EnumPropertyDescriptor.LabelZarovnaniSvisle:    _vAlign = e; break;
-                        }
+                    switch (d.ToolbarSlot, d)
+                    {
+                        case (FormatToolbarSlot.Bold,                BoolPropertyDescriptor b): _bold          = b; break;
+                        case (FormatToolbarSlot.Italic,              BoolPropertyDescriptor b): _italic        = b; break;
+                        case (FormatToolbarSlot.Underline,           BoolPropertyDescriptor b): _underline     = b; break;
+                        case (FormatToolbarSlot.Strikethrough,       BoolPropertyDescriptor b): _strikethrough = b; break;
+                        case (FormatToolbarSlot.HorizontalAlignment, EnumPropertyDescriptor e): _hAlign        = e; break;
+                        case (FormatToolbarSlot.VerticalAlignment,   EnumPropertyDescriptor e): _vAlign        = e; break;
+                    }
                 }
             }
 

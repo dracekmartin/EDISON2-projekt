@@ -79,7 +79,7 @@ Method TestParitaSeStarymModulem()
 	}
 
 	if 'overeno {
-		do $$$AssertTrue(1, "starý modul ani jedna firma jádra sady na tomto serveru není - přeskočeno")
+		do $$$AssertSkipped("starý modul ani jedna firma jádra sady na tomto serveru není - přeskočeno")
 		quit
 	}
 	set souhrn = "linek "_overeno_", porovnáno hodnot "_porovnano_", vědomých odchylek "_odchylek_", dluhů "_dluhu
@@ -112,7 +112,7 @@ Method TestZnackaNaObjednaniUCasu()
 	set db = "CB_GWBUS", sku = 216, lin = "0340941"
 	kill parametry
 	if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry) {
-		do $$$AssertTrue(1, "linka "_lin_" není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("linka "_lin_" není na tomto serveru - přeskočeno")
 		quit
 	}
 	set nasich = 0, key = ""
@@ -189,7 +189,7 @@ Method TestPoznamkyMimoJadroProtiLegacy()
 		set nalezy = nalezy _ $select(nalezy="":"", 1:" | ") _ db_" "_lin_" ("_popis_"): starý ["_vLeg_"] × náš ["_vNase_"]"
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "starý modul ani firmy sady na tomto serveru nejsou - přeskočeno")
+		do $$$AssertSkipped("starý modul ani firmy sady na tomto serveru nejsou - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(nalezy, "", "řádek legendy se liší od starého modulu: "_nalezy)
@@ -217,11 +217,11 @@ Method TestMistenkyNaNovyRadek()
 	set db = "CB_GWBUS", sku = 990, lin = "0322002"
 	kill parametry
 	if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry) {
-		do $$$AssertTrue(1, "linka "_lin_" není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("linka "_lin_" není na tomto serveru - přeskočeno")
 		quit
 	}
 	if '$data(^[db]JRSET("Definice","MistOR")) {
-		do $$$AssertTrue(1, "firma "_db_" už nemá MistOR - přeskočeno")
+		do $$$AssertSkipped("firma "_db_" už nemá MistOR - přeskočeno")
 		quit
 	}
 	set texty = "", key = ""
@@ -322,7 +322,7 @@ Method TestVetyAtributuProtiLegacy()
 		set nalezy = nalezy _ $select(nalezy="":"", 1:" | ") _ db_" "_lin_" "_klic_" ("_popis_"): starý ["_$get(vetyLeg(klic))_"] × náš ["_$get(vetyNase(klic))_"]"
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "starý modul ani firma VS_CSAD na tomto serveru není - přeskočeno")
+		do $$$AssertSkipped("starý modul ani firma VS_CSAD na tomto serveru není - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(nalezy, "", "věta atributu se liší od starého modulu: "_nalezy)
@@ -357,7 +357,7 @@ Method TestRegistrNemaMrtveZaznamy()
 		}
 	}
 	if overeno < pocetLinek {
-		do $$$AssertTrue(1, "část jádra sady na serveru chybí - mrtvé záznamy registru se nekontrolují")
+		do $$$AssertSkipped("část jádra sady na serveru chybí - mrtvé záznamy registru se nekontrolují")
 		quit
 	}
 

@@ -1,5 +1,7 @@
 using EDControls;
 using EDControls.EDViewModel;
+using TemplateDesigner.Models;
+using static TemplateDesigner.Designer.KeyboardShortcuts;
 
 namespace TemplateDesigner;
 
@@ -16,13 +18,12 @@ public class HelpSection
 }
 
 /// <summary>
-/// Nápověda F1 - datově řízený obsah (zkratky, workflow, tipy) s fulltext filtrem (Ctrl+F).
-/// Obsah drž v souladu s autoritativní tabulkou zkratek v ux-conventions.md - při přidání
-/// zkratky/featury aktualizovat BuildContent().
+/// Nápověda F1 - datově řízený obsah (zkratky, workflow, tipy) s fulltext filtrem.
+/// Zkratky se berou z <see cref="TemplateDesigner.Designer.KeyboardShortcuts"/>, ručně se tu píše jen popis.
 /// </summary>
 public class HelpDialogViewModel : EDViewModel
 {
-    private readonly List<HelpSection> _all = BuildContent();
+    private readonly List<HelpSection> _all;
 
     private List<HelpSection> _filteredSections;
     public List<HelpSection> FilteredSections
@@ -40,8 +41,10 @@ public class HelpDialogViewModel : EDViewModel
 
     public bool NothingFound => FilteredSections.Count == 0;
 
-    public HelpDialogViewModel()
+    /// <param name="nazev">Název instance aktuální agendy (linka) - nápověda o výběru a tisku mluví jeho slovy.</param>
+    public HelpDialogViewModel(NazevInstance? nazev = null)
     {
+        _all = BuildContent(nazev ?? NazevInstance.Obecny);
         _filteredSections = _all;
     }
 
@@ -81,25 +84,25 @@ public class HelpDialogViewModel : EDViewModel
     private static string Fold(string s) => SearchNormalization.NormalizeForSearch(s);
 
     // ─────────────────────────────────────────────────────────────────────
-    // Obsah - zkratky dle autoritativní tabulky (ux-conventions.md)
+    // Obsah - zkratky z KeyboardShortcuts, popis ručně
     // ─────────────────────────────────────────────────────────────────────
 
-    private static List<HelpSection> BuildContent() =>
+    private static List<HelpSection> BuildContent(NazevInstance n) =>
     [
         new HelpSection
         {
             Title = "🚀 Rychlý start",
             Entries =
             [
-                new("1. Otevřít šablonu z databáze / založit novou", "Ctrl+O / Ctrl+N"),
-                new("2. Zkontrolovat agendu a variantu (zelený štítek ve stavovém řádku); změna", "Ctrl+Shift+A"),
-                new("3. Vybrat linky pro náhled (modrý štítek „Linka“ ve stavovém řádku)", "Ctrl+Shift+I"),
+                new("1. Otevřít šablonu z databáze / založit novou", Gestures(Open, New)),
+                new("2. Zkontrolovat agendu a variantu (zelený štítek ve stavovém řádku); změna", ChangeAgenda.Gesture),
+                new($"3. Vybrat {n.AkuzativMnozne} pro náhled (modrý štítek „{NazevInstance.SVelkym(n.Jednotne)}“ ve stavovém řádku)", SelectInstances.Gesture),
                 new("4. Přidat sekce (tlačítko Přidat sekci) a prvky (táhnout z palety)", "myš"),
                 new("5. Napojit data - pole ze záložky „Datová pole“ táhnout na plochu", "táhnout myší"),
-                new("6. Upravit vzhled - záložka Vlastnosti (rychlé) / Enter (kompletní dialog)", "Enter"),
-                new("7. Uložit do databáze a vytisknout s reálnými daty", "Ctrl+S, Ctrl+P"),
+                new($"6. Upravit vzhled - záložka Vlastnosti (rychlé) / {Properties.Gesture} (kompletní dialog)", Properties.Gesture),
+                new("7. Uložit do databáze a vytisknout s reálnými daty", $"{Save.Gesture}, {Print.Gesture}"),
             ],
-            Tip = "Živý náhled vpravo ukazuje výsledek s daty vybrané linky průběžně. " +
+            Tip = $"Živý náhled vpravo ukazuje výsledek s daty {n.Shoda("vybrané", "vybraného", "vybraného", "vybraného")} {n.Genitiv} průběžně. " +
                   "Databáze je primární úložiště šablon - soubor JSON slouží jen pro přenos (menu Soubor → Import/Export).",
         },
 
@@ -108,12 +111,12 @@ public class HelpDialogViewModel : EDViewModel
             Title = "📄 Soubor a šablony",
             Entries =
             [
-                new("Nová šablona", "Ctrl+N"),
-                new("Otevřít z databáze (přehled šablon s filtrem)", "Ctrl+O"),
-                new("Uložit do databáze (nová se zeptá na jméno)", "Ctrl+S"),
+                new("Nová šablona", New.Gesture),
+                new("Otevřít z databáze (přehled šablon s filtrem)", Open.Gesture),
+                new("Uložit do databáze (nová se zeptá na jméno)", Save.Gesture),
                 new("Uložit jako (nová kopie v databázi)", "menu Soubor"),
                 new("Import / export JSON souboru (přenos šablony)", "menu Soubor"),
-                new("Vlastnosti stránky (formát, orientace, okraje, jazyk)", "Ctrl+Shift+P"),
+                new("Vlastnosti stránky (formát, orientace, okraje, jazyk)", PageProperties.Gesture),
             ],
             Tip = "Při změně formátu nebo orientace stránky se návrhář zeptá, zda obsah přepočítat na novou velikost - " +
                   "úprava okrajů je běžná vratná změna.",
@@ -121,15 +124,15 @@ public class HelpDialogViewModel : EDViewModel
 
         new HelpSection
         {
-            Title = "🖨 Tisk a export (Ctrl+P)",
+            Title = $"🖨 Tisk a export ({Print.Gesture})",
             Entries =
             [
-                new("Vytvořit PDF / PNG - z vybraných linek, bez vybrané linky z ukázkových dat", "Ctrl+P → Vytvořit"),
-                new("Členění výstupu - vše do jednoho / po linkách / po zastávkách a směrech", "dialog tisku"),
+                new($"Vytvořit PDF / PNG - z vybraných {n.GenitivMnozne}, bez {n.Shoda("vybrané", "vybraného", "vybraného", "vybraného")} {n.Genitiv} z ukázkových dat", $"{Print.Gesture} → Vytvořit"),
+                new($"Členění výstupu - vše do jednoho / jeden PDF na {n.Akuzativ} / jeden PDF na zastávku a směr", "dialog tisku"),
                 new("Název souboru z datových polí, např. {CISLO_LINKY}", "dialog tisku"),
                 new("Víc stránek na jeden papír (šablona o víc stránkách)", "dialog tisku → Uspořádání na list"),
                 new("Druhá stránka dokladu vedle první, nebo na zadní stranu listu", "dialog tisku → Uspořádání na list"),
-                new("Kontrola všech vybraných linek bez tisku", "dialog tisku → Zkontrolovat, lupa na liště"),
+                new($"Kontrola všech vybraných {n.GenitivMnozne} bez tisku", "dialog tisku → Zkontrolovat, lupa na liště"),
                 new("Hlášky k tisku - informace, upozornění, problém", "blok vpravo ve stavovém řádku"),
             ],
             Tip = "Hlášky tisk nezastaví. Problém znamená, že se část obsahu na papír nedostane (ořízne se, " +
@@ -138,14 +141,14 @@ public class HelpDialogViewModel : EDViewModel
 
         new HelpSection
         {
-            Title = "🗂 Data, agenda a linky",
+            Title = $"🗂 Data, agenda a {n.Mnozne}",
             Entries =
             [
-                new("Změnit agendu / variantu (založí novou prázdnou šablonu)", "Ctrl+Shift+A"),
-                new("Výběr linek pro náhled a tisk", "Ctrl+Shift+I / modrý štítek"),
-                new("Listování mezi vybranými linkami", "◀ ▶ u štítku"),
-                new("Seznam vybraných linek k přepnutí", "▲ u štítku"),
-                new("Obnovit data z databáze (znovu načte ze serveru)", "F5"),
+                new("Změnit agendu / variantu (založí novou prázdnou šablonu)", ChangeAgenda.Gesture),
+                new($"Výběr {n.GenitivMnozne} pro náhled a tisk", $"{SelectInstances.Gesture} / modrý štítek"),
+                new($"Předchozí a další z vybraných {n.GenitivMnozne}", "◀ ▶ u štítku"),
+                new($"Seznam vybraných {n.GenitivMnozne} k přepnutí", "▲ u štítku"),
+                new("Obnovit data z databáze (znovu načte ze serveru)", RefreshData.Gesture),
                 new("Datová pole → nový text s {POLE} na ploše", "táhnout pole na plochu"),
                 new("Datová pole → přidat {POLE} do existujícího textu", "táhnout pole na text"),
                 new("Zkopírovat {NAZEV_POLE} do schránky", "dvojklik na pole"),
@@ -161,15 +164,15 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Výběr prvku", "klik"),
-                new("Přidat do výběru", "Ctrl+klik"),
-                new("Vybrat jen jeden prvek ze skupiny", "Alt+klik"),
+                new("Přidat do výběru", AddToSelection.Gesture),
+                new("Vybrat jen jeden prvek ze skupiny", SelectFromGroup.Gesture),
                 new("Výběr více prvků oblastí", "táhnout přes prázdno"),
-                new("Vybrat vše v aktivní sekci", "Ctrl+A"),
-                new("Vlastnosti výběru (1 prvek / společné vlastnosti více)", "Enter / dvojklik"),
-                new("Úprava textu přímo na plátně (textový prvek)", "F2"),
-                new("Zrušit výběr / probíhající akci", "Esc"),
+                new("Vybrat vše v aktivní sekci", SelectAll.Gesture),
+                new("Vlastnosti výběru (1 prvek / společné vlastnosti více)", $"{Properties.Gesture} / dvojklik"),
+                new("Úprava textu přímo na plátně (textový prvek)", EditContent.Gesture),
+                new("Zrušit výběr / probíhající akci", Cancel.Gesture),
             ],
-            Tip = "F2: Enter = potvrdit, Shift+Enter = nový řádek, Esc = zrušit.",
+            Tip = $"{EditContent.Gesture}: {ConfirmText.Gesture} = potvrdit, {NewLine.Gesture} = nový řádek, {DiscardText.Gesture} = zrušit.",
         },
 
         new HelpSection
@@ -177,19 +180,19 @@ public class HelpDialogViewModel : EDViewModel
             Title = "✏ Editace",
             Entries =
             [
-                new("Zpět / Vpřed", "Ctrl+Z / Ctrl+Y"),
-                new("Vyjmout / Kopírovat / Vložit", "Ctrl+X / Ctrl+C / Ctrl+V"),
-                new("Duplikovat (kopie posunutá o 5 mm)", "Ctrl+D"),
-                new("Duplikovat vedle originálu s mezerou 4 mm", "Ctrl+D, pak šipka"),
-                new("Kopírovat / vložit STYL (písmo, barvy, rámeček)", "Ctrl+Shift+C / Ctrl+Shift+V"),
-                new("Seskupit / rozeskupit prvky", "Ctrl+G / Ctrl+Shift+G"),
-                new("Rozdělit prvek vodorovně / svisle na poloviny", "Ctrl+Shift+H / Ctrl+Shift+J"),
-                new("Smazat výběr", "Delete"),
-                new("Posun o 1 mm / o krok mřížky", "šipky / Ctrl+šipky"),
-                new("Změna velikosti o 1 mm (pravá a dolní hrana)", "Shift+šipky"),
-                new("Vrstva: dopředu / dozadu (úplně: +Shift)", "Ctrl+PgUp / Ctrl+PgDn"),
+                new("Zpět / Vpřed", Gestures(Undo, Redo)),
+                new("Vyjmout / Kopírovat / Vložit", Gestures(Cut, Copy, Paste)),
+                new("Duplikovat (kopie posunutá o 5 mm)", Duplicate.Gesture),
+                new("Duplikovat vedle originálu s mezerou pro přichytávání (výchozí 2 mm)", DuplicateBeside.Gesture),
+                new("Kopírovat / vložit STYL (písmo, barvy, rámeček)", Gestures(CopyStyle, PasteStyle)),
+                new("Seskupit / rozeskupit prvky", Gestures(Group, Ungroup)),
+                new("Rozdělit prvek vodorovně / svisle na poloviny", Gestures(SplitHorizontally, SplitVertically)),
+                new("Smazat výběr", Delete.Gesture),
+                new("Posun o 1 mm / o krok mřížky", Gestures(Move, MoveByGrid)),
+                new("Změna velikosti o 1 mm (pravá a dolní hrana)", Resize.Gesture),
+                new("Vrstva: přenést dopředu / odeslat dozadu (zcela: +Shift)", Gestures(BringForward, SendBackward)),
                 new("Zarovnání a rozložení vybraných prvků", "lišta nástrojů / menu Upravit"),
-                new("Normalizovat pozice (zaokrouhlit na krok)", "Ctrl+Shift+N"),
+                new("Normalizovat pozice (zaokrouhlit na krok)", NormalizePositions.Gesture),
             ],
             Tip = "Hromadná úprava: vyberte víc prvků a stiskněte Enter - dialog společných vlastností.",
         },
@@ -200,7 +203,7 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Přidat sekci", "tlačítko Přidat sekci"),
-                new("Přesunout aktivní sekci nahoru / dolů", "Ctrl+Shift+↑ / Ctrl+Shift+↓"),
+                new("Přesunout aktivní sekci nahoru / dolů", Gestures(MoveSectionUp, MoveSectionDown)),
                 new("Přesunout sekci tažením", "táhnout myší v panelu"),
                 new("Výška sekce myší - patička se tahá za HORNÍ hranu (roste nahoru)", "táhnout hranu na ploše"),
                 new("Vlastnosti / smazání sekce", "pravý klik"),
@@ -216,33 +219,23 @@ public class HelpDialogViewModel : EDViewModel
             Title = "👁 Zobrazení",
             Entries =
             [
-                new("Přizpůsobit stránku oknu", "Ctrl+0"),
-                new("Skutečná velikost 100 %", "Ctrl+1"),
-                new("Zoom k kurzoru", "Ctrl+kolečko"),
-                new("Sbalit / rozbalit levý panel", "Ctrl+B"),
+                new("Přizpůsobit stránku oknu", FitToPage.Gesture),
+                new("Skutečná velikost 100 %", ActualSize.Gesture),
+                new("Zoom ke kurzoru", ZoomAtCursor.Gesture),
+                new("Sbalit / rozbalit levý panel", ToggleLeftPanel.Gesture),
                 new("Mřížka plátna, přichytávání, velikost kroku (0,2–10 mm)", "lišta nástrojů"),
                 new("Strom šablony (sekce → skupiny → prvky)", "záložka Strom"),
-                new("Nápověda (tento dialog)", "F1"),
+                new("Nápověda (tento dialog)", TemplateDesigner.Designer.KeyboardShortcuts.Help.Gesture),
             ],
         },
 
         new HelpSection
         {
             Title = "🔲 Prvky",
-            Entries =
-            [
-                new("Text - statický nebo s poli {NAZEV}", "paleta"),
-                new("Obrázek - ze souboru (auto zmenšení velkých)", "paleta"),
-                new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
-                new("Kód (QR, čárový) - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
-                new("Tabulka (z dat) - řádky z kolekce dat agendy (vč. řazení řádků)", "paleta"),
-                new("Tabulka (pevná) - mřížku vyplňujete sami (rozměr zadáte při vložení)", "paleta"),
-                new("Seznam zastávek - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
-                new("Minuty odjezdů - po skupinách dnů", "paleta (JŘ agenda)"),
-                new("Poznámky - značky, omezení a vysvětlivky pod vývěskou", "paleta (JŘ agenda)"),
-                new("Tabulka spojů - zastávky × spoje (linkový JŘ)", "paleta (JŘ agenda)"),
-            ],
-            Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
+            // Prvky a jejich popis z katalogu - totéž, co ukazuje bublina palety.
+            Entries = [.. Models.ElementCatalog.All.Select(e =>
+                new HelpEntry($"{e.Name} - {e.Hint}", e.IsGeneric ? "paleta" : "paleta (JŘ agenda)"))],
+            Tip = "Tabulka s řádky z dat umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
                   "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr řazení), nejméně a nejvýš řádků " +
                   "a souhrnné řádky (SUM, COUNT, AVG…). Vše v dialogu tabulky (dvojklik).",
         },
@@ -252,19 +245,19 @@ public class HelpDialogViewModel : EDViewModel
             Title = "▦ Pevná tabulka - vyplňování",
             Entries =
             [
-                new("Dovnitř do buňky (rovnou do té, na kterou kliknete)", "Alt+klik"),
-                new("Dovnitř do naposledy kliknuté buňky / upravit obsah", "F2"),
-                new("Posun po buňkách / potvrdit a dál", "šipky / Tab / Enter"),
-                new("Psaní přepíše obsah buňky, Esc vede ven", "psaní / Esc"),
+                new("Dovnitř do buňky (rovnou do té, na kterou kliknete)", EnterCell.Gesture),
+                new("Dovnitř do naposledy kliknuté buňky / upravit obsah", EditCell.Gesture),
+                new("Posun po buňkách / potvrdit a dál", $"šipky / {NextCell.Gesture} / {CellBelow.Gesture}"),
+                new("Psaní přepíše obsah buňky, Esc vede ven", $"psaní / {LeaveCells.Gesture}"),
                 new("Nabídka datových polí uvnitř buňky", "napsat {"),
-                new("Výběr více buněk (obdélník)", "táhnout / Shift+klik / Shift+šipky / Ctrl+A"),
-                new("Tučné / kurzíva / podtržení buňky (i během psaní)", "Ctrl+B / Ctrl+I / Ctrl+U"),
-                new("Vlastnosti buňky - písmo, barvy, formát hodnoty", "Alt+Enter"),
-                new("Vymazat obsah buněk (ne prvek)", "Delete"),
+                new("Výběr více buněk (obdélník)", $"táhnout / {ExtendCellSelectionByClick.Gesture} / {ExtendCellSelection.Gesture} / {SelectAllCells.Gesture}"),
+                new("Tučné / kurzíva / podtržení buňky (i během psaní)", Gestures(CellBold, CellItalic, CellUnderline)),
+                new("Vlastnosti buňky - písmo, barvy, formát hodnoty", CellProperties.Gesture),
+                new("Vymazat obsah buněk (ne prvek)", ClearCells.Gesture),
                 new("Řádky a sloupce, sloučení buněk, vlastnosti řádku", "pravý klik"),
                 new("Šířka sloupce / výška řádku", "táhnout vnitřní hranici"),
             ],
-            Tip = "Obsah z Excelu jde vložit rovnou (Ctrl+V) - tabulka se dorovná. Vlastnosti řádku "
+            Tip = $"Obsah z Excelu jde vložit rovnou ({PasteCells.Gesture}) - tabulka se dorovná. Vlastnosti řádku "
                   + "nabízejí podmínku viditelnosti: řádek se vytiskne, jen když podmínka platí "
                   + "(např. {VS} schová řádek u dokladu bez variabilního symbolu).",
         },
@@ -342,7 +335,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Pokračování / opačný směr (jen v sekci na každé stránce)", "{POKRACOVANI}"),
             ],
             Tip = "Výraz viditelnosti se zadává ve vlastnosti „Podmínka viditelnosti“ - prázdný = vždy viditelné. " +
-                  "Formátování čísel a datumů řídí jazyk šablony (Ctrl+Shift+P), ne nastavení Windows.",
+                  $"Formátování čísel a datumů řídí jazyk šablony ({PageProperties.Gesture}), ne nastavení Windows.",
         },
 
         new HelpSection
@@ -350,9 +343,9 @@ public class HelpDialogViewModel : EDViewModel
             Title = "💡 Tipy a triky",
             Entries =
             [
-                new("Proporcionální škálování celé šablony", "lišta nástrojů 50–200 %"),
+                new("Proporcionální škálování celé šablony", "Upravit → Přepočítat šablonu na jinou velikost"),
                 new("Zamknout prvek proti posunu/změně velikosti", "vlastnost Uzamčeno"),
-                new("Chytré přichytávání k hranám sousedů (i mezera 4 mm)", "při tažení / změně velikosti"),
+                new("Chytré přichytávání k hranám sousedů (i v mezeře pro přichytávání)", "při tažení / změně velikosti"),
                 new("Výška podle obsahu - prvek roste s obsahem (text se zalamuje)", "Výška prázdná"),
                 new("JŘ prvek s pevnou výškou zmenší písmo, aby se obsah vešel", "automatické zmenšení"),
                 new("AI průvodce - zeptejte se, kde co v aplikaci najdete", "záložka Pomocník"),

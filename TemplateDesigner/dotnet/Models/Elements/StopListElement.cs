@@ -288,7 +288,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // Šipka vlevo si nárokuje pruh nalevo od sloupce zastávek. Musí být součástí rozdělení
         // šířek, ne kreslením přes souseda - jinak si po zúžení prvku lehne na jízdní doby
         // (#12843 bod 1). Vpravo se kreslí uvnitř sloupce a rezervu drží nameShrinkReserveMm.
-        bool showArrowEarly = GetBoolParam(ctx.Data, "TISK_SIPKY", DefaultShowArrow);
+        bool showArrowEarly = GetBoolParam(ctx.Data, ParametrySestavy.TiskSipky, DefaultShowArrow);
         float arrowLaneMm = showArrowEarly && DirectionArrowPosition == DirectionArrowSide.Left
             ? ArrowOutsideOffsetMm + (MathF.Max(DirectionArrowHeadSize, DirectionArrowWidth) / 2f) + 0.2f
             : 0f;
@@ -311,7 +311,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         using var paints = CreateStandardPaints(ctx);
 
         // Parametry z tiskového dialogu přepíší element properties
-        bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", DefaultShowPassedStops);
+        bool showPassed = GetBoolParam(ctx.Data, ParametrySestavy.TiskProjetychZastavek, DefaultShowPassedStops);
         bool showArrow = showArrowEarly;
         bool arrowLeft = arrowLaneMm > 0f;
 
@@ -508,6 +508,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     /// <summary>Parent kaskády pro per-column data override - co sloupec dědí, když vlastní styl nemá.</summary>
     public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
+
+    public override IEnumerable<StyleZone> ResolvedStyleZones() =>
+        [new("HeaderStyle", ResolveColumnHeaderParent()), new("DataStyle", ResolveColumnDataParent())];
 
     /// <summary>Vyřeší styl záhlaví sloupce přes sdílené jádro (kaskáda column → element → baked +
     /// legacy StopColumn.Alignment fallback). Public kvůli testovatelnosti (StopListCascadeTests).</summary>
@@ -732,7 +735,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         var zastavky = BuildZastavkyProRender(data);
         if (zastavky.Count == 0) return DesignerPlaceholderHeight;
 
-        bool showPassed = GetBoolParam(data, "TISK_PROJETYCH_ZAST", DefaultShowPassedStops);
+        bool showPassed = GetBoolParam(data, ParametrySestavy.TiskProjetychZastavek, DefaultShowPassedStops);
         int visibleStops;
         if (string.IsNullOrWhiteSpace(RowVisibilityExpression))
         {
@@ -823,7 +826,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// z dat. Jediná cesta, jak si prvek zastávky bere - aby zdroj nemohl chybět v jedné z nich.</summary>
     private List<ZastavkaData> BuildZastavkyProRender(DataContext? data)
     {
-        SloupekJakoStanoviste = data?.GetValue("ZDROJ_STANOVISTE")?.ToString() == "Sloupek";
+        SloupekJakoStanoviste = data?.GetValue(ParametrySestavy.ZdrojStanoviste)?.ToString() == ParametrySestavy.ZdrojStanovisteSloupek;
         return ExpandPlatformRows(BuildZastavky(data));
     }
 
@@ -1425,7 +1428,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // Popisky i skupina jako formulář (StopListElementEdit.cls), `B194` E10.
         new BoolPropertyDescriptor  { FromImage = true, Label = "Aktuální: Tučné",       Group = AktualniGroup, Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
         new BoolPropertyDescriptor  { FromImage = true, Label = "Aktuální: Podtržení",   Group = AktualniGroup, Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
-        new FloatPropertyDescriptor { Label = "Aktuální: Velikost",  Group = AktualniGroup, Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 3, Max = 72, Unit = "pt" },
+        new FloatPropertyDescriptor { Label = "Aktuální: Velikost",  Group = AktualniGroup, Get = () => CurrentStopFontSize ?? ResolveColumnDataParent().FontSize, Set = v => CurrentStopFontSize = Math.Abs(v - ResolveColumnDataParent().FontSize) < 0.01f ? null : v, Min = 3, Max = 72, Unit = "pt" },
         new ColorPropertyDescriptor { FromImage = true, Label = "Aktuální: Barva textu", Group = AktualniGroup, Get = () => CurrentStopTextColor ?? "", Set = v => CurrentStopTextColor = string.IsNullOrWhiteSpace(v) ? null : v },
         new ColorPropertyDescriptor { FromImage = true, Label = "Aktuální: Barva pozadí",      Group = AktualniGroup, Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
         // „Projeté zastávky" (zapnutí) tu záměrně není - řídí ji parametr sestavy

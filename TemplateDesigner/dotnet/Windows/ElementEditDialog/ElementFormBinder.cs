@@ -125,6 +125,20 @@ public static class ElementFormBinder
         !string.IsNullOrWhiteSpace(value) && !Models.ColorHex.IsValid(value);
 
     /// <summary>
+    /// Schová tlačítka, pro která okno nemá akci - klik by nic neudělal (do 30. 10. „Nastavení celé tabulky"
+    /// v okně buňky). Ostatní pole nechá být, jejich viditelnost posílá server a řídí pravidlo hostitele.
+    /// </summary>
+    public static void SkrytTlacitkaBezAkce(IEnumerable<Item>? items, IEnumerable<string> obsluhovana)
+    {
+        var akce = obsluhovana.ToHashSet(StringComparer.Ordinal);
+        foreach (var f in (items ?? []).OfType<Field>())
+        {
+            if (f.FieldType == FieldType.Button && !akce.Contains(f.Key) && f.Visibility != ItemVisibility.Collapsed)
+                f.Visibility = ItemVisibility.Collapsed;
+        }
+    }
+
+    /// <summary>
     /// Schová pole, která podle pravidla hostitele nic nedělají, a s nimi skupinu, ve které žádné
     /// viditelné pole nezbylo - jinak by po ní zůstal prázdný nadpis. Null pravidlo = vše vidět.
     /// </summary>
@@ -206,6 +220,23 @@ public static class ElementFormBinder
     /// </summary>
     public static void ApplyInheritedValues(EDInputForm form, IReadOnlyDictionary<string, string>? inherited)
         => ApplyInheritedValues([.. (form.Items ?? []).OfType<Field>()], inherited);
+
+    /// <summary>
+    /// Hodnoty, se kterými se prvek vytiskne, pro pole, která nemá nastavená - formulář jimi předvyplní
+    /// prázdné vlastnosti místo výchozích hodnot schématu (<see cref="ApplyInheritedValues(EDInputForm, IReadOnlyDictionary{string, string}?)"/>).
+    /// Null = prvek takovou kaskádu nemá a formulář nechá výchozí hodnoty schématu.
+    /// </summary>
+    /// <remarks>Text z importu PDF nemá svislé zarovnání: tiskl se „Nahoře", formulář ukazoval
+    /// výchozí „Na střed" (do 30. 10.). Hodnoty dává <see cref="TemplateElement.ResolvedStyleZones"/>,
+    /// totéž, z čeho čte panel a lišta.</remarks>
+    public static IReadOnlyDictionary<string, string>? InheritedValuesFor(TemplateElement element)
+    {
+        Dictionary<string, string>? hodnoty = null;
+        foreach (var zona in element.ResolvedStyleZones())
+            foreach (var (klic, hodnota) in ElementPropertyAccessor.FormValues(zona.Style, zona.Path + "."))
+                (hodnoty ??= new(StringComparer.Ordinal))[klic] = hodnota;
+        return hodnoty;
+    }
 
     internal static void ApplyInheritedValues(List<Field> fields, IReadOnlyDictionary<string, string>? inherited)
     {

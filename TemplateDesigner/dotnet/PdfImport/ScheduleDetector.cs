@@ -4,7 +4,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.PdfImport;
 
 /// <summary>
-/// Typ importu - odvozuje se z agendy, ve které import běží (<see cref="ScheduleImportTypes.ForAgenda"/>).
+/// Typ importu - odvozuje se z agendy, ve které import běží (<see cref="ScheduleImportTypes.ForElementKind"/>).
 /// Engine ví, jakou strukturu hledá, a použije odpovídající heuristiky.
 /// </summary>
 public enum ScheduleImportType
@@ -19,17 +19,15 @@ public enum ScheduleImportType
 
 public static class ScheduleImportTypes
 {
-    /// <summary>Kód agendy je stabilní persistovaný klíč, takže jeho začátek spolehlivě říká,
-    /// o jaký jízdní řád jde (MHD i AD varianta sdílí rozpoznávání).</summary>
-    public static ScheduleImportType ForAgenda(string? agendaCode)
-    {
-        if (string.IsNullOrEmpty(agendaCode)) return ScheduleImportType.None;
-        if (agendaCode.StartsWith("ZASTAVKOVY_JR", StringComparison.OrdinalIgnoreCase))
-            return ScheduleImportType.ZastavkovyJrMhd;
-        if (agendaCode.StartsWith("LINKOVY_JR", StringComparison.OrdinalIgnoreCase))
-            return ScheduleImportType.LinkovyJr;
-        return ScheduleImportType.None;
-    }
+    /// <summary>Podle druhu JŘ prvků, který agenda hlásí v registru - týž údaj řídí paletu prvků.
+    /// MHD i AD varianta sdílí rozpoznávání. Do 30. 10. se to poznávalo podle začátku kódu agendy.</summary>
+    public static ScheduleImportType ForElementKind(string? elementKind) =>
+        elementKind?.ToUpperInvariant() switch
+        {
+            "STOP" => ScheduleImportType.ZastavkovyJrMhd,
+            "LINE" => ScheduleImportType.LinkovyJr,
+            _      => ScheduleImportType.None,
+        };
 }
 
 /// <summary>

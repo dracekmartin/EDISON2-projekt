@@ -1,13 +1,12 @@
 using System.IO;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using TemplateDesigner.Models;
 
 namespace TemplateDesigner.Tests.Serialization;
 
 /// <summary>
-/// Driftová pojistka <b>parametrů sestavy</b> agend (<c>CACHE/ALVA/TemplateDesigner/Agendy/*.cls</c>).
+/// Driftová pojistka <b>parametrů sestavy</b> agend (celý kód agend, <see cref="ZdrojeAgend"/>).
 ///
 /// <para>Slovník polí hlídá <see cref="AgendaSchemaDriftTests"/>, formuláře prvků
 /// <see cref="EDInputFormSchemaDriftTests"/>. Parametry do 23. 10. nehlídalo nic, a tak se do linkových
@@ -15,7 +14,7 @@ namespace TemplateDesigner.Tests.Serialization;
 /// jmenuje „Tabulka spojů" (review `B193`).</para>
 ///
 /// <para>Parser vidí parametr zapsaný literálem (<c>s p.name = "X"</c>, <c>AddBoolParam(arr, "X", …)</c>)
-/// kdekoli v agendě, i ve sdílené definici (<c>ParametrSmeruTisku</c>, <c>BaseAgenda</c>). Parametr
+/// kdekoli v kódu agend, i ve sdílené definici (<c>Jr/Parametry.cls</c>). Parametr
 /// s názvem nebo popiskem skládaným za běhu (typy provozu linkového JŘ MHD) nevidí. Volby enumů se tu
 /// nekontrolují - jejich popisky jsou zamčené (ukládá se zobrazený text).</para>
 ///
@@ -120,7 +119,7 @@ public class AgendaParameterDriftTests
     }
 
     private static List<Param> AllParams() =>
-        [.. Directory.GetFiles(AgendyDir(), "*.cls").SelectMany(ParseAgenda)];
+        [.. ZdrojeAgend.KodAgend().SelectMany(ParseAgenda)];
 
     /// <summary>Pojistka proti tiše zelenému testu: kdyby se změnil zápis parametrů a parser je
     /// přestal vidět, ostatní testy projdou na prázdném vstupu.</summary>
@@ -202,7 +201,7 @@ public class AgendaParameterDriftTests
         var spatne = new List<string>();
         int pushu = 0;
 
-        foreach (var file in Directory.GetFiles(AgendyDir(), "*.cls"))
+        foreach (var file in ZdrojeAgend.Agendy())
         {
             string body = GetParametersBody(File.ReadAllText(file));
             if (body.Length == 0) continue;
@@ -230,19 +229,4 @@ public class AgendaParameterDriftTests
         int end = text.IndexOf("\nClassMethod ", i + 1, StringComparison.Ordinal);
         return end < 0 ? text[i..] : text[i..end];
     }
-
-    private static string AgendyDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-
-        Assert.True(File.Exists(Path.Combine(dir!.FullName, "EDISON2.sln")),
-            "Nenalezen root repa (EDISON2.sln) - drift testy potřebují zdrojáky .cls");
-        return Path.Combine(dir.FullName,
-            "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
 }

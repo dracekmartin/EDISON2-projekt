@@ -1,6 +1,6 @@
 ---
 name: novy-element
-description: Přidá nový typ elementu do TemplateDesigneru - třída, registrace v ElementTypes a JsonDerivedType, factory switche, toolbar, volitelně paleta a dynamická výška, strom šablony, docs. Použij při zavádění nového TYPU elementu; na novou vlastnost existujícího elementu je to zbytečné (viz sekce na konci).
+description: Přidá nový typ elementu do TemplateDesigneru - třída, registrace v ElementTypes a JsonDerivedType, záznam v katalogu prvků (paleta, nabídka, továrna, jména, agendy), formulář, ikona, volitelně dynamická výška, docs. Použij při zavádění nového TYPU elementu; na novou vlastnost existujícího elementu je to zbytečné (viz sekce na konci).
 argument-hint: <NázevElementu>
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash(dotnet build *), Bash(dotnet test *), Bash(grep *), Bash(ls *)
 ---
@@ -60,6 +60,9 @@ Pravidla:
 - `Clone()` vždy přes `CopyBaseTo(target)` - kopíruje Id (nové Guid), pozice, border, background, rotaci, GroupId, CustomProperties.
 - `GetPropertyDescriptors()` vždy končí `.. GetPositionDescriptors()` (pozice, border, viditelnost, skupina).
 - `ApplyScale(float)` override **pouze** pokud element má vlastní mm/pt properties mimo base (FontSize v pt, Padding v mm, …). Base třída škáluje X/Y/Width/Height/BorderWidth automaticky.
+- **Prvek s textem** vrací každou textovou část v `ResolvedStyleZones()` (`new("HeaderStyle", ResolveColumnHeaderParent())`,
+  styl z téže metody, kterou kreslí). Deskriptory stylu čtou `ResolvedZone(...)` nebo tutéž metodu, **nikdy `?? 9f` / `?? "Arial"`** -
+  jinak panel a formulář ukazují jinou hodnotu, než se vytiskne. Hlídá `VychoziHodnotyZKaskadyTests.ZdedeneHodnotyFormulare_ProKazdyPrvekSTextem`.
 
 ---
 
@@ -99,52 +102,48 @@ Vždy přes konstantu, nikdy literál (C# povoluje `const` expressions v atribut
 
 ---
 
-## 5. MainWindowViewModel - výchozí rozměry a factory
+## 5. Záznam v katalogu prvků
 
-Soubor: `dotnet/Windows/MainWindow/TemplateDesignerViewModel.cs`
-
-Dva switch výrazy, oba přes `ElementTypes.NovyElement`:
+Soubor: `dotnet/Models/ElementCatalog.cs` - jeden záznam do `All`, na místo podle pořadí v paletě
+(obecné prvky, pak prvky JŘ; hlavní tabulka sestavy před Poznámkami):
 
 ```csharp
-// GetDefaultElementSize (~řádek 844)
-ElementTypes.NovyElement => (80f, 40f),
-
-// CreateElementByType (~řádek 858)
-ElementTypes.NovyElement => new NovyElement { X = x, Y = y, Width = w, Height = h },
+new(ElementTypes.NovyElement, typeof(NovyElement), "Nový prvek", "co prvek dělá, jednou větou",
+    "EDIcons.NovyElement", 80f, 40f, Obecny, (5f, 5f),
+    (w, h) => new NovyElement { Width = w, Height = h }),
 ```
 
-Výchozí rámeček nastaví `CreateElementByType` automaticky na konci (BorderColor=black, BorderWidth=0.1mm).
+Z katalogu se odvodí (od 30. 10., dřív to bylo 12 až 20 míst ručně): továrna a výchozí velikost
+(`CreateElementByType`, `GetDefaultElementSize`), tlačítko palety s bublinou „Jméno - popis", nabídka
+„Přidat prvek", jména pro uživatele (`ElementNames` - strom šablony, titulky oken, hlášky), agendy prvku
+(`AgendaCapabilities`: `Obecny`, `Zastavkovy`, `Linkovy`, nebo oba druhy), seznam prvků pro asistenta,
+seznam prvků v nápovědě F1 a třída formuláře `{Typ}Edit` (`ElementCatalog.FormClass`).
+
+- **Jméno** podle `ux-conventions §8` (kanon termínů); stejné uvidí uživatel všude.
+- **Výška podle obsahu**: `NewInstance` výšku nenastaví (`(w, _) => new NovyElement { Width = w }`),
+  `Height` v záznamu je pak jen náhled při vkládání a výšku počítá krok 8.
+- Pozice z nabídky „Přidat prvek" (`MenuPosition`); z palety jde prvek tam, kam ho uživatel pustí.
 
 ---
 
-## 6. Toolbar menu
+## 6. Formulář `{Typ}Edit.cls`
 
-Soubor: `dotnet/Windows/MainWindow/MainWindow.xaml.cs`, metoda `BtnAddElement_Click` (~řádek 999):
-
-```csharp
-Add("Nový element", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NovyElement, 5, 5));
-```
+Soubor: `CACHE/ALVA/TemplateDesigner/EDInputForm/NovyElementEdit.cls` (konvence `{Typ}Edit`, jinak ho
+katalog nenajde - hlídá `ElementCatalogTests`). Panel vlastností i okno prvku ho berou automaticky.
+Kostra a popisky podle `ux-conventions §4` a `§8`, základní pole přes `BaseElementFields` (`AddBorder`,
+`AddPosition`, `AddConditions`). Formulář zapiš do `SchemaMap` v `EDInputFormSchemaDriftTests`.
+**Nasazení** `.cls` jen editačním nástrojem a ověření voláním `Init` na serveru - `cache-api.md` §Nasazení `.cls`.
 
 ---
 
-## 7. Paleta (volitelné, jen pro často používané elementy)
+## 7. Ikona
 
-Soubor: `dotnet/Windows/MainWindow/MainWindow.xaml` (sekce `PaletteButton`):
-
-```xml
-<Button Style="{StaticResource PaletteButton}" ToolTip="Nový element - táhni na canvas" Tag="NovyElement"
-        PreviewMouseLeftButtonDown="PaletteButton_PreviewMouseLeftButtonDown">
-    <Image Source="{StaticResource EDIcons.NovyElement}" Width="16" Height="16"/>
-</Button>
-```
-
-`Tag="NovyElement"` zůstává jako literál (XAML nemá `x:Static` ergonomii pro 9 tlačítek; drift odchytne první switch při drop).
-
-Ikona - `EDControls/dotnet/EDIcons/EDIcons.xaml`:
+`EDControls/dotnet/EDIcons/EDIcons.xaml`:
 ```xml
 <BitmapImage x:Key="EDIcons.NovyElement" UriSource="pack://application:,,,/EDControls;component/EDIcons/png/noveElement.png"/>
 ```
-PNG registruj v `EDControls.csproj` jako `<Resource Include="EDIcons\png\noveElement.png"/>`.
+PNG registruj v `EDControls.csproj` jako `<Resource Include="EDIcons\png\noveElement.png"/>`. Klíč ikony je
+v záznamu katalogu (krok 5); že v `EDIcons.xaml` existuje, hlídá `ElementCatalogTests`.
 
 ---
 
@@ -172,16 +171,7 @@ protected override float DesignerPlaceholderHeight => 8f;
 
 ---
 
-## 9. Název prvku pro uživatele - ElementNames
-
-Soubor: `dotnet/Models/ElementNames.cs`, větev v `ForUser` i `ForType` - týž název jako v paletě
-a v nabídce vkládání. Bere ho strom šablony, stavový řádek i hlášky; bez něj ukážou obecné „prvek".
-Prvek doplň i do seznamu v `ElementNamesTests.KazdyTypPrvkuMaJmeno` - sám ho test nenajde.
-Strom technické údaje prvku neukazuje (`B194` E1).
-
----
-
-## 10. Dokumentace
+## 9. Dokumentace
 
 - `.claude/docs/changelog.md` - přidat řádek do aktuálního datumu ("NovyElement - popis").
 - Pokud jde o ScheduleElementBase-derived element, aktualizovat i `.claude/docs/elementy-architektura.md`.
@@ -192,7 +182,7 @@ Strom technické údaje prvku neukazuje (`B194` E1).
 
 ## Dodatek: tabulkový element s per-column stylingem
 
-Pokud nový element má **sloupce se samostatným stylingem záhlaví/dat** (jako `TableElement`/`StopListElement`/`DepartureGridElement`), postupuj podle 5 doplňujících kroků (detaily v `.claude/rules/mvvm-patterns.md §Jednotná kaskáda stylů buněk`):
+Pokud nový element má **sloupce se samostatným stylingem záhlaví/dat** (jako `TableElement`/`StopListElement`/`DepartureGridElement`), postupuj podle 5 doplňujících kroků - okno se sloupci otevři v `MainWindow.OpenPropertiesForElement` (detaily v `.claude/rules/mvvm-patterns.md §Jednotná kaskáda stylů buněk`):
 
 **1. Model - per-column `TextStyle?`:**
 ```csharp
@@ -262,8 +252,8 @@ Záložku Sloupce **nekopíruj** - dodej jen:
 
 **5. Formulář `*ElementEdit.cls` (záložka Obecné i panel vlastností):**
 
-Soubor `CACHE/ALVA/TemplateDesigner/EDInputForm/NovyElementEdit.cls`, napojení v `MainWindow.PanelCacheClass`
-a v konstantě `GeneralSchemaClass` okna sloupců. Formulář dodrží kostru z `ux-conventions §4`:
+Soubor `CACHE/ALVA/TemplateDesigner/EDInputForm/NovyElementEdit.cls` (krok 6); okno sloupců ho bere přes
+`ElementCatalog.FormClass(ElementTypes.NovyElement)` v `GeneralSchemaClass`. Formulář dodrží kostru z `ux-conventions §4`:
 - **Nahoře skupiny jen tohoto prvku**, pojmenované podle toho, čeho se na výtisku týkají; skupina „Obecné" se nepoužívá.
 - **Pod nimi vždy stejný konec:** Záhlaví, Datové buňky, pak `BaseElementFields.AddBorder`, `AddGrid`, `AddPosition`,
   `AddConditions` (Rámeček prvku, Mřížka, Pozice a velikost, Podmínky).
@@ -283,28 +273,26 @@ a v konstantě `GeneralSchemaClass` okna sloupců. Formulář dodrží kostru z 
 | 1 | `Models/Elements/NovyElement.cs` | ✅ |
 | 3 | `Models/ElementTypes.cs` | ✅ |
 | 4 | `Models/TemplateElement.cs` (JsonDerivedType) | ✅ |
-| 5 | `Windows/MainWindow/TemplateDesignerViewModel.cs` (2 switches) | ✅ |
-| 6 | `Windows/MainWindow/MainWindow.xaml.cs` (toolbar menu) | ✅ |
-| 7 | `Windows/MainWindow/MainWindow.xaml` + `EDIcons.xaml` + PNG | volitelné |
-| 8 | `Models/Layout/SkiaHeightCalculator.cs` | jen u dynamické výšky |
-| 9 | `Models/ElementNames.cs` (ForUser, ForType) | ✅ |
-| 10 | `changelog.md` (`CLAUDE.md` jen u neodvoditelného invariantu) | ✅ |
-| D5 | `CACHE/.../EDInputForm/NovyElementEdit.cls` + `MainWindow.PanelCacheClass` | u tabulkového prvku |
+| 5 | `Models/ElementCatalog.cs` (jeden záznam) | ✅ |
+| 6 | `CACHE/.../EDInputForm/NovyElementEdit.cls` + `SchemaMap` v `EDInputFormSchemaDriftTests` | ✅ |
+| 7 | `EDControls/.../EDIcons.xaml` + PNG + `EDControls.csproj` | ✅ |
+| 8 | `Models/Layout/SkiaHeightCalculator.cs` | jen u výšky podle obsahu |
+| 9 | `changelog.md` (`CLAUDE.md` jen u neodvoditelného invariantu) | ✅ |
+| D4 | okno sloupců přes `<ColumnsTab>` + otevření v `MainWindow.OpenPropertiesForElement` | u tabulkového prvku |
 
 ---
 
 ## Brána - bez tohohle není hotovo
 
-Pořadí záleží: drift test najde chybějící registraci, kterou build neodhalí (`ElementTypes`
-konstanta bez `JsonDerivedType`).
+Drift testy najdou chybějící registraci, kterou build neodhalí: `ElementCatalogTests` porovná katalog
+s konstantami `ElementTypes`, atributy `JsonDerivedType`, třídami prvků, formuláři `{Typ}Edit.cls`
+a ikonami; `CloneCompletenessTests` hlídá `Clone()`.
 
 1. `dotnet build EDISON2.sln` - musí projít čistě
-2. `dotnet test TemplateDesigner.Tests --filter ElementRegistrationDrift` - musí projít
-3. `dotnet test TemplateDesigner.Tests --filter CloneCompleteness` - hlídá, že `Clone()`
-   nezapomněl novou property
-4. U prvku s formulářem `dotnet test TemplateDesigner.Tests --filter EDInputFormSchemaDrift` a `--filter DescriptorLabelsMatchForm`,
+2. `dotnet test TemplateDesigner.Tests --filter "ElementCatalog|ElementRegistrationDrift|CloneCompleteness"` - musí projít
+3. U prvku s formulářem `dotnet test TemplateDesigner.Tests --filter EDInputFormSchemaDrift` a `--filter DescriptorLabelsMatchForm`,
    u okna sloupců `--filter OkBezeZmeny`
-5. **Přečti výstup**, netvrď „mělo by to projít". Když test spadne, oprav a spusť znovu.
+4. **Přečti výstup**, netvrď „mělo by to projít". Když test spadne, oprav a spusť znovu.
 
 Vizuál (jak element vypadá na canvasu a v PDF) žádný test nevidí - to musí proklikat
 uživatel. Do reportu napiš konkrétní cestu: co přidat, kam táhnout, co má být vidět.

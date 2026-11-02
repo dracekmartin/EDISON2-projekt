@@ -121,6 +121,17 @@ public static class ElementPropertyAccessor
     /// Veřejné kvůli hodnotám z kaskády, které se do formuláře předvyplňují mimo reflexi cíle.</summary>
     public static string ToFormValue(object? value) => ToStringValue(value);
 
+    /// <summary>Vyřešený styl jako hodnoty polí formuláře (klíč = <paramref name="prefix"/> + vlastnost,
+    /// třeba <c>Style.FontSize</c>). Čte se reflexí, takže nové pole stylu se propíše samo.</summary>
+    public static Dictionary<string, string> FormValues(Models.ResolvedTextStyle resolved, string prefix)
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var property in typeof(Models.ResolvedTextStyle).GetProperties())
+            if (property.GetIndexParameters().Length == 0)
+                values[prefix + property.Name] = ToFormValue(property.GetValue(resolved));
+        return values;
+    }
+
     private static string ToStringValue(object? value) => value switch
     {
         null => "",

@@ -65,21 +65,22 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
 
     // Capability metadata agendy (class parametry) - defenzivně, neznámá/prázdná třída → defaults.
     s elementKind = ""
-    s instanceLabel = ""
+    s instanceTvary = ""
     i agendaClass '= "" {
         try {
             s elementKind   = $parameter(agendaClass, "ElementKind")
-            s instanceLabel = $parameter(agendaClass, "InstanceLabel")
-        } catch ex { s elementKind = "", instanceLabel = "" }
+            s instanceTvary = $parameter(agendaClass, "InstanceTvary")
+        } catch ex { s elementKind = "", instanceTvary = "" }
     }
 
     s split = "SINGLE"
     i $isobject(vals) && vals.%IsDefined("__EXPORT_SPLIT") { s split = vals.%Get("__EXPORT_SPLIT") }
     s f = form.AddFieldToLastGroup("__EXPORT_SPLIT", "Členění výstupu", $$$FieldTypeList, 1, 1)
     d f.AddListItem("SINGLE", "Vše do jednoho PDF")
-    s hasPerLine = (instanceLabel '= "")
+    s hasPerLine = (instanceTvary '= "")
     s hasPerStop = (elementKind = "STOP")
-    i hasPerLine { d f.AddListItem("PER_LINE", "Jeden PDF na " _ ..Akuzativ(instanceLabel)) }
+    // 4. pád jednotného čísla z tvarů agendy (`BaseAgenda.InstanceTvary`).
+    i hasPerLine { d f.AddListItem("PER_LINE", "Jeden PDF na " _ $p(instanceTvary,",",3)) }
     i hasPerStop { d f.AddListItem("PER_STOP", "Jeden PDF na zastávku/směr") }
     // Uložená hodnota, kterou tato agenda nenabízí (přepnutí agendy) → fallback SINGLE.
     i (split="PER_LINE") && 'hasPerLine { s split = "SINGLE" }
@@ -142,16 +143,6 @@ ClassMethod AddParamGroups(form As ALVA.EDControls.EDInputForm.Form, arr As %Dyn
     }
 }
 
-/// Akuzativ českého labelu instance pro větu „Jeden PDF na …" (linka→linku, faktura→fakturu,
-/// instance→instanci). Jednoduchá heuristika koncovky; neznámá koncovka → beze změny.
-ClassMethod Akuzativ(slovo As %String) As %String
-{
-    q:slovo="" slovo
-    q:$e(slovo,*)="a" $e(slovo, 1, *-1) _ "u"
-    q:$e(slovo,*)="e" $e(slovo, 1, *-1) _ "i"
-    q slovo
-}
-
 ClassMethod Validate(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -209,9 +200,16 @@ ClassMethod AddParamField(form As ALVA.EDControls.EDInputForm.Form, p As %Dynami
         // required=1 → enum musí mít vybranou hodnotu (List dropdown bez úvodního prázdného řádku)
         s f = form.AddFieldToLastGroup(name, label, $$$FieldTypeList, 0, 1)
         s opts = p.options
+        // `optionLabels` = co se u volby ukáže, když se liší od uloženého textu (`P2`, `Jr.Parametry.AddVolbyRozdeleniSloupcu`)
+        s popisky = p.optionLabels
         i $isobject(opts) {
             s osz = opts.%Size()
-            for j=0:1:(osz-1) { s o = opts.%Get(j)  d:o'="" f.AddListItem(o, o) }
+            for j=0:1:(osz-1) {
+                s o = opts.%Get(j)
+                continue:o=""
+                s popisek = $s($isobject(popisky):popisky.%Get(j), 1:"")
+                d f.AddListItem(o, $s(popisek'="":popisek, 1:o))
+            }
         }
         s:val'="" f.value = val
     } elseif type = "date" {

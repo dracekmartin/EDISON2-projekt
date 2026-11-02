@@ -1,3 +1,4 @@
+using TemplateDesigner.Models;
 using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -25,7 +26,7 @@ public class MockDataSloupceTests
     [Fact]
     public void DefiniceSloupcu_SePosilaServeru()
     {
-        var input = CacheAgendaProvider.MockDataInput(Definice, "cs");
+        var input = CacheAgendaProvider.MockDataInput(new TemplateDataInputs(Definice, false, "cs"));
 
         Assert.Equal(Definice, input["DEFINICE_SLOUPCU"]?.Value?.ToString());
     }
@@ -42,7 +43,7 @@ public class MockDataSloupceTests
     [InlineData("")]
     public void BezVlastnichSloupcu_SeKlicNeposila(string? definice)
     {
-        var input = CacheAgendaProvider.MockDataInput(definice, "cs");
+        var input = CacheAgendaProvider.MockDataInput(new TemplateDataInputs(definice, false, "cs"));
 
         Assert.DoesNotContain(input, kvp => kvp.Key == "DEFINICE_SLOUPCU");
     }
@@ -53,9 +54,9 @@ public class MockDataSloupceTests
     [Fact]
     public void ZmenaDefinice_ZmeniKlicCache()
     {
-        string bez = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", null, "cs");
-        string s = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "cs");
-        string jina = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", """[{"key":"VSE"}]""", "cs");
+        string bez = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", new TemplateDataInputs(null, false, "cs"));
+        string s = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", new TemplateDataInputs(Definice, false, "cs"));
+        string jina = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", new TemplateDataInputs("""[{"key":"VSE"}]""", false, "cs"));
 
         Assert.NotEqual(bez, s);
         Assert.NotEqual(s, jina);
@@ -72,8 +73,8 @@ public class MockDataSloupceTests
     public void StejnaDefinice_DaStejnyKlic()
     {
         Assert.Equal(
-            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "cs"),
-            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "cs"));
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", new TemplateDataInputs(Definice, false, "cs")),
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", new TemplateDataInputs(Definice, false, "cs")));
     }
 
     // ── jazyk ────────────────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ public class MockDataSloupceTests
     [Fact]
     public void Jazyk_SePosilaServeru()
     {
-        Assert.Equal("sk", CacheAgendaProvider.MockDataInput(null, "sk")["JAZYK"]?.Value?.ToString());
+        Assert.Equal("sk", CacheAgendaProvider.MockDataInput(new TemplateDataInputs(null, false, "sk"))["JAZYK"]?.Value?.ToString());
     }
 
     /// <summary>
@@ -99,8 +100,8 @@ public class MockDataSloupceTests
     public void ZmenaJazyka_ZmeniKlicCache()
     {
         Assert.NotEqual(
-            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "cs"),
-            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "sk"));
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", new TemplateDataInputs(Definice, false, "cs")),
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", new TemplateDataInputs(Definice, false, "sk")));
     }
 
     /// <summary>Dvě agendy se nesmí potkat v jednom klíči, ani když mají stejnou definici.</summary>
@@ -108,7 +109,7 @@ public class MockDataSloupceTests
     public void RuzneAgendy_MajiRuznyKlic()
     {
         Assert.NotEqual(
-            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "cs"),
-            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_MHD", Definice, "cs"));
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", new TemplateDataInputs(Definice, false, "cs")),
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_MHD", new TemplateDataInputs(Definice, false, "cs")));
     }
 }

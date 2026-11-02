@@ -731,18 +731,50 @@ public class EDInputFormSchemaDriftTests
         "ZIndex",           // → Vrstva (rozhodnutí Jan 2026-10-26, `B194` E7)
         "Velikost značek",  // → Poměr velikosti značek („Velikost" = pevná hodnota v pt / mm, `B194` E9c)
         "Velikost minut",   // → Poměr velikosti minut
+        "Písmo",            // → Font
+        "Velikost písma",   // → Velikost (ve větě nápovědy je „velikost písma" správně)
+        "Hrot šipky",       // → Tvar hrotu (výběr = co se vybírá, Jan 28. 10.)
+        "Barva šipky",      // → Barva ve skupině Šipka směru (část se v popisku neopakuje)
+        "Odsazení",         // → Odsazení podle trasy (zaškrtávátko = věc, kterou zapíná)
+        "Pozadí",           // → Barva pozadí (hledání podle „barva")
+        "Projeté: Čas",     // → Projeté: Zobrazit čas
+        "Více stanovišť",   // → Výběr stanoviště
     ];
 
-    /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive). Sdílené s
-    /// <see cref="AgendaSchemaDriftTests"/>.</summary>
-    internal static readonly string[] BannedLabelSubstrings =
+    /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive): názvosloví i tvary popisku.
+    /// Sdílené s <see cref="AgendaSchemaDriftTests"/> a <see cref="AgendaParameterDriftTests"/>.</summary>
+    internal static string[] BannedLabelSubstrings => [.. BannedTerms, .. BannedLabelForms];
+
+    /// <summary>Tvary, které vadí jen v popisku, ne ve větě nápovědy nebo hlášky: zkratky a tvar „Část:
+    /// Vlastnost". „Tisk projetých zastávek" je v nápovědě správně, „Barva projetých" v popisku ne.</summary>
+    internal static readonly string[] BannedLabelForms =
     [
-        "Šířka rámečku",    // → Tloušťka rámečku (Šířka patří elementu)
-        "Zebra",            // → Střídání řádků: Barva pozadí
         "Min. ",            // zkratky ne → „Nejmenší …" (Jan 28. 10.)
+        "Max. ",            // → „Největší …" / „Nejvýš …"
+        // „dle" zakázat nejde: zamčené volby parametrů („Automaticky (dle linky)", „Dle četnosti ze zastávky").
         "Tl. ",             // → Tloušťka …
         "Řádek NZ",         // → Řádek negativních značek
         "Font aktuální",    // → Aktuální: Velikost (je to velikost písma, ne rodina)
+        "↔",                // → slovy „Mezera mezi značkou a minutou" (`B194` E9b)
+        "aktuální zast.",   // → „Aktuální: Vlastnost" (zkratka; `B194` E10)
+        "projetých",        // → „Projeté: Barva textu", „Projeté: Zobrazit čas"
+        // Celý popisek „Tučně" hlídá BannedExactLabels; tady i uvnitř („Aktuální: Tučně", `B194` E10).
+        "Tučně",            // → Tučné
+        "Podtržené",        // → Podtržení
+        "Přeškrtnuté",      // → Přeškrtnutí
+        "Rodina písma",     // → Font
+        "Pozadí záhlaví",   // → Barva pozadí záhlaví (velké P = popisek začíná „Pozadí")
+        "Pozadí buněk",     // → Barva pozadí buněk
+        "(u pravého okraje", // vysvětlení do nápovědy, ne do závorky ve volbě
+    ];
+
+    /// <summary>Názvosloví (kanon ux-conventions §8), které platí ve všech textech pro uživatele:
+    /// popiscích, volbách, nápovědách, textech oken i hláškách (`B194f` G4, hlídá
+    /// <see cref="NazvosloviTextuTests"/>).</summary>
+    internal static readonly string[] BannedTerms =
+    [
+        "Šířka rámečku",    // → Tloušťka rámečku (Šířka patří prvku)
+        "Zebra",            // → Střídání řádků: Barva pozadí
         " per ",            // UI texty česky (kanon §8)
         "(vlak/bus)",       // → (vlak/autobus)
         "nástupiště",       // → označník
@@ -750,6 +782,14 @@ public class EDInputFormSchemaDriftTests
         "Tabulka linky",    // → Tabulka spojů (tak se jmenuje agenda, prvek by se s ní pletl)
         "Mřížka odjezdů",   // → Minuty odjezdů
         "Legenda poznámek", // → Poznámky
+        // Tabulky se liší tím, odkud se berou řádky - data mohou mít obě (rozhodnutí Jan 30. 10.)
+        "dynamická tabulka", // → Tabulka s řádky z dat (termín se hledá od začátku slova, proto obě velikosti)
+        "Dynamická tabulka",
+        "dynamické tabulky",
+        "Dynamické tabulky",
+        "dynamickou tabulku",
+        "Tabulka (z dat)",  // → Tabulka s řádky z dat
+        "Tabulka (pevná)",  // → Pevná tabulka
         // Hlavička tabulky oproti datovým buňkám = „záhlaví"; „nadpis" jen pro jinou věc
         // (text skupiny dnů v datech) - rozhodnutí Jan 2026-10-26, `B194` E4
         "Nadpisy skupin",   // → Záhlaví skupin dnů
@@ -757,13 +797,24 @@ public class EDInputFormSchemaDriftTests
         "řádku nadpisu",    // → 2. řádek záhlaví
         "Oddělovač skupin", // → Mezera mezi skupinami dnů (je to mezera, ne čára; `B194` E9a)
         "skupinami sloupců", // → Mezera mezi skupinami dnů (stejný pojem v Minutách i Tabulce spojů)
-        "↔",                // → slovy „Mezera mezi značkou a minutou" (`B194` E9b)
-        "aktuální zast.",   // → „Aktuální: Vlastnost" (zkratka; `B194` E10)
-        "projetých",        // → „Projeté: Barva textu", „Projeté: Zobrazit čas"
         "element",          // → prvek (rozhodnutí Jan 2026-10-26, `B194` E7)
         "Element",
         "cílov",            // → konečná (poslední zastávka směru; Jan 2026-10-27, `B194` D3)
         "CIS číslo",        // → „Číslo … zastávky (CIS)" - CIS na konci jako u názvů (`B194` D3)
+        "canvas",           // → plátno
+        "Výplň",            // → Barva pozadí
+        "Pořadí vrstvy",    // → Vrstva
+        "popisové sloupce", // → popisné sloupce (Jan 26. 10.)
+        "sloupce popisu",   // → popisné sloupce
+        "Zobrazit nadpis",  // → Záhlaví (první pole skupiny Záhlaví)
+        "dynamická výška",  // → výška podle obsahu
+        "počítá engine",    // → výška podle obsahu
+        "fixní tabulka",    // → Pevná tabulka
+        "Datová tabulka",   // → Tabulka s řádky z dat
+        "Výpis z dat",      // → Tabulka s řádky z dat
+        "Kód (QR / čárový)", // → Kód (QR, čárový)
+        "Úplně dopředu",    // → Přenést zcela dopředu (příkazy vrstvy, rozhodnutí Jan 30. 10.)
+        "Úplně dozadu",     // → Odeslat zcela dozadu
         // „stanoviště" už zakázané NENÍ (2026-08-03, #13088): označník a sloupek se ukázaly být dvě
         // různá pole a „stanoviště" je zastřešující pojem pro to z nich, které je zvolené parametrem
         // „Číslo stanoviště podle". Jako synonymum pro označník se dál nepoužívá - viz ux-conventions §8.
