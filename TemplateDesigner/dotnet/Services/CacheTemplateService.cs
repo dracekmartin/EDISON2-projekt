@@ -203,6 +203,20 @@ public class CacheTemplateService
             return PrintTemplateChoice.FromOut(Query("GetTemplateForPrint", inVar, PrintTemplateChoice.CacheClass));
         });
 
+    /// <summary>Nastaví výchozí šablonu firmy pro tisk agendy; <c>null</c> ji zruší a tisk vezme výchozí šablonu M-line.</summary>
+    public Task SetDefaultTemplateAsync(string agendaCode, Guid? templateId)
+        => Task.Run(() =>
+        {
+            var inVar = new CVar();
+            inVar["agendaCode"] = new CVar(agendaCode);
+            inVar["templateId"] = new CVar(templateId?.ToString() ?? "");
+            Query("SetDefaultTemplate", inVar, PrintTemplateChoice.CacheClass);
+        });
+
+    /// <summary>Strom šablon firmy podle oblasti práce, agendy a varianty s výchozí šablonou pro tisk (`B190`).</summary>
+    public Task<TemplateCatalog> GetCatalogAsync()
+        => Task.Run(() => TemplateCatalog.Parse(Query("GetStrom", new CVar(), TemplateCatalog.CacheClass)["1"]?.Value?.ToString()));
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /// <summary>MLRest.Query + ThrowOnError v jednom. Syrovou síťovou výjimku (výpadek VPN/serveru,

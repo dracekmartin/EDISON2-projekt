@@ -31,6 +31,8 @@
     <Compile Include="..\TemplateDesigner\dotnet\Models\StopFields.cs" Link="TemplateDesigner\StopFields.cs" />
     <!-- Šablona pro tisk (SablonaProTiskTests): parser odpovědi pravidla. -->
     <Compile Include="..\TemplateDesigner\dotnet\Services\PrintTemplateChoice.cs" Link="TemplateDesigner\PrintTemplateChoice.cs" />
+    <!-- Strom šablon (StromSablonTests): parser odpovědi stromu. -->
+    <Compile Include="..\TemplateDesigner\dotnet\Services\TemplateCatalog.cs" Link="TemplateDesigner\TemplateCatalog.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -80,7 +80,8 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
 - **Volitelné**, výchozí prázdný výsledek: `GetParameters`, `GetAvailableSkupiny`, `GetAvailableInstances`.
   Předpřipravené tabulky (`GetTableTemplates` / `GetTableTemplate`) jsou od 30. 10. zrušené - návrhář je nikde nenabízel
   (`B56` S10). Hotové bloky do šablony se nedělají (`B66` zrušené 31. 10.), výchozím bodem jsou dodané šablony.
-- **Parametry třídy** - `AgendaVariantCode` (stabilní persistovaný klíč), `Agenda` / `Variant` s labely, `ElementKind`,
+- **Parametry třídy** - `AgendaVariantCode` (stabilní persistovaný klíč), `Agenda` / `Variant` s labely,
+  `OblastPrace` (větev stromu šablon v okně Ctrl+O, kód z `AgendyRegistr.OblastiPrace`; neznámá = Ostatní, hlídá `StromSablonTest`), `ElementKind`,
   `InstanceParamName`, `CustomColumns`, `VariantyTras`, `RozdilyVerzi`, `Released` (bez něj se agenda uživatelům nenabízí),
   `InstanceTvary` + `InstanceRod` (jak se jmenuje to, co agenda tiskne - tvary pádů a rod; návrhář z nich skládá
   texty oken a hlášek, obecný text „linku" napevno nepíše, hlídá `NazevInstanceTests`).

@@ -58,6 +58,10 @@ Parameter Variant As %String = "";
 /// User-facing label varianty (např. "AD (linková doprava)", "MHD"); "" = bez varianty.
 Parameter VariantLabel As %String = "";
 
+/// Oblast práce, pod kterou agenda leží ve stromu šablon (kód z `API.AgendyRegistr.OblastiPrace`, např. "JIZDNI_RADY").
+/// Strom se neukládá, jde ho kdykoli přeskupit. Agenda s neznámým nebo prázdným kódem je ve stromu pod Ostatní.
+Parameter OblastPrace As %String = "";
+
 /// Zveřejněná pro uživatele (1) vs interní/pilotní (0, default). Nezveřejněná agenda se
 /// nenabízí v UI výběru (Změnit agendu, filtr šablon), ale zůstává plně funkční - existující
 /// šablony s jejím kódem se otevřou, EDISON launch funguje. Zveřejnění = vědomý krok (přepnout

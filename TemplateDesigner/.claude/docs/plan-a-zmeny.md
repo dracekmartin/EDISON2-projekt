@@ -38,6 +38,12 @@ Dílčí vylepšení a náměty.
 
 > U každého záznamu je uvedené, které agendy se týká.
 
+### Týden od 2. 11. 2026 · Šablony v databázi podle oblastí a agend
+
+- **Všechny agendy:** okno **Šablony v databázi** (Ctrl+O) třídí šablony do stromu podle oblasti práce, agendy a varianty.
+  U každé agendy vidíte, kolik má šablon, a vpravo jen šablony vybrané větve.
+  Strom se bude rozšiřovat s dalšími agendami převzatými z Report Generátoru.
+
 ### Týden od 26. 10. 2026 · Linkové JŘ - městská doprava (MHD)
 
 - **Linkový JŘ MHD:** celá městská linka na jedné sestavě, s daty z modulu MHD - zastávky jsou

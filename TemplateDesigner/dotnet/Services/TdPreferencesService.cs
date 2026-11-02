@@ -245,7 +245,8 @@ public record MainStatePref(
     double? PreviewPanelWidthPx = null,
     int ActiveLeftTabIndex   = 0,
     string? LastAgendaCode   = null,
-    bool ParamsBarExpanded   = false)
+    bool ParamsBarExpanded   = false,
+    string? TemplatePickerNode = null)
 {
     public static readonly MainStatePref Default = new();
 }

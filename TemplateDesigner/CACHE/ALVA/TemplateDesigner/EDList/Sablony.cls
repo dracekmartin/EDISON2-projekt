@@ -1,14 +1,14 @@
 Include GENERAL
 
-/// Seznam tiskových šablon uložených v TemplateDesigneru - metadata všech šablon
-/// per aktuální IDFa (firmu).
+/// Seznam tiskových šablon uložených v TemplateDesigneru - metadata všech šablon, které firma vidí
+/// (vlastní a M-line, `API.Sablony.VetveFirmy`).
 ///
 /// Šablona = uložený layout tiskové sestavy (zastávkový JŘ MHD, faktura, ...) s odkazem
-/// na agendu odkud čerpá data. Sloupce seznamu: název, agenda, datum změny, autor.
+/// na agendu odkud čerpá data. Sloupce seznamu: název, agenda, zdroj, šablona pro tisk, datum změny, autor.
 ///
 /// Data:  ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Metadata", ...)
 /// CRUD:  ALVA.TemplateDesigner.API.Sablony (tato třída pouze čte)
-/// Konzument: CacheTemplatePickerDialog v TD (.NET)
+/// Konzument: CacheTemplatePickerDialog v TD (.NET) - seznam vpravo od stromu `API.StromSablon`
 Class ALVA.TemplateDesigner.EDList.Sablony Extends %RegisteredObject
 {
 
@@ -25,71 +25,91 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
         d list.AddColumn("agenda",     "Agenda",       "TEXT",     110, "", 1)
         d list.AddColumn("varianta",   "Varianta",     "TEXT",      60, "", 1)
         d list.AddColumn("zdroj",      "Zdroj",        "TEXT",      70, "", 1)
+        d list.AddColumn("proTisk",    "Pro tisk",     "TEXT",      95, "", 1)
         d list.AddColumn("modifiedAt", "Změněno",      "DATETIME", 130, "", 1, "dd.MM.yyyy HH:mm")
         d list.AddColumn("modifiedBy", "Kým",          "TEXT",      70, "", 1)
         d list.AddColumn("author",     "Autor",        "TEXT",      70, "", 1)
+        // Skryté: návrhář podle nich zvýrazní šablonu, kterou tisk vezme, a nastaví výchozí šablonu agendy.
+        s col = list.AddColumn("agendaCode", "Kód agendy", "TEXT")
+        s col.visible = 0
+        s col = list.AddColumn("vychozi", "Výchozí pro tisk", "TEXT")
+        s col.visible = 0
         d list.WriteColumnsToOut()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
 }
 
-/// Vrátí řádky šablon. Volitelný filter (sub-subscript pod "filter"):
-///   IN["filter","agendaCode"] = "MHD" | "FAKTURY" | "GENERAL" | "" (všechny)
+/// Vrátí řádky šablon. Volitelný filtr (sub-subscript pod "filter"):
+///   IN["filter","agendaCodes"] = kódy agend čárkou - uzel stromu šablon (oblast, agenda nebo varianta)
+///   IN["filter","agendaCode"]  = jeden kód agendy (starší tvar); oba prázdné = všechny šablony
 ClassMethod LoadList(ByRef sys As %String) As %Status
 {
     s err = ""
     try {
         $$$FillParams
 
-        s filterAgenda = $g(^||ML("IN","filter","agendaCode"))
+        s kody = $g(^||ML("IN","filter","agendaCodes"))
+        s:kody="" kody = $g(^||ML("IN","filter","agendaCode"))
         s list = ##class(ALVA.EDControls.EDList.List).%New()
 
-        // Systémové (MLINE) první - sdílené šablony od M-line, na klientovi read-only.
-        // Nezdvojovat, když session firma sama je MLINE (autorování systémových).
-        if IdFa '= "MLINE" d ..AddBranchRows(list, "MLINE", filterAgenda, 1)
-        // Vlastní (firma)
-        d ..AddBranchRows(list, IdFa, filterAgenda, 0)
+        s vetve = ##class(ALVA.TemplateDesigner.API.Sablony).VetveFirmy(IdFa)
+        for iVetev = 1:1:$ll(vetve) {
+            s vetev = $lg(vetve, iVetev)
+            k ids
+            if kody = "" {
+                d ##class(ALVA.TemplateDesigner.API.Sablony).IdSablon(vetev, "", .ids)
+            } else {
+                for iKod = 1:1:$l(kody, ",") {
+                    s kod = $p(kody, ",", iKod)
+                    d:kod'="" ##class(ALVA.TemplateDesigner.API.Sablony).IdSablon(vetev, kod, .ids)
+                }
+            }
+            // Šablony M-line jsou na klientovi jen ke čtení; firma MLINE (autorování) je má jako vlastní.
+            s templateId = ""
+            for {
+                s templateId = $o(ids(templateId))
+                q:templateId=""
+                d ..AddTemplateRow(list, vetev, templateId, vetev'=IdFa, IdFa, .vychozi)
+            }
+        }
 
         d list.WriteRowsToOut()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
 }
 
-/// Přidá řádky jedné větve (firma nebo MLINE), s volitelným filtrem agendy.
-ClassMethod AddBranchRows(list As ALVA.EDControls.EDList.List, sourceIdFa As %String, filterAgenda As %String, isSystem As %Boolean)
-{
-    if filterAgenda '= "" {
-        s templateId = ""
-        for {
-            s templateId = $o(^ALVA.TemplateDesigner.Templates(sourceIdFa,"IDX","ByAgenda",filterAgenda,templateId))
-            q:templateId=""
-            d ..AddTemplateRow(list, sourceIdFa, templateId, isSystem)
-        }
-    } else {
-        s templateId = ""
-        for {
-            s templateId = $o(^ALVA.TemplateDesigner.Templates(sourceIdFa,"DTA",templateId))
-            q:templateId=""
-            d ..AddTemplateRow(list, sourceIdFa, templateId, isSystem)
-        }
-    }
-}
-
 /// Sestaví jeden řádek z metadat šablony. isSystem=1 → systémová (MLINE) větev.
-ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, IdFa As %String, templateId As %String, isSystem As %Boolean = 0)
+/// `vychozi(agendaCode)` = $lb(templateId, zdroj) šablony, kterou tisk agendy vezme; plní se jednou za agendu.
+ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, vetev As %String, templateId As %String, isSystem As %Boolean, IdFa As %String, ByRef vychozi)
 {
-    if '$d(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId)) q
-    s base = $name(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata"))
+    if '$d(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId)) q
+    s base = $name(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata"))
+    s agendaCode = $g(@base@("AgendaCode"))
 
     s row = list.AddRow(templateId)
     s row.name       = $g(@base@("Name"))
-    d ..ResolveAgendaVariant($g(@base@("AgendaCode")), .agendaLabel, .variantaText)
+    d ..ResolveAgendaVariant(agendaCode, .agendaLabel, .variantaText)
     s row.agenda     = agendaLabel
     s row.varianta   = variantaText
     s row.modifiedAt = $g(@base@("ModifiedAt"))
     s row.modifiedBy = $g(@base@("ModifiedBy"))
     s row.author     = $g(@base@("Author"))
     s row.zdroj      = $s(isSystem:"M-line", 1:"vlastní")
+    s row.agendaCode = agendaCode
+
+    s:'$d(vychozi(agendaCode)) vychozi(agendaCode) = ..SablonaProTisk(IdFa, agendaCode)
+    s zdroj = $s($lg(vychozi(agendaCode),1)=templateId:$lg(vychozi(agendaCode),2), 1:"")
+    s row.vychozi = zdroj
+    s row.proTisk = $case(zdroj, "firma":"výchozí firmy", "mline":"výchozí M-line", :"")
+}
+
+/// Šablona, kterou tisk agendy vezme bez volby volajícího, jako $lb(templateId, zdroj); agenda bez třídy
+/// (Obecná, smazaná agenda) šablonu pro tisk nemá.
+ClassMethod SablonaProTisk(IdFa As %String, agendaCode As %String) As %List
+{
+    q:##class(ALVA.TemplateDesigner.API.AgendyRegistr).GetClassForCode(agendaCode)="" $lb("","")
+    s sablona = ##class(ALVA.TemplateDesigner.API.SablonyProTisk).SablonaProTisk(IdFa, agendaCode)
+    q $lb(sablona.templateId, sablona.zdroj)
 }
 
 /// Rozloží kombinovaný kód (metadata AgendaCode) na zobrazovací dvojici Agenda + Varianta

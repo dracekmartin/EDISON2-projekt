@@ -113,18 +113,16 @@ ClassMethod SeznamProTisk(IdFa As %String, agendaCode As %String, mlineIdFa As %
     // Bez výchozí šablony seznam pořád nabídne, co je - formulář pak žádnou nepředvybere.
     s vychoziId = ..SablonaProTisk(IdFa, agendaCode, "", mlineIdFa).templateId
 
-    // Firma, která sama je MLINE (autorování systémových šablon), by šablony vypsala dvakrát.
-    s vetve = $lb(IdFa)
-    s:IdFa'=mlineIdFa vetve = vetve_$lb(mlineIdFa)
+    s vetve = ##class(ALVA.TemplateDesigner.API.Sablony).VetveFirmy(IdFa, mlineIdFa)
 
     s seznam = ##class(%DynamicArray).%New()
     f iVetev = 1:1:$ll(vetve) {
         s vetev = $lg(vetve, iVetev)
-        k poradi
+        k ids, poradi
+        d ##class(ALVA.TemplateDesigner.API.Sablony).IdSablon(vetev, agendaCode, .ids)
         s id = ""
         f {
-            s id = $o(^ALVA.TemplateDesigner.Templates(vetev,"IDX","ByAgenda",agendaCode,id))  q:id=""
-            continue:'$d(^ALVA.TemplateDesigner.Templates(vetev,"DTA",id))
+            s id = $o(ids(id))  q:id=""
             s jmeno = $g(^ALVA.TemplateDesigner.Templates(vetev,"DTA",id,"Metadata","Name"))
             s poradi($zcvt(jmeno,"L")_" ", id) = jmeno
         }
@@ -166,7 +164,9 @@ ClassMethod WriteVychoziFirmy(IdFa As %String, agendaCode As %String, templateId
 ClassMethod NajdiSablonu(IdFa As %String, agendaCode As %String, templateId As %String, mlineIdFa As %String) As %DynamicObject
 {
     q:templateId="" ""
-    f vetev = IdFa, mlineIdFa {
+    s vetve = ##class(ALVA.TemplateDesigner.API.Sablony).VetveFirmy(IdFa, mlineIdFa)
+    f iVetev = 1:1:$ll(vetve) {
+        s vetev = $lg(vetve, iVetev)
         continue:'$d(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId))
         continue:$g(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","AgendaCode"))'=agendaCode
         s sablona = ##class(%DynamicObject).%New()

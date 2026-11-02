@@ -35,6 +35,9 @@ namespace TemplateDesigner.Serialization;
 /// <para><see cref="VychoziSablonaMline"/> = Id šablony M-line, kterou agenda tiskne bez výchozí šablony firmy
 /// (`B190`); úvodní obrazovka a spuštění podle něj vyberou hotovou šablonu. Prázdné (i starší Caché) = první
 /// šablona agendy ze `SystemTemplates/`.</para>
+///
+/// <para><see cref="OblastPrace"/> = kód oblasti práce, pod kterou agenda leží ve stromu šablon (`B190`). Strom skládá
+/// server (`API.StromSablon`); klient kód zatím jen nese. Prázdné (i starší Caché) = bez oblasti.</para>
 /// </summary>
 public record AgendaRegistryEntry(
     string Code,
@@ -54,7 +57,8 @@ public record AgendaRegistryEntry(
     bool RozdilyVerzi = false,
     string InstanceTvary = "",
     string InstanceRod = "",
-    string VychoziSablonaMline = "")
+    string VychoziSablonaMline = "",
+    string OblastPrace = "")
 {
     /// <summary>Název instance pro texty návrháře (<see cref="NazevInstance"/>). <see cref="InstanceLabel"/>
     /// a <see cref="InstanceLabelPlural"/> server posílá jen pro starší návrháře; starší server bez tvarů

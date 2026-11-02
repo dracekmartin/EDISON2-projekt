@@ -26,7 +26,8 @@
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **do příští verze (Jan 2. 11.)**, obě strany děláme my.
   Okno JŘ → Tisky → „Tisk linkového JŘ (nový)": formulář se šablonou, parametry a složkou, PDF bez návrháře.
   Hotové kroky 1-3 (linkový JŘ AD); položka je zákazníkům skrytá, na DEV ji zapne `^JRR("TiskNovymNavrharem")=1`.
-  Zbývá: okno „Šablony pro tisk" s výchozí šablonou podle agend (k rozmyšlení), zastávkový JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
+  Krok 4 (2. 11.): výchozí šablona pro tisk se nastavuje v okně šablon (Ctrl+O) se stromem podle oblasti práce, agendy a varianty.
+  Zbývá: zastávkový JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
 
 - **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
   dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),

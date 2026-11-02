@@ -38,6 +38,8 @@ Parameter Variant = "AD";
 /// Jen „AD": „(linková doprava)" se pletlo s agendou Linkový JŘ (Jan 27. 10.).
 Parameter VariantLabel = "AD";
 
+Parameter OblastPrace = "JIZDNI_RADY";
+
 Parameter Released = 1;
 
 Parameter InstanceParamName = "LINKA_ID";

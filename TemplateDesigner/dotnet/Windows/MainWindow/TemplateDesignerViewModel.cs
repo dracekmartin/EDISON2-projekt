@@ -455,9 +455,19 @@ public partial class TemplateDesignerViewModel : EDViewModel
             PreviewPanelWidthPx: previewPanelPx,
             ActiveLeftTabIndex: activeTabIndex,
             LastAgendaCode:     State.CurrentTemplate.AgendaCode,
-            ParamsBarExpanded:  ParamsBarExpanded);
+            ParamsBarExpanded:  ParamsBarExpanded,
+            TemplatePickerNode: TemplatePickerNode);
 
         return Preferences.SaveMainStateAsync(snapshot);
+    }
+
+    private string? _templatePickerNode;
+    /// <summary>Uzel stromu v okně šablon vybraný naposledy (klíč <see cref="TemplateCatalogNodeVM.Key"/>);
+    /// okno se příště otevře na něm. Do prvního otevření v session platí uložený z minula.</summary>
+    public string? TemplatePickerNode
+    {
+        get => _templatePickerNode ?? Preferences?.MainState.TemplatePickerNode;
+        set => _templatePickerNode = value;
     }
 
     // ── Execute wrapper ───────────────────────────────────────────────────────

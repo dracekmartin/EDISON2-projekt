@@ -15,12 +15,13 @@ public partial class CacheTemplatePickerDialog : Window
         // Wire-up EDList eventů → VM
         TheList.SelectionChanged += (_, _) => _vm.Selected = TheList.SelectedRow;
         TheList.RowDoubleClicked += (_, _) => { if (_vm.OpenCommand.CanExecute(null)) _vm.OpenCommand.Execute(null); };
+        Tree.SelectedItemChanged += (_, e) => _vm.SelectedNode = e.NewValue as TemplateCatalogNodeVM;
 
-        // VM žádá reload (po Delete / Rename) - sebere current filter a znovu načte.
+        // VM žádá načtení seznamu (jiný uzel stromu, Delete, Rename) s filtrem vybraného uzlu.
         // RequestReload je Action, takže async cesta musí chybu spolknout tady (fire-and-forget).
         _vm.RequestReload = async () =>
         {
-            try { await TheFilter.RefreshAsync(); }
+            try { await TheList.LoadListAsync(_vm.CurrentFilter); }
             catch (Exception ex) { _vm.PopupDisplayer.Error(ex); }
         };
 
@@ -35,11 +36,16 @@ public partial class CacheTemplatePickerDialog : Window
         // Close
         _vm.RequestClose += result => { DialogResult = result; Close(); };
 
-        // Init sloupců po načtení okna; EDFilter sám zavolá první LoadList přes initial Refresh.
+        // Sloupce, strom s posledním uzlem, pak seznam toho uzlu.
         // Async (R1): na pomalé lince by synchronní varianta zmrazila celou aplikaci, ne jen dialog.
         Loaded += async (_, _) =>
         {
-            try { await TheList.InitializeListAsync(); }
+            try
+            {
+                await TheList.InitializeListAsync();
+                await _vm.LoadCatalogAsync();
+                await TheList.LoadListAsync(_vm.CurrentFilter);
+            }
             catch (Exception ex) { _vm.PopupDisplayer.Error(ex); }
 
             // Dotaz na kanál až po zobrazení seznamu a bez čekání: nabídka nových šablon se

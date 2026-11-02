@@ -197,7 +197,7 @@ export) už udělalo půlku - render bere šablonu parametrem.
 **fasádu udělat hned při implementaci A3** (~den práce navíc), takže přechod na B později
 = zabalit fasádu do služby, ne přepis. Rozhodnout při návrhu bloku A.
 
-**Navazuje `B190` - tisk z modulu jízdních řádů bez návrháře** (roadmapa, čeká na kolegy, spíš další verze).
+**Navazuje `B190` - tisk z modulu jízdních řádů bez návrháře** (roadmapa, do příští verze, obě strany děláme my).
 Uživatel v jízdních řádech (nové okno JŘ) vybere linky a dostane PDF bez otevření návrháře; šablonu určí jednoduchá volba výchozí šablony (nebo podobně, doladí se).
 Podle doporučení výše začít spuštěním návrháře z EDISONu s parametry (launch kontrakt už je) a render oddělit fasádou; postupovat pilotem podle R7.
 PDF bez okna ze spuštění už je pro jednu linku (`Vystup=PDF`, rozdílový JŘ 23. 10., `Config/LaunchInput`), šablona zatím jen ze `LaunchTemplates/` v exe.
@@ -225,7 +225,7 @@ Nahradí dnešní skrytá pravidla: spuštění bere nejnověji upravenou šablo
 Rozsah `B190`:
 
 - ✅ (2. 11., krok 1) výchozí šablona firmy mimo JSON šablony `^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",AgendaCode)` (příznak v JSON by zkopírovalo „Uložit jako"); výchozí šablonu M-line určuje parametr třídy agendy `VychoziSablonaMline` (linkový JŘ AD: A4 s poznámkami pod tabulkou); pravidlo a seznam pro formulář v `API/SablonyProTisk.cls`;
-- nastavení v okně Otevřít z databáze: sloupec „Výchozí" a akce „Nastavit jako výchozí pro tisk" (API `SetDefaultTemplate` už je); šablona, kterou tisk vezme, je v seznamu vizuálně zvýrazněná, aby ji uživatel poznal na první pohled (Jan 2. 11.);
+- ✅ (2. 11., krok 4) nastavení v okně šablon (Ctrl+O) se stromem šablon (níž): tlačítko „Nastavit jako výchozí pro tisk" / „Zrušit výchozí pro tisk" u vybrané šablony; šablona, kterou tisk vezme, je v seznamu tučně a ve sloupci Pro tisk, aby ji uživatel poznal na první pohled (Jan 2. 11.);
 - ✅ (2. 11., krok 2) spuštění bez okna rozšířené o víc linek (`LINKA_ID` čárkou, jedno PDF), volitelné číslo šablony (`Sablona=`) a PDF ze šablony z databáze; rozdílový JŘ dál z `LaunchTemplates/`.
 
 Rozhodnuto (Jan 2. 11.):
@@ -241,7 +241,13 @@ Po OK okno spustí návrhář bez okna s označenými linkami (jsou vždy z jedn
 Nejdřív linkový JŘ (pilot), po odladění zastávkový.
 Do příští verze (Jan 2. 11.): položka je zákazníkům skrytá, ukáže ji `^JRR("TiskNovymNavrharem")=1` v datovém namespace firmy.
 
-**Nastavení výchozí šablony (k rozmyšlení, Jan 2. 11.):** ne v okně Otevřít z databáze, ale v samostatném okně s přehledem šablon podle agend (strom nebo seznam s filtrem, jako ve starém návrháři), zatím otevíraném z návrháře; časem může nahradit Ctrl+O a být i v shellu. Návrh se dvěma propojenými seznamy (agendy s výchozí šablonou × šablony vybrané agendy) čeká na rozhodnutí.
+**Strom šablon (rozhodnuto Jan 2. 11.):** jedno okno pro přehled, otevření, výchozí šablonu pro tisk a později poslání šablony (`B189`), ne druhé okno vedle Ctrl+O - dva seznamy téhož by se rozešly.
+Plochý seznam agend by se s agendami report generátoru nevešel, proto pevný strom: oblast práce → agenda → varianta, šablony vybrané větve vpravo.
+Strom skládá server z registru agend (`API.StromSablon`) a nic v něm uloženého není; oblast práce ohlásí agenda parametrem `OblastPrace`, seznam oblastí je v `AgendyRegistr.OblastiPrace` (z rozboru převodu report generátoru, `F7`).
+Variantu strom vynechá, když ji agenda má jen jednu; oblast bez agendy neukáže; nahoře je Všechny šablony (i agend mimo strom) a hledání v seznamu pak prohledá všechny.
+Složky, které si zakládá uživatel, vědomě nejsou (Jan 2. 11.): starý report generátor měl pevnou větev a modul a pod modulem složky libovolně hluboko, ale na CB_DP je zakládala skoro jen M-line a odpovídaly naší agendě (Mzdy 2: Výplatní páska, Mzdový list…) nebo oblasti práce (Osobní doprava: Plánování, Zpracování); zákazník tam měl dvě.
+Šablony, které firma vidí (vlastní a M-line), čtou strom, seznam okna i formulář před tiskem jednou cestou (`API.Sablony.VetveFirmy` a `IdSablon`); další větev (šablony od jiné firmy, `B189`) přibude jen tam.
+Později: licence (varianta ponese modul a strom firmě skryje agendy bez licence; starý návrhář ukazoval všechny), jazykové verze šablon (ve starém stromu pod českou předlohou; vlastnost šablony, ne úroveň stromu, s fakturami), strom i v shellu (táž odpověď serveru, pak komponenta v EDControls).
 
 **Parametr sestavy × nastavení prvku (Jan 2. 11.):** parametr je volba, která se smí lišit tisk od tisku. Šablona nese jeho výchozí hodnotu (firma ji nastaví v návrháři a uloží se šablonou), formulář před tiskem ji ukáže a uživatel ji smí změnit jen pro tento tisk, šablonu nepřepíše.
 Nastavení prvku je vzhled a obsah výtisku a ve formuláři před tiskem není. Formulář proto ukazuje všechny parametry agendy jako tiskové okno návrháře.

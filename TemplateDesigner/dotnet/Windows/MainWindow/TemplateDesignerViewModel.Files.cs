@@ -473,8 +473,10 @@ public partial class TemplateDesignerViewModel
 
         // Confirmace neuložených změn AŽ po explicitním Otevřít - dialog funguje i jako
         // správce (smazat / přejmenovat) bez intent načíst do editoru.
-        var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, _agendaEntries);
-        if (Dialogs?.ShowCacheTemplatePicker(vm) != true || vm.SelectedTemplateId is null) return;
+        var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, TemplatePickerNode);
+        bool open = Dialogs?.ShowCacheTemplatePicker(vm) == true;
+        TemplatePickerNode = vm.SelectedNodeKey;
+        if (!open || vm.SelectedTemplateId is null) return;
 
         if (!await ConfirmUnsavedChangesAsync()) return;
 

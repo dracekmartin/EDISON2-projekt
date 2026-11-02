@@ -35,19 +35,12 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
         $$$FillParams
 
         s arr = ##class(%DynamicArray).%New()
-        s baseClass = "ALVA.TemplateDesigner.Agendy.BaseAgenda"
+        d ..TridyAgend(.tridy)
 
-        // SQL nad %Dictionary: najdi všechny přímé subclasses BaseAgenda.
-        // (Pokud bude víc úrovní dědičnosti, použít %Dictionary.ClassDefinitionQuery
-        // s rekurzí - zatím stačí přímé subclasses.)
-        s sql = "SELECT ID FROM %Dictionary.ClassDefinition WHERE Super = ? AND ID <> ? ORDER BY ID"
-        s rs = ##class(%SQL.Statement).%ExecDirect(, sql, baseClass, baseClass)
-        if rs.%SQLCODE < 0 {
-            $$$ThrowStatus($$$ERROR($$$GeneralError, "ListAgendy SQL failed: "_rs.%Message))
-        }
-
-        while rs.%Next() {
-            s className = rs.%Get("ID")
+        s className = ""
+        for {
+            s className = $o(tridy(className))
+            q:className=""
             s code = $parameter(className, "AgendaVariantCode")
             s agenda = $parameter(className, "Agenda")
             s agendaLabel = $parameter(className, "AgendaLabel")
@@ -65,6 +58,7 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
             s entry.agendaLabel = agendaLabel
             s entry.variant = variant
             s entry.variantLabel = variantLabel
+            s entry.oblastPrace = $parameter(className, "OblastPrace")
             s entry.cacheClass = className
             s entry.instanceParamName = $parameter(className, "InstanceParamName")
             s entry.elementKind = $parameter(className, "ElementKind")
@@ -94,19 +88,54 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
 ClassMethod GetClassForCode(agendaCode As %String) As %String
 {
     q:agendaCode="" ""
-    s result = ""
+    d ..TridyAgend(.tridy)
+    s className = ""
+    for {
+        s className = $o(tridy(className))
+        q:className=""
+        q:$parameter(className, "AgendaVariantCode")=agendaCode
+    }
+    q className
+}
+
+/// Třídy agend do `tridy(className)` - přímí potomci BaseAgenda, včetně těch bez kódu (volající je přeskočí).
+/// Jediné místo, které agendy hledá; víc úrovní dědičnosti registr nezná (R8: sdílený kód patří do pomocných tříd).
+ClassMethod TridyAgend(ByRef tridy)
+{
+    k tridy
     s baseClass = "ALVA.TemplateDesigner.Agendy.BaseAgenda"
     s sql = "SELECT ID FROM %Dictionary.ClassDefinition WHERE Super = ? AND ID <> ?"
     s rs = ##class(%SQL.Statement).%ExecDirect(, sql, baseClass, baseClass)
-    q:rs.%SQLCODE<0 ""
-    while rs.%Next() {
-        s className = rs.%Get("ID")
-        if $parameter(className, "AgendaVariantCode") = agendaCode {
-            s result = className
-            q
-        }
+    if rs.%SQLCODE < 0 {
+        $$$ThrowStatus($$$ERROR($$$GeneralError, "Seznam agend nejde načíst: "_rs.%Message))
     }
-    q result
+    while rs.%Next() {
+        s tridy(rs.%Get("ID")) = ""
+    }
+}
+
+/// Oblasti práce stromu šablon v pořadí, v jakém je strom ukazuje: $lb($lb(kód, název), ...).
+/// Členění podle oblasti práce uživatele z rozboru převodu report generátoru (`F7`); agenda svou ohlásí parametrem
+/// `OblastPrace`. Kódy se neukládají do šablon, název i pořadí jde kdykoli změnit. Agenda bez známé oblasti
+/// je ve stromu pod Ostatní (`OblastOstatni`).
+ClassMethod OblastiPrace() As %List
+{
+    s oblasti = $lb($lb("JIZDNI_RADY", "Jízdní řády"))
+    s oblasti = oblasti_$lb($lb("PLAN_A_PROVOZ", "Plán a provoz"))
+    s oblasti = oblasti_$lb($lb("OBJEDNAVKY", "Objednávky"))
+    s oblasti = oblasti_$lb($lb("MZDY", "Mzdy"))
+    s oblasti = oblasti_$lb($lb("POKLADNA_A_ODBAVENI", "Pokladna a odbavení"))
+    s oblasti = oblasti_$lb($lb("UCETNICTVI", "Účetnictví"))
+    s oblasti = oblasti_$lb($lb("MAJETEK_A_SKLAD", "Majetek a sklad"))
+    s oblasti = oblasti_$lb($lb("VOZIDLA", "Vozidla"))
+    s oblasti = oblasti_$lb($lb("OBECNE", "Obecné"))
+    q oblasti
+}
+
+/// Oblast pro agendu bez známé oblasti práce - strom ji zařadí na konec, aby šablona nezmizela.
+ClassMethod OblastOstatni() As %List
+{
+    q $lb("OSTATNI", "Ostatní")
 }
 
 }

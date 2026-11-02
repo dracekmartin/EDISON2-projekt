@@ -34,6 +34,8 @@ Parameter Variant As %String = "MHD";
 
 Parameter VariantLabel As %String = "MHD";
 
+Parameter OblastPrace As %String = "JIZDNI_RADY";
+
 /// Zveřejněná 23. 10. do verze 27. 10. (`B191f`): tabulka sedí se starým tiskem na 65 linkách CB_DP
 /// a KV_DP. Na datech zákazníka po vydání ověřit poznámky z trasy, příjezd/odjezd na zastávce
 /// a atributy spoje mimo B/C - dev data je nemají (rozhodnutí Jan 23. 10.).

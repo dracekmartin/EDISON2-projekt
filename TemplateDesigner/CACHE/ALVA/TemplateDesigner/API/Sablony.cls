@@ -279,4 +279,34 @@ ClassMethod AppendMetadata(arr As %DynamicArray, IdFa As %String, templateId As 
     d arr.%Push(obj)
 }
 
+// ── Šablony, které firma vidí ────────────────────────────────────────────────
+
+/// Větve, ze kterých firma bere šablony: vlastní a sdílená M-line, v tomto pořadí. Firma MLINE (autorování
+/// systémových šablon) má jen jednu, jinak by se šablony vypsaly dvakrát. Čtou z toho okno šablon návrháře
+/// (seznam i strom) a formulář před tiskem v okně JŘ; další větev (šablony od jiné firmy) přibude jen tady.
+ClassMethod VetveFirmy(IdFa As %String, mlineIdFa As %String = "MLINE") As %List
+{
+    q $s(IdFa=mlineIdFa:$lb(IdFa), 1:$lb(IdFa, mlineIdFa))
+}
+
+/// Šablony jedné větve do `ids(templateId)`: jen agendy `agendaCode` (index ByAgenda), prázdné = všechny agendy.
+/// Položka indexu bez šablony se přeskočí.
+ClassMethod IdSablon(vetev As %String, agendaCode As %String, ByRef ids)
+{
+    s id = ""
+    if agendaCode = "" {
+        for {
+            s id = $o(^ALVA.TemplateDesigner.Templates(vetev,"DTA",id))
+            q:id=""
+            s ids(id) = ""
+        }
+        q
+    }
+    for {
+        s id = $o(^ALVA.TemplateDesigner.Templates(vetev,"IDX","ByAgenda",agendaCode,id))
+        q:id=""
+        s:$d(^ALVA.TemplateDesigner.Templates(vetev,"DTA",id)) ids(id) = ""
+    }
+}
+
 }

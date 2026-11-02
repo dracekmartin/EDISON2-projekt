@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-11-02 (4) - Okno šablon se stromem podle oblasti práce, agendy a varianty; výchozí šablona pro tisk (`B190` krok 4)
+
+Výchozí šablona pro tisk šla nastavit jen přes API a okno Ctrl+O mělo plochý seznam s filtrem agendy, který by se s agendami report generátoru nevešel.
+Okno „Šablony v databázi" má vlevo pevný strom oblast práce → agenda → varianta (rozhodnutí Jan 2. 11., R4): skládá ho server z registru agend (`API/StromSablon.cls`), nic v něm uloženého není a složky uživatele vědomě nejsou.
+Oblast práce ohlásí agenda parametrem `OblastPrace` (agendy JŘ: Jízdní řády), seznam oblastí z rozboru report generátoru je v `AgendyRegistr.OblastiPrace`; registr kód posílá i návrháři.
+U varianty je počet šablon a šablona, kterou tisk vezme; agenda s jednou variantou je jeden uzel, oblast bez agendy se neukáže, nahoře Všechny šablony. Okno si pamatuje poslední uzel.
+Vpravo šablony vybrané větve (`EDList.Sablony` s filtrem `agendaCodes`), šablona pro tisk tučně a ve sloupci Pro tisk („výchozí firmy" / „výchozí M-line"); tlačítko „Nastavit jako výchozí pro tisk" / „Zrušit výchozí pro tisk". Výchozí šablonu M-line zrušit nejde, jen přebít.
+Šablony, které firma vidí, čtou strom, seznam okna i formulář před tiskem v okně JŘ jednou cestou (`API.Sablony.VetveFirmy` a `IdSablon`); hledání tříd agend je jen v `AgendyRegistr.TridyAgend`.
+Ověřeno: Caché testy TemplateDesigneru (nový `StromSablonTest`, 5 testů, mutace nezveřejněné agendy ve stromu, filtru jen prvního kódu a jen větve firmy chycené), .NET testy 2708/2708 (nové `TemplateCatalogTests`, mutace sloučení jediné varianty a tlačítka u výchozí M-line chycené), integrační testy 62/62 (nové `StromSablonTests` nad skutečnou odpovědí stromu a seznamu), voláním `GetStrom`, `LoadList` a `ListAgendy` na dev serveru (CB_DP). Okno v aplikaci neproklikané.
+
 ## 2026-11-02 (3) - Tisk z okna JŘ: formulář se šablonou a všemi parametry sestavy (`B190` krok 3)
 
 Okno JŘ (repo EDISON, ISYJR2) má v Tisky pod „Návrhář sestav" položku „Tisk linkového JŘ (nový)". Formulář BIG nabídne šablonu (předvybraná výchozí, označená „- výchozí"), všechny parametry sestavy agendy ve skupinách agendy a složku pro PDF; po OK okno spustí návrhář do PDF (krok 2) s označenými linkami a hodnotami parametrů.

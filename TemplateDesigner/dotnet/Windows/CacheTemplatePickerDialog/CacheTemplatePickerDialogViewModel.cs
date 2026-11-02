@@ -1,22 +1,47 @@
 using EDControls.EDList;
 using EDControls.EDViewModel;
-using TemplateDesigner.Serialization;
 using TemplateDesigner.Services;
 
 namespace TemplateDesigner;
 
 /// <summary>
-/// ViewModel pro Caché picker dialog. Data drží EDList (Caché-driven přes
-/// <c>ALVA.TemplateDesigner.EDList.Sablony</c>), filter řídí <c>EDFilter</c>
-/// (deklarativně v XAML přes <c>EDFilterCombo</c>); VM jen vystavuje seznam agend
-/// pro combo, CRUD akce a OK output.
+/// ViewModel okna šablon v databázi (Ctrl+O). Vlevo strom podle oblasti práce, agendy a varianty
+/// (<c>ALVA.TemplateDesigner.API.StromSablon</c>, `B190`), vpravo seznam šablon vybraného uzlu (EDList nad
+/// <c>ALVA.TemplateDesigner.EDList.Sablony</c>). VM drží strom, CRUD akce, výchozí šablonu pro tisk a OK output.
 /// </summary>
 public class CacheTemplatePickerDialogViewModel : EDViewModel
 {
     private readonly CacheTemplateService _service;
+    private TemplateCatalog _catalog = TemplateCatalog.Empty;
 
-    /// <summary>Seznam agend pro <c>EDFilterCombo</c>. První položka <c>null</c> kód = „Všechny agendy".</summary>
-    public List<AgendaFilterVM> AgendaFilters { get; }
+    /// <summary>Uzly stromu; do načtení ze serveru jen Všechny šablony.</summary>
+    public IReadOnlyList<TemplateCatalogNodeVM> Nodes { get; private set; } = TemplateCatalogNodeVM.Build(TemplateCatalog.Empty);
+
+    private string _selectedNodeKey;
+    /// <summary>Klíč vybraného uzlu; volající si ho zapamatuje pro příští otevření.</summary>
+    public string SelectedNodeKey => _selectedNodeKey;
+
+    private TemplateCatalogNodeVM? _selectedNode;
+    /// <summary>Code-behind plní ze stromu. Jiný uzel = nový filtr seznamu.</summary>
+    public TemplateCatalogNodeVM? SelectedNode
+    {
+        get => _selectedNode;
+        set
+        {
+            if (value is null || ReferenceEquals(value, _selectedNode)) return;
+            bool changed = value.Key != _selectedNodeKey;
+            _selectedNode = value;
+            _selectedNodeKey = value.Key;
+            OnPropertyChanged();
+            if (changed) RequestReload?.Invoke();
+        }
+    }
+
+    /// <summary>Filtr seznamu šablon podle vybraného uzlu; Všechny šablony = bez filtru.</summary>
+    public IReadOnlyDictionary<string, string> CurrentFilter =>
+        _selectedNode is { AgendaCodes.Count: > 0 } node
+            ? new Dictionary<string, string> { ["agendaCodes"] = node.FilterValue }
+            : new Dictionary<string, string>();
 
     private EDListRow? _selected;
     /// <summary>Code-behind plní z <c>EDList.SelectionChanged</c>.</summary>
@@ -26,7 +51,10 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         set
         {
             if (Set(ref _selected, value))
+            {
+                OnPropertyChanged(nameof(DefaultButtonText));
                 System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+            }
         }
     }
 
@@ -43,6 +71,89 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     public RelayCommand      OpenCommand   { get; }
     public AsyncRelayCommand DeleteTemplateCommand { get; }
     public AsyncRelayCommand RenameCommand { get; }
+    public AsyncRelayCommand ToggleDefaultCommand { get; }
+
+    // ── Výchozí šablona pro tisk ──────────────────────────────────────────────
+
+    /// <summary>Co udělá tlačítko výchozí šablony u vybrané šablony.</summary>
+    public enum DefaultAction
+    {
+        /// <summary>Agenda se z modulu netiskne (Obecná, nezveřejněná) - výchozí šablonu mít nemůže.</summary>
+        None,
+        /// <summary>Nastavit jako výchozí šablonu firmy pro tisk agendy.</summary>
+        Set,
+        /// <summary>Je výchozí šablonou firmy - zrušit, tisk pak vezme výchozí šablonu M-line.</summary>
+        Clear,
+        /// <summary>Je výchozí šablonou M-line a firma žádnou nemá - už je výchozí, zrušit ji nejde.</summary>
+        AlreadyDefault,
+    }
+
+    /// <summary>
+    /// Akce podle sloupce <c>vychozi</c> řádku (firma | mline | prázdné) a podle toho, jestli se agenda tiskne
+    /// z modulu. Výchozí šablonu M-line firma zrušit nemůže, jen ji přebít svou.
+    /// </summary>
+    public static DefaultAction DecideDefaultAction(string? vychozi, bool canPrint) =>
+        !canPrint ? DefaultAction.None
+        : vychozi == "firma" ? DefaultAction.Clear
+        : vychozi == "mline" ? DefaultAction.AlreadyDefault
+        : DefaultAction.Set;
+
+    private DefaultAction SelectedDefaultAction =>
+        Selected is null ? DefaultAction.None
+        : DecideDefaultAction(Selected["vychozi"], CanPrint(Selected["agendaCode"]));
+
+    private bool CanPrint(string? agendaCode) =>
+        _catalog.Areas.SelectMany(a => a.Agendas).SelectMany(a => a.Variants)
+            .Any(v => v.Code == agendaCode && v.CanPrint);
+
+    public string DefaultButtonText => SelectedDefaultAction == DefaultAction.Clear
+        ? "Zrušit výchozí pro tisk"
+        : "Nastavit jako výchozí pro tisk";
+
+    private async Task ToggleDefaultAsync()
+    {
+        if (Selected is null || !Guid.TryParse(Selected.Id, out var id)) return;
+        var agendaCode = Selected["agendaCode"];
+        if (string.IsNullOrEmpty(agendaCode)) return;
+
+        var action = SelectedDefaultAction;
+        if (action is not (DefaultAction.Set or DefaultAction.Clear)) return;
+        try
+        {
+            await _service.SetDefaultTemplateAsync(agendaCode, action == DefaultAction.Set ? id : null);
+            await LoadCatalogAsync();
+            RequestReload?.Invoke();
+        }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+    }
+
+    /// <summary>
+    /// Načte strom ze serveru a vybere naposledy vybraný uzel (jinak Všechny šablony). Seznam nenačítá - volající
+    /// pak zavolá <see cref="RequestReload"/>, aby se seznam načetl jednou. Bez stromu (chyba serveru) zůstanou
+    /// Všechny šablony a seznam funguje jako dřív.
+    /// </summary>
+    public async Task LoadCatalogAsync()
+    {
+        try { _catalog = await _service.GetCatalogAsync(); }
+        catch (CacheTemplateException ex)
+        {
+            _catalog = TemplateCatalog.Empty;
+            PopupDisplayer.Error(ex);
+        }
+        Nodes = TemplateCatalogNodeVM.Build(_catalog);
+        OnPropertyChanged(nameof(Nodes));
+        OnPropertyChanged(nameof(DefaultButtonText));
+        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+
+        // Uzel se vybere dřív, než ho strom ukáže; strom pak výběr ohlásí stejným uzlem a seznam se znovu nenačte.
+        var target = TemplateCatalogNodeVM.Find(Nodes, _selectedNodeKey) ?? Nodes[0];
+        foreach (var node in TemplateCatalogNodeVM.PathTo(Nodes, target).SkipLast(1))
+            node.IsExpanded = true;
+        _selectedNode = target;
+        _selectedNodeKey = target.Key;
+        target.IsSelected = true;
+        OnPropertyChanged(nameof(SelectedNode));
+    }
 
     // ── Nové šablony od M-line (distribuční kanál) ────────────────────────────
 
@@ -106,34 +217,32 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         OnPropertyChanged(nameof(HasAvailable));
         OnPropertyChanged(nameof(AvailableText));
 
+        await LoadCatalogAsync();
         RequestReload?.Invoke();
         PopupDisplayer.Info(ulozeno > 0
             ? $"Staženo šablon: {ulozeno}. Najdete je v přehledu mezi systémovými (M-line)."
             : "Šablony se nepodařilo stáhnout - zkuste to prosím později.");
     }
 
-    /// <summary>Code-behind napojí - VM žádá o reload EDListu (po Delete / Rename). EDFilter sebere current filter.</summary>
+    /// <summary>Code-behind napojí - VM žádá o načtení seznamu s <see cref="CurrentFilter"/> (nový uzel, Delete, Rename).</summary>
     public Action? RequestReload { get; set; }
 
     /// <summary>Code-behind napojí - VM žádá o nový název (rename dialog). Vrátí název nebo null (zrušeno). VM nezná WPF.</summary>
     public Func<string, string?>? RequestRenameInput { get; set; }
 
-    public CacheTemplatePickerDialogViewModel(CacheTemplateService service, IReadOnlyList<AgendaRegistryEntry> agendas)
+    /// <param name="lastNodeKey">Uzel stromu vybraný při posledním otevření; null = Všechny šablony.</param>
+    public CacheTemplatePickerDialogViewModel(CacheTemplateService service, string? lastNodeKey = null)
     {
         _service = service;
         _channel = new SystemTemplateChannelSync(service);
-
-        // Dvouosé popisky seřazené po agendách (Zastávkový JŘ · AD / · MHD vedle sebe).
-        // Jen zveřejněné agendy (Released) - pilotní se ve filtru nenabízí; jejich šablony
-        // zůstávají dosažitelné přes „Všechny agendy".
-        AgendaFilters = new List<AgendaFilterVM> { new(null, "Všechny agendy") };
-        foreach (var a in agendas.Where(x => x.Released).OrderBy(x => x.EffectiveAgendaLabel).ThenBy(x => x.Variant))
-            AgendaFilters.Add(new AgendaFilterVM(a.Code, a.DisplayName));
+        _selectedNodeKey = lastNodeKey ?? TemplateCatalogNodeVM.AllKey;
 
         // Systémové (M-line) jsou read-only - otevřít lze, mazat/přejmenovat ne.
         OpenCommand           = Command(Open,             () => Selected is not null);
         DeleteTemplateCommand = CommandAsync(DeleteAsync, () => Selected is not null && !IsSelectedSystem);
         RenameCommand         = CommandAsync(RenameAsync, () => Selected is not null && !IsSelectedSystem);
+        ToggleDefaultCommand  = CommandAsync(ToggleDefaultAsync,
+            () => SelectedDefaultAction is DefaultAction.Set or DefaultAction.Clear);
     }
 
     private void Open()
@@ -154,6 +263,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         try
         {
             await _service.DeleteAsync(id);
+            await LoadCatalogAsync();
             RequestReload?.Invoke();
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
@@ -170,11 +280,9 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         try
         {
             await _service.RenameAsync(id, newName);
+            await LoadCatalogAsync();
             RequestReload?.Invoke();
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
 }
-
-/// <summary>Filter item pro agenda dropdown.</summary>
-public record AgendaFilterVM(string? Code, string Label);
