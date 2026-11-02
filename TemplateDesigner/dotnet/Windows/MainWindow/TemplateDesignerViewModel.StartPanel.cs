@@ -23,7 +23,7 @@ public partial class TemplateDesignerViewModel
     {
         var sablona = State.CurrentTemplate;
         string? systemova = sablona.AgendaCode is { Length: > 0 } agenda
-            ? (await Task.Run(() => EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda)))?.Name
+            ? (await Task.Run(() => EmbeddedSystemTemplate(agenda)))?.Name
             : null;
 
         IReadOnlyList<StartPanelItem> posledni = [], firemni = [];
@@ -111,11 +111,15 @@ public partial class TemplateDesignerViewModel
     /// <summary>Hotová šablona M-line pro agendu, null když agenda žádnou nemá.</summary>
     private async Task<Template?> LoadSystemTemplateAsync(string agenda)
     {
-        var embedded = await Task.Run(() => EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda));
+        var embedded = await Task.Run(() => EmbeddedSystemTemplate(agenda));
         if (embedded is null || TemplateStorage is null) return embedded;
         // V databázi může být novější verze z distribučního kanálu; když tam ještě není (seed
         // běží souběžně se startem), stačí ta z .exe.
         try { return (await TemplateStorage.LoadAsync(embedded.Id, CacheTemplateService.MlineIdFa)).Template; }
         catch (CacheTemplateException) { return embedded; }
     }
+
+    /// <summary>Výchozí šablona M-line agendy ze .exe podle registru; agenda bez ní (nebo starší server) první v pořadí souborů.</summary>
+    private Template? EmbeddedSystemTemplate(string agenda) =>
+        EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda, AgendaEntry(agenda)?.VychoziSablonaMline);
 }

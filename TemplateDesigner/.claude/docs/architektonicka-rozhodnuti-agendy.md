@@ -224,9 +224,8 @@ Nahradí dnešní skrytá pravidla: spuštění bere nejnověji upravenou šablo
 
 Rozsah `B190`:
 
-- výchozí šablona firmy uložená mimo JSON šablony, např. `^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",AgendaCode)` (příznak v JSON by zkopírovalo „Uložit jako"); M-line ji určí při vydání;
-- nastavení v okně Otevřít z databáze: sloupec „Výchozí" a akce „Nastavit jako výchozí pro tisk";
-- serverová metoda pravidla: okno JŘ podle ní předvybere šablonu ve formuláři před tiskem a kratší cesta ji použije; bez šablony řekne, že agenda šablonu nemá;
+- ✅ (2. 11., krok 1) výchozí šablona firmy mimo JSON šablony `^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",AgendaCode)` (příznak v JSON by zkopírovalo „Uložit jako"); výchozí šablonu M-line určuje parametr třídy agendy `VychoziSablonaMline` (linkový JŘ AD: A4 s poznámkami pod tabulkou); pravidlo a seznam pro formulář v `API/SablonyProTisk.cls`;
+- nastavení v okně Otevřít z databáze: sloupec „Výchozí" a akce „Nastavit jako výchozí pro tisk" (API `SetDefaultTemplate` už je);
 - spuštění bez okna rozšířené o víc linek, volitelné číslo šablony (`Sablona=`) a PDF ze šablony z databáze (dnes jen `LaunchTemplates/`).
 
 Rozhodnuto (Jan 2. 11.):

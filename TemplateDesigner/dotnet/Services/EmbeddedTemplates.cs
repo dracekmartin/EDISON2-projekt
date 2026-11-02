@@ -36,15 +36,20 @@ public static class EmbeddedTemplates
         return reader.ReadToEnd();
     }
 
-    /// <summary>První šablona agendy ve složce, null když tam agenda žádnou nemá.</summary>
-    public static Template? ForAgenda(string folder, string agendaCode)
+    /// <summary>
+    /// Šablona agendy ve složce: ta s Id <paramref name="preferredId"/> (výchozí šablona M-line agendy z registru),
+    /// jinak první podle jména souboru; null když tam agenda žádnou nemá.
+    /// </summary>
+    public static Template? ForAgenda(string folder, string agendaCode, string? preferredId = null)
     {
+        Template? first = null;
         foreach (var name in ResourceNames(folder))
         {
             var template = TemplateSerializer.Deserialize(Read(name));
-            if (string.Equals(template.AgendaCode, agendaCode, StringComparison.OrdinalIgnoreCase))
-                return template;
+            if (!string.Equals(template.AgendaCode, agendaCode, StringComparison.OrdinalIgnoreCase)) continue;
+            if (Guid.TryParse(preferredId, out var id) && template.Id == id) return template;
+            first ??= template;
         }
-        return null;
+        return first;
     }
 }

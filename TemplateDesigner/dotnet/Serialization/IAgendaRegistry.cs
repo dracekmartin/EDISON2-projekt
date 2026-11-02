@@ -31,6 +31,10 @@ namespace TemplateDesigner.Serialization;
 /// <para><see cref="RozdilyVerzi"/> = agenda posílá dvě verze linky s vyznačenými rozdíly; jen u ní nabízí
 /// Tabulka spojů a Poznámky barvy rozdílů. Default false: starší Caché bez klíče barvy rozdílů neukáže ani
 /// u rozdílového JŘ - ten se uživatelům nenabízí a PDF pro porovnání linek formulář nepotřebuje.</para>
+///
+/// <para><see cref="VychoziSablonaMline"/> = Id šablony M-line, kterou agenda tiskne bez výchozí šablony firmy
+/// (`B190`); úvodní obrazovka a spuštění podle něj vyberou hotovou šablonu. Prázdné (i starší Caché) = první
+/// šablona agendy ze `SystemTemplates/`.</para>
 /// </summary>
 public record AgendaRegistryEntry(
     string Code,
@@ -49,7 +53,8 @@ public record AgendaRegistryEntry(
     bool VariantyTras = true,
     bool RozdilyVerzi = false,
     string InstanceTvary = "",
-    string InstanceRod = "")
+    string InstanceRod = "",
+    string VychoziSablonaMline = "")
 {
     /// <summary>Název instance pro texty návrháře (<see cref="NazevInstance"/>). <see cref="InstanceLabel"/>
     /// a <see cref="InstanceLabelPlural"/> server posílá jen pro starší návrháře; starší server bez tvarů

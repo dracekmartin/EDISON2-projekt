@@ -16,6 +16,7 @@ Include GENERAL
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")             = malý blob: celý JSON / velký: počet kusů
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data", n)          = n-tý kus JSON blobu (jen velký blob)
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
+///   ^ALVA.TemplateDesigner.Templates(IdFa, "DEFAULT", AgendaCode) = TemplateID - výchozí pro tisk (`API.SablonyProTisk`)
 ///
 /// Blob: MALÝ (vejde se do 1 kusu) se ukládá jednoklíčově - formát čitelný i staršími klienty
 /// bez podpory kusů (#13013). VELKÝ po kusech, nikdy jako jeden řetězec - překročil by limit
@@ -213,6 +214,8 @@ ClassMethod DeleteTemplate(ByRef sys As %String) As %Status
             s agendaCode = $g(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","AgendaCode"))
             if agendaCode '= "" {
                 k ^ALVA.TemplateDesigner.Templates(IdFa,"IDX","ByAgenda",agendaCode,templateId)
+                // Výchozí šablona firmy pro tisk (`API.SablonyProTisk`) by ukazovala do prázdna.
+                k:$g(^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",agendaCode))=templateId ^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",agendaCode)
             }
             k ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId)
             s ^||ML("OUT","deleted") = "1"

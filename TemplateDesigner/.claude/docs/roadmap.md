@@ -27,6 +27,7 @@
   Uživatel v okně JŘ vybere v Tisky „Tisk linkového / zastávkového JŘ (nový)", ve formuláři šablonu a složku
   a dostane PDF bez otevření návrháře. Výchozí šablona firmy, pravidlo výběru a podoba v okně JŘ jsou
   rozhodnuté: [`R4`](architektonicka-rozhodnuti-agendy.md). Nejdřív linkový JŘ AD, po odladění zastávkový.
+  Hotový krok 1 (pravidlo a výchozí šablony na serveru); zbývá spuštění návrháře s víc linkami, okno JŘ, nastavení výchozí v návrháři.
 
 - **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
   dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),

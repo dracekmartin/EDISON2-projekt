@@ -84,6 +84,9 @@ Parameter ElementKind As %String = "LINE";
 
 Parameter InstanceTvary As %String = "linka,linky,linku,linky,linek";
 
+/// „Linkový JŘ (AD) - poznámky pod tabulkou A4" (`linkovy-jr-ad-poznamky-pod-a4.json`, rozhodnutí Jan 2. 11.).
+Parameter VychoziSablonaMline As %String = "3c4b2f8e-6a1d-4e57-9b0a-7f2d5c8e1a64";
+
 /// Vrátí DataSchema - skaláry hlavičky linky + kolekce ZASTAVKY/SPOJE/SKUPINY_DNU/POZNAMKY.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {

@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-11-02 - Šablona pro tisk z okna JŘ: výchozí šablona firmy a M-line a pravidlo výběru (`B190` krok 1)
+
+Tisk z okna jízdních řádů bez návrháře potřebuje vědět, kterou šablonu vzít. Dosud spuštění bralo nejnověji upravenou šablonu firmy a úvodní obrazovka první šablonu M-line v pořadí souborů.
+Server teď drží jedno pravidlo (`API/SablonyProTisk.cls`, rozhodnutí R4): šablona od volajícího, šablona u linky (jen místo, nedělá se), výchozí šablona firmy, výchozí šablona M-line, jinak hláška „Pro agendu … není nastavená šablona pro tisk".
+Výchozí šablona firmy je mimo JSON šablony (`^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",agenda)`), smí ukazovat i na šablonu M-line a smazání šablony ji uklidí; výchozí šablonu M-line určuje parametr třídy agendy `VychoziSablonaMline` a registr ho posílá návrháři.
+Šablona, kterou volající chce a v databázi není, je chyba, ne tichý přechod na výchozí. Seznam šablon pro formulář v okně JŘ (`SeznamProTisk`) dává vlastní šablony a pak M-line s označenou výchozí.
+Nová šablona M-line **„Linkový JŘ (AD) - poznámky pod tabulkou A4"** (z A4 s poznámkami vedle: poznámky v sekci pod tabulkou přes celou šířku ve čtyřech sloupcích) je výchozí pro linkový JŘ AD (rozhodnutí Jan 2. 11.); úvodní obrazovka a spuštění s linkou ji nabídnou místo A5 postskriptu.
+Nastavení výchozí šablony v okně Otevřít z databáze přijde v kroku 4; do té doby jde jen přes API.
+Ověřeno: Caché testy TemplateDesigneru 297/298 (1 přeskočený z dřívějška) včetně nového `SablonyProTiskTest` (11 testů, mutací neověřeno), .NET testy 2689/2689 včetně kontroly, že výchozí šablona M-line agendy je v exe se stejnou agendou, integrační testy 48/48, voláním `ListAgendy` a `GetTemplateForPrint` na dev serveru (CB_GWBUS: hláška, šablona M-line tam ještě není nalitá). Vzhled nové šablony a úvodní obrazovka v aplikaci neproklikané.
+
 ## 2026-11-01 (56) - Rozdělení sloupců se ve vývěsce i linkovém JŘ jmenuje stejně (`P2`)
 
 Volba „Rozdělení sloupců podle platnosti" měla pro totéž rozdělení dvě jména: „Pracovní / Sobota / Neděle+svátky" ve vývěsce a „Pracovní dny / Soboty / Neděle+svátky" v linkovém JŘ, k tomu zkratky v prázdninových volbách vývěsky („Prac. mimo+o prázd.").

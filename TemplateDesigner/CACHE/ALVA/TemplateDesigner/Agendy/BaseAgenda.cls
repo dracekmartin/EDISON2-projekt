@@ -84,6 +84,11 @@ Parameter VariantyTras As %Boolean = 0;
 /// jinde by nic neobarvily. Do 30. 10. to návrhář poznal podle kódu agendy (`B194g` R4).
 Parameter RozdilyVerzi As %Boolean = 0;
 
+/// Id systémové šablony M-line (`Template.Id` v `SystemTemplates/` exe), kterou agenda tiskne, když
+/// firma nemá vlastní výchozí šablonu (krok 4 pravidla `API.SablonyProTisk`, `B190`). Určuje ji
+/// M-line vydáním třídy; prázdné = agenda výchozí šablonu M-line nemá.
+Parameter VychoziSablonaMline As %String = "";
+
 /// Druh JŘ elementů, které agenda podporuje - řídí kontextové menu/paletu okna.
 /// "STOP" = zastávkové (StopList/DepartureGrid/NotesLegend), "LINE" = knižní/linkové
 /// (LineTable), "" = bez JŘ kontextu (okno ukáže všechny). C# vlastní mapování druh→typy.

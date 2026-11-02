@@ -57,6 +57,7 @@ public class SystemTemplateSeedTests
         Assert.Contains("zastavkovy-jr-mhd.json", names);
         Assert.Contains("linkovy-jr-ad-postskript-a5.json", names);
         Assert.Contains("linkovy-jr-ad-poznamky-vedle-a4.json", names);
+        Assert.Contains("linkovy-jr-ad-poznamky-pod-a4.json", names);
         Assert.Contains("linkovy-jr-mhd-postskript-a5.json", names);
         // Rozdílový JŘ systémový není: seed by ho nalil do databáze a v návrháři by ho šlo otevřít
         // (rozhodnutí Jan 23. 10.). Leží v LaunchTemplates/, viz LaunchTemplateTests.
@@ -113,6 +114,7 @@ public class SystemTemplateSeedTests
     [Theory]
     [InlineData("linkovy-jr-ad-postskript-a5.json")]
     [InlineData("linkovy-jr-ad-poznamky-vedle-a4.json")]
+    [InlineData("linkovy-jr-ad-poznamky-pod-a4.json")]
     [InlineData("linkovy-jr-mhd-postskript-a5.json")]
     public void LinkovaSablona_ZvyrazniAktualniZastavku(string fileName)
     {
@@ -210,6 +212,48 @@ public class SystemTemplateSeedTests
                 "takže by jedna šablona v MLINE přepsala druhou.");
             byId[t.Id] = Path.GetFileName(f);
         }
+    }
+
+    private static readonly Regex VychoziMlineRx = new(
+        "Parameter\\s+VychoziSablonaMline[^=]*=\\s*\"([^\"]*)\"", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Výchozí šablonu M-line určuje parametr třídy agendy (server), šablonu samotnou nese .exe. Id, ke kterému
+    /// .exe šablonu té agendy nemá, by tisk bez výchozí šablony firmy shodilo hláškou (`B190`).
+    /// </summary>
+    [Fact]
+    public void VychoziSablonaMlineAgendyJeZabalenaSeStejnouAgendou()
+    {
+        var sablony = TemplateFiles().Select(f => TemplateSerializer.Deserialize(File.ReadAllText(f))).ToList();
+        var nalezeno = 0;
+        foreach (var soubor in ZdrojeAgend.Agendy())
+        {
+            var zdroj = File.ReadAllText(soubor);
+            var id = VychoziMlineRx.Match(zdroj).Groups[1].Value;
+            if (id == "") continue;
+            nalezeno++;
+            var kod = AgendaCodeRx.Match(zdroj).Groups[1].Value;
+            var sablona = sablony.SingleOrDefault(t => t.Id == Guid.Parse(id));
+            Assert.True(sablona is not null, $"{Path.GetFileName(soubor)}: výchozí šablona M-line {id} v SystemTemplates/ není");
+            Assert.Equal(kod, sablona!.AgendaCode);
+        }
+        Assert.True(nalezeno > 0, "Žádná agenda nemá výchozí šablonu M-line - hledání v Agendy/*.cls je rozbité");
+    }
+
+    /// <summary>Úvodní obrazovka a spuštění berou výchozí šablonu M-line z registru, ne první soubor v pořadí jmen.</summary>
+    [Fact]
+    public void ForAgenda_VychoziSablonaMaPrednostPredPrvniVPoradi()
+    {
+        const string agenda = "LINKOVY_JR_AD";
+        var a4Pod = TemplateSerializer.Deserialize(
+            File.ReadAllText(Path.Combine(SystemTemplatesDir(), "linkovy-jr-ad-poznamky-pod-a4.json"))).Id;
+
+        Assert.Equal(a4Pod, EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda, a4Pod.ToString())!.Id);
+        // Starší server výchozí šablonu neposílá → první v pořadí jmen, jako dřív.
+        var prvni = EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda)!.Id;
+        Assert.NotEqual(a4Pod, prvni);
+        Assert.Equal(prvni, EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda, Guid.NewGuid().ToString())!.Id);
+        Assert.Equal(prvni, EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda, "")!.Id);
     }
 
     /// <summary>
