@@ -22,16 +22,38 @@ public class SessionDataTests
         Assert.Equal(apId == 3, access.IsAllAccess);
     }
 
-    [DevServerFact]
-    public void DefaultWindowLoad_RealServer_ReturnsServerFormId()
+    // Bez nastaveného okna server i parser vrátí 0, proto test okno nastaví. SetUserDefaultForm píše pod uživatele
+    // v systémové databázi: neexistující MLP 999 by tam založil uzel bez jména, na kterém padají smyčky přes uživatele
+    // (ALVA.SYS.Login, Login i ChangePassword). Proto MLP testovacího účtu a testovací firma.
+    [TestAccountFact]
+    public void DefaultWindowSetLoad_TestAccount_ParserReturnsSavedFormId()
+    {
+        var rest = DevServer.Connect(DevServer.WriteIdfa, AccountMlp());
+        var original = DefaultWindowService.Load(rest);
+        const int formId = 145009;
+        try
+        {
+            DefaultWindowService.Set(rest, formId);
+
+            var raw = rest.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", new object[] { });
+            // Parser nečíselnou hodnotu tiše přečte jako 0 (žádné výchozí okno).
+            Assert.True(raw.Length > 1 && raw[1]?.ToString() == formId.ToString(), "GetUserDefaultForm nevrátil uložené id na indexu 1.");
+            Assert.Equal(formId, DefaultWindowService.Load(rest));
+        }
+        finally
+        {
+            DefaultWindowService.Set(rest, original);
+        }
+    }
+
+    // GetMLPFromUsername jen čte. Login by MLP vrátil taky, ale nuluje flagy 17 a 20. Oddělovač "~" je v metodě pevný.
+    private static string AccountMlp()
     {
         var rest = DevServer.Connect();
-        var raw = rest.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", new object[] { });
-
-        // Parser nečíselnou hodnotu tiše přečte jako 0 (žádné výchozí okno).
-        Assert.True(raw.Length > 1, "GetUserDefaultForm nevrátil řádek s id okna.");
-        Assert.True(int.TryParse(raw[1]?.ToString(), out var formId), "Id výchozího okna (index 1) není číslo.");
-
-        Assert.Equal(formId, DefaultWindowService.Load(rest));
+        var raw = rest.QueryOrThrow("ALVA.SYSTEM.Main", "GetMLPFromUsername", new object[] { "USERNAME~" + DevServer.Account!.Login });
+        var parts = (raw.Length > 1 ? raw[1]?.ToString() ?? "" : "").Split('~');
+        Assert.True(parts.Length == 2 && parts[0] == "MLP" && int.TryParse(parts[1], out var mlp) && mlp > 0,
+            "GetMLPFromUsername nevrátil MLP testovacího účtu.");
+        return parts[1];
     }
 }

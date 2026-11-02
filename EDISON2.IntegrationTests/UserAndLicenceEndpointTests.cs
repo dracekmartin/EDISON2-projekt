@@ -50,6 +50,22 @@ public class UserAndLicenceEndpointTests
             "UserProfileService nečte adresář a příznak z polí 2 a 1 řádku personDir.");
     }
 
+    // Řádek centrálního adresáře se hledá podle dvou polí, chybějící řádek parser tiše přečte jako nenastavený adresář.
+    // Server ho skládá jako system, export, adresář, maxTableCells, CSV oddělovač, CSV uvozovky, PDF prohlížeč.
+    // DEV má adresář prázdný (nastavit by šel jen sdílenou SaveSettings), pozice proto hlídá číselné maxTableCells.
+    [DevServerFact]
+    public void LoadSettings_CentralExportRow_ProfileServiceReadsPath()
+    {
+        var rest = DevServer.Connect();
+
+        var rows = LegacyOutput.Rows(rest.QueryOrThrow("ALVA.EDISON.Main", "LoadSettings", new object[] { }), rest.Delimiter)
+            .Where(row => row.Length >= 2 && row[0] == "system" && row[1] == "export").ToList();
+
+        var row = Assert.Single(rows);
+        Assert.True(row.Length == 7 && int.TryParse(row[3], out _), "Řádek system/export nemá 7 polí s číselným maxTableCells v poli 4.");
+        Assert.True(UserProfileService.LoadCentralExportDir(rest) == row[2], "UserProfileService nečte cestu z pole 3 řádku system/export.");
+    }
+
     // Průvodce volá LoadDatabaseList před výběrem firmy; metoda ze sys čte jen oddělovač, identita testu výsledek nemění.
     [DevServerFact]
     public void LoadDatabaseList_ProductionParser_ListsEveryNamespace()

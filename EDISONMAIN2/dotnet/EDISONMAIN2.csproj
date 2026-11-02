@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="EDISONMAIN2.Tests" />
+    <InternalsVisibleTo Include="EDISON2.IntegrationTests" />
   </ItemGroup>
 
   <ItemGroup>

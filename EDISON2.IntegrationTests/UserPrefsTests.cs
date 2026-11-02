@@ -134,6 +134,35 @@ public class UserPrefsTests
         Assert.Empty(_failures);
     }
 
+    // Odebrání ★ pošle jen klíč dlaždice. Položku agendy, kterou shell nezná, musí server nechat.
+    [DevServerFact]
+    public async Task DesktopShortcutRemove_ShellTile_AgendaItemStays()
+    {
+        var prefs = CreatePrefs();
+        var modulePrefs = CreateModulePrefs(prefs);
+        var module = MenuModule("145009");
+        try
+        {
+            await prefs.DeleteAsync("EDISONMAIN2", "Shortcuts");
+            AgendaAdd(SinkReportItem);
+            var shell = new ModuleShortcutsService();
+            shell.Seed([module], await modulePrefs.LoadShortcutsAsync());
+            shell.Add(module);
+            var tile = Tile(shell, module).ToDto();
+            Assert.True(await modulePrefs.AddShortcutAsync(tile));
+
+            Assert.True(await modulePrefs.RemoveShortcutAsync(tile));
+
+            var stored = Assert.IsType<List<DesktopShortcutDto>>(await modulePrefs.LoadShortcutsAsync());
+            Assert.Equal([("PrintReport", "1003")], stored.Select(s => (s.Kind, s.Id)));
+        }
+        finally
+        {
+            await prefs.DeleteAsync("EDISONMAIN2", "Shortcuts");
+        }
+        Assert.Empty(_failures);
+    }
+
     private ModulePreferencesService CreateModulePrefs(CacheUserPrefsService prefs) =>
         new(prefs, new RestCallRunner(() => _rest), _failures.Add);
 

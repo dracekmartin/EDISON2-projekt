@@ -12,7 +12,9 @@ skutečnou odpovědí.
 - **Identita je pevná** (`DevServer`), ne z `CACHE_USER`: čtení pod `CB_DP` / MLP 1, zápisy jen
   pod `TEST_EDISON2_IT` / MLP 999 s úklidem ve `finally`. Výjimky: `LogLogin` (záznam sestavy
   přihlášení úklid přes MLRest nemá, každý běh přidá řádek pod touto firmou) a `Login` testovacího
-  účtu (nuluje jeho uživatelské flagy 17 a 20). Data agend (MHD, ...)
+  účtu (nuluje jeho uživatelské flagy 17 a 20). Stav, který přes MLRest uklidit nejde, zapisují a mažou helpery
+  `ALVA.EDTesting.IT*` jen pod `TEST_EDISON2_IT`: Přehledy (`ITDashboard`), ACTIVITY zámek a požadavek na ukončení
+  session (`ITSession`, jen GUID volajícího), usage telemetrie (`ITTelemetry`). Data agend (MHD, ...)
   leží v datovém namespace firmy: `Connect(dataNamespace: DevServer.ReadDataNamespace)`, výchozí je nemá.
 - **Testovací účet** (`TestAccount` v `EDTesting`, jde použít i z E2E): jméno a heslo nejsou v gitu, drží je DEV
   v globálu `^EDTesting("ITAccount","login")` a `("password")` v namespace MLINE (nastavuje vlastník v terminálu
@@ -31,9 +33,13 @@ skutečnou odpovědí.
   - `ALVA.EDISON.MiniAplikaceAPI.LoadData` s `refresh=1` - přepočítá a přepíše Přehledy (miniaplikace),
     test si data zapíše přes `ALVA.EDTesting.ITDashboard` pod testovací firmu,
   - `VerifyLic` - zakládá ACTIVITY zámek a počítá IP do licence,
-  - `UkonciUzivatele` bez řádku GUID - odhlásí všechny shelly na serveru,
+  - `UkonciUzivatele` - bez řádku GUID odhlásí všechny shelly na serveru. Požadavek na ukončení vlastní
+    session zapisuje a uklízí `ALVA.EDTesting.ITSession` (`RequestEnd`, `CleanEndRequest`),
   - `LockClearExt` s prázdným nebo cizím GUID - prázdný smaže všechny zámky na serveru,
   - `ChangeLoginState` - příznak přihlašování pro celý server,
   - `ResetSettings` / `SaveParams` / `LoadParams` s prázdným MLP - pracují s uživatelem `*`
-    (sdílené defaulty).
+    (sdílené defaulty),
+  - `ALVA.USERS.ApiEdison.SetUserDefaultForm` s MLP 999 - zapíše pod uživatele systémové databáze uzel
+    bez jména a smyčky přes uživatele v `ALVA.SYS.Login` na něm padají. Jen MLP testovacího účtu (`SessionDataTests`),
+  - `ChangePassword` s platným starým heslem testovacího účtu - změní heslo, ze kterého testy berou přihlášení.
 - Server má nasazený stav pracovního stromu (compile hook při editaci `.cls`), ne pushovaný commit.
