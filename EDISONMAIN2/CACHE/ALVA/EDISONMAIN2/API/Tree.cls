@@ -402,7 +402,7 @@ ClassMethod FillMain() [ Private ]
 		d ..AddFamily("Nastavení a číselníky", 0, "2.1", 0, 0)
 			d ..AddExe("Nastavení", "JRSETTINGS.exe", "ALVA.JRSETTINGS.formJRSETTINGSShow", "8001", 0, "", 0, "", 0, "Nastavení jízdních řádů")
 			d ..AddExe("Akce", "JRZAST.exe", "ALVA.JRZAST.formJRZASTavkyAkceList", "7033", 0, "", 0, "", 0)
-			d ..AddExe("Blízké obce", "JRZAST.exe", "ALVA.JRZAST.formJRZASTavkyObceList", "7004", 0, "", 0, "", 0)
+			d ..AddExe("Blízké obce (obsolete)", "JRZAST.exe", "ALVA.JRZAST.formJRZASTavkyObceList", "7004", 0, "", 0, "", 1)
 			d ..AddExe("Bod na trase", "JRZAST.exe", "ALVA.JRZAST.formJRZASTavkyBodNaTraseList", "7036", 0, "", 0, "", 0)
 			d ..AddExe("Dopravci (obsolete)", "JRMAIN.exe", "ALVA.JRMAIN.formJRMAINDopravceList", "6006", 0, "", 0, "", 1)
 			d ..AddExe("Dopravní systémy Mikroelektronika", "JRMAIN.exe", "ALVA.JRMAIN.formJRMAINEnumDopravniSystemyMikroelektronikaList", "6037", 0, "", 0, "", 0)
