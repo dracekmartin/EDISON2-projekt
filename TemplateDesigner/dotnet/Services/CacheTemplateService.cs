@@ -188,18 +188,33 @@ public class CacheTemplateService
         return result["data"]?.Value?.ToString();
     }
 
+    // ─── Šablona pro tisk (API.SablonyProTisk) ────────────────────────────────
+
+    /// <summary>
+    /// Šablona pro tisk podle pravidla na serveru (`B190`): <paramref name="templateId"/> od volajícího, jinak výchozí
+    /// šablona firmy, jinak M-line. Bez šablony vrátí důvod pro uživatele, ne výjimku.
+    /// </summary>
+    public Task<PrintTemplateChoice> GetTemplateForPrintAsync(string agendaCode, string? templateId = null)
+        => Task.Run(() =>
+        {
+            var inVar = new CVar();
+            inVar["agendaCode"] = new CVar(agendaCode);
+            inVar["templateId"] = new CVar(templateId ?? "");
+            return PrintTemplateChoice.FromOut(Query("GetTemplateForPrint", inVar, PrintTemplateChoice.CacheClass));
+        });
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /// <summary>MLRest.Query + ThrowOnError v jednom. Syrovou síťovou výjimku (výpadek VPN/serveru,
     /// socket timeout) zabalí do <see cref="CacheTemplateException"/>, aby volající dostali jednotnou
     /// doménovou hlášku „Operace v databázi selhala" místo generického „neočekávaná chyba" z globálního
     /// handleru. RestStatus.Error řeší <see cref="ThrowOnError"/> (stejný typ výjimky).</summary>
-    private CVar Query(string operation, CVar inVar)
+    private CVar Query(string operation, CVar inVar, string cacheClass = CacheClass)
     {
         CVar result;
         try
         {
-            result = _mlRest.Query(CacheClass, operation, inVar);
+            result = _mlRest.Query(cacheClass, operation, inVar);
         }
         catch (CacheTemplateException) { throw; }
         catch (Exception ex)

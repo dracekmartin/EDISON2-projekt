@@ -226,7 +226,7 @@ Rozsah `B190`:
 
 - ✅ (2. 11., krok 1) výchozí šablona firmy mimo JSON šablony `^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",AgendaCode)` (příznak v JSON by zkopírovalo „Uložit jako"); výchozí šablonu M-line určuje parametr třídy agendy `VychoziSablonaMline` (linkový JŘ AD: A4 s poznámkami pod tabulkou); pravidlo a seznam pro formulář v `API/SablonyProTisk.cls`;
 - nastavení v okně Otevřít z databáze: sloupec „Výchozí" a akce „Nastavit jako výchozí pro tisk" (API `SetDefaultTemplate` už je); šablona, kterou tisk vezme, je v seznamu vizuálně zvýrazněná, aby ji uživatel poznal na první pohled (Jan 2. 11.);
-- spuštění bez okna rozšířené o víc linek, volitelné číslo šablony (`Sablona=`) a PDF ze šablony z databáze (dnes jen `LaunchTemplates/`).
+- ✅ (2. 11., krok 2) spuštění bez okna rozšířené o víc linek (`LINKA_ID` čárkou, jedno PDF), volitelné číslo šablony (`Sablona=`) a PDF ze šablony z databáze; rozdílový JŘ dál z `LaunchTemplates/`.
 
 Rozhodnuto (Jan 2. 11.):
 

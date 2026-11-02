@@ -113,6 +113,51 @@ public class SpusteniPdfTests : IDisposable
         Assert.True(LaunchPdfWindowViewModel.CanWriteTo(_slozka));
     }
 
+    [Fact]
+    public async Task HromadnyTisk_DoSlozkyNejdeZapisovat_RadiFormularTisku()
+    {
+        // Hromadný tisk z okna JŘ volí složku ve formuláři tisku, ne v okně Porovnání linek.
+        Directory.CreateDirectory(_slozka);
+        var soubor = Path.Combine(_slozka, "soubor");
+        File.WriteAllText(soubor, "");
+        var vm = new LaunchPdfWindowViewModel(LaunchInput.Parse($"Agenda=LINKOVY_JR_AD;LINKA_ID=0330530,0330531;Slozka={soubor}\\Tisk;Vystup=PDF"),
+            Task.FromResult(new AgendaRegistryLoad([])),
+            _ => throw new InvalidOperationException("bez zapisovatelné složky se návrhář nemá vytvářet"))
+        {
+            Folder = _slozka,
+            OpenPdf = _ => throw new InvalidOperationException("PDF nemá vzniknout"),
+        };
+
+        await vm.RunAsync();
+
+        _popup.Received(1).Info(Arg.Is<string>(s => s.Contains("nejde zapisovat") && s.Contains("formuláři tisku")),
+            Arg.Any<System.Windows.Window?>());
+    }
+
+    [Fact]
+    public void LinkyZeSpusteni_CarkouVPoradiVolajiciho_BezPrazdnychAOpakovanych()
+    {
+        var vstup = LaunchInput.Parse("Agenda=LINKOVY_JR_AD;LINKA_ID=0330531, 0330530,,0330531;Vystup=PDF");
+
+        Assert.Equal(["0330531", "0330530"], vstup.Instances("LINKA_ID"));
+        Assert.Equal(["0380760"], LaunchInput.Parse(Porovnani).Instances("LINKA_ID"));
+        Assert.Empty(vstup.Instances("INSTANCE_ID"));
+    }
+
+    [Fact]
+    public void LinkyBezDat_SeznamSDuvodemZkracenyNaDeset()
+    {
+        var vynechane = Enumerable.Range(1, 12).Select(i => ($"33050{i}", i == 1 ? null : (string?)$"důvod {i}")).ToList();
+
+        var seznam = TemplateDesignerViewModel.SeznamVynechanych(vynechane);
+
+        var radky = seznam.Split('\n');
+        Assert.Equal(11, radky.Length);
+        Assert.Equal("330501: nemá data.", radky[0]);
+        Assert.Equal("330502: důvod 2", radky[1]);
+        Assert.Equal("… a dalších 2", radky[^1]);
+    }
+
     // Vstup z porovnání linek v ISYJR2 (TiskJRHelper.OpenRozdilovyJR).
     private const string Porovnani =
         "Agenda=LINKOVY_JR_AD_ROZDILOVY;SKUPINA_LINEK_ID=307;LINKA_ID=0380760;POROVNAT_SKUPINU=207;POROVNAT_LINKU=0380760;Vystup=PDF";

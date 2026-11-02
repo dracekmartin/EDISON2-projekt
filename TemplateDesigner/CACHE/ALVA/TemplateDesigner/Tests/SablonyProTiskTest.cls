@@ -28,12 +28,13 @@ Method OnAfterOneTest(testname As %String) As %Status
 	quit $$$OK
 }
 
-/// Bez výchozí šablony firmy i M-line tisk skončí hláškou pro uživatele, ne tichým výsledkem.
+/// Bez výchozí šablony firmy i M-line tisk skončí důvodem pro uživatele, ne tichým výsledkem ani chybou programu.
 Method TestBezSablonyHlaska()
 {
-	set chyba = ..ChybaPravidla("")
-	do $$$AssertTrue(chyba [ "není nastavená šablona pro tisk", "hláška bez šablony: "_chyba)
-	do $$$AssertTrue(chyba [ "Linkový JŘ (AD)", "hláška jmenuje agendu: "_chyba)
+	set sablona = ..Pravidlo("")
+	do $$$AssertEquals(sablona.templateId, "", "bez šablony: prázdné templateId")
+	do $$$AssertTrue(sablona.duvod [ "není nastavená šablona pro tisk", "důvod bez šablony: "_sablona.duvod)
+	do $$$AssertTrue(sablona.duvod [ "Linkový JŘ (AD)", "důvod jmenuje agendu: "_sablona.duvod)
 }
 
 /// Krok 4: firma nic nenastavila → výchozí šablona M-line z parametru agendy.
@@ -87,17 +88,28 @@ Method TestVolbaVolajicihoMaPrednost()
 	do $$$AssertEquals(sablona.zdroj, "volajici", "volající: zdroj")
 }
 
-/// Šablona, kterou volající chce a v databázi není (nebo je jiné agendy), je chyba - ne tichý přechod
-/// na výchozí, uživatel by dostal jiný výtisk, než si vybral.
-Method TestVolbaVolajicihoNeexistujeJeChyba()
+/// Šablona, kterou volající chce a v databázi není (nebo je jiné agendy), skončí důvodem - ne tichým
+/// přechodem na výchozí, uživatel by dostal jiný výtisk, než si vybral.
+Method TestVolbaVolajicihoNeexistujeNeniVychozi()
 {
 	do ..Uloz(..#Mline, ..VychoziMlineId(), "A4 poznámky pod", ..#Agenda)
 	do ..Uloz(..#Firma, "FA-VYV", "Vývěska", "ZASTAVKOVY_JR_AD")
 
-	set chyba = ..ChybaPravidla("FA-NENI")
-	do $$$AssertTrue(chyba [ "Vybraná šablona pro tisk v databázi není", "neexistující šablona: "_chyba)
-	set chyba = ..ChybaPravidla("FA-VYV")
-	do $$$AssertTrue(chyba [ "patří jiné agendě", "šablona jiné agendy: "_chyba)
+	set sablona = ..Pravidlo("FA-NENI")
+	do $$$AssertEquals(sablona.templateId, "", "neexistující šablona: ne výchozí M-line")
+	do $$$AssertTrue(sablona.duvod [ "Vybraná šablona pro tisk v databázi není", "neexistující šablona: "_sablona.duvod)
+	set sablona = ..Pravidlo("FA-VYV")
+	do $$$AssertEquals(sablona.templateId, "", "šablona jiné agendy: ne výchozí M-line")
+	do $$$AssertTrue(sablona.duvod [ "patří jiné agendě", "šablona jiné agendy: "_sablona.duvod)
+}
+
+/// Neznámá agenda je chyba volajícího, ne důvod pro uživatele.
+Method TestNeznamaAgendaJeChyba()
+{
+	set chyba = ""
+	try { do ##class(ALVA.TemplateDesigner.API.SablonyProTisk).SablonaProTisk(..#Firma, "NEEXISTUJE", "", ..#Mline) }
+	catch ex { set chyba = ex.DisplayString() }
+	do $$$AssertTrue(chyba [ "Neznámá agenda", "neznámá agenda: "_chyba)
 }
 
 /// Smazaná výchozí šablona firmy: mazání ukazatel uklidí a pravidlo spadne na M-line.
@@ -194,15 +206,6 @@ Method TestApiNastaveniAVyber()
 Method Pravidlo(templateId As %String) As %DynamicObject
 {
 	quit ##class(ALVA.TemplateDesigner.API.SablonyProTisk).SablonaProTisk(..#Firma, ..#Agenda, templateId, ..#Mline)
-}
-
-/// Text chyby pravidla, "" když šablonu vrátilo.
-Method ChybaPravidla(templateId As %String) As %String
-{
-	set chyba = ""
-	try { do ..Pravidlo(templateId) }
-	catch ex { set chyba = ex.DisplayString() }
-	quit chyba
 }
 
 Method VychoziMlineId() As %String

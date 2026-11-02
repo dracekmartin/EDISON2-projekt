@@ -29,6 +29,8 @@
   <ItemGroup>
     <Compile Include="..\TemplateDesigner\dotnet\Models\KontraktDat.cs" Link="TemplateDesigner\KontraktDat.cs" />
     <Compile Include="..\TemplateDesigner\dotnet\Models\StopFields.cs" Link="TemplateDesigner\StopFields.cs" />
+    <!-- Šablona pro tisk (SablonaProTiskTests): parser odpovědi pravidla. -->
+    <Compile Include="..\TemplateDesigner\dotnet\Services\PrintTemplateChoice.cs" Link="TemplateDesigner\PrintTemplateChoice.cs" />
   </ItemGroup>
 
   <ItemGroup>

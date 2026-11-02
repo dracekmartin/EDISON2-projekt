@@ -7,7 +7,9 @@ Include GENERAL
 ///   2. šablona přiřazená instanci (lince) - zatím se nedělá, šablona se bere výš (Jan 2. 11.),
 ///   3. výchozí šablona firmy pro agendu,
 ///   4. výchozí šablona M-line pro agendu (parametr `VychoziSablonaMline` třídy agendy),
-///   5. jinak chyba „není nastavená šablona pro tisk".
+///   5. jinak důvod „není nastavená šablona pro tisk".
+/// Kroky 1 a 5 nekončí chybou programu, ale důvodem pro uživatele (`duvod`, prázdné `templateId`);
+/// chyba je jen neznámá agenda.
 ///
 /// Výchozí šablona firmy leží mimo JSON šablony, aby ji „Uložit jako" nezkopírovalo:
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "DEFAULT", AgendaCode) = TemplateID
@@ -24,6 +26,7 @@ Parameter MlineIdFa = "MLINE";
 /// IN["templateId"] = šablona vybraná volajícím (volitelná, krok 1)
 /// OUT["templateId"], OUT["sourceIdFa"] (firma nebo MLINE, pro `API.Sablony.LoadTemplate`), OUT["name"],
 /// OUT["zdroj"] = volajici | firma | mline (který krok šablonu dal)
+/// Bez šablony: OUT["templateId"] = "" a OUT["duvod"] = text pro uživatele.
 ClassMethod GetTemplateForPrint(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -35,6 +38,7 @@ ClassMethod GetTemplateForPrint(ByRef sys As %String) As %Status
         s ^||ML("OUT","sourceIdFa") = sablona.sourceIdFa
         s ^||ML("OUT","name")       = sablona.name
         s ^||ML("OUT","zdroj")      = sablona.zdroj
+        s ^||ML("OUT","duvod")      = sablona.duvod
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
 }
@@ -53,17 +57,18 @@ ClassMethod SetDefaultTemplate(ByRef sys As %String) As %Status
     q $$$OK
 }
 
-/// Šablona pro tisk podle pravidla jako {templateId, sourceIdFa, name, zdroj}. Bez šablony vyhodí chybu
-/// s textem pro uživatele. Volá ji i formulář před tiskem v okně JŘ (repo EDISON), proto bez `sys`.
+/// Šablona pro tisk podle pravidla jako {templateId, sourceIdFa, name, zdroj, duvod}. Bez šablony je
+/// `templateId` prázdné a `duvod` říká uživateli proč. Volá ji i formulář před tiskem v okně JŘ (repo EDISON),
+/// proto bez `sys`.
 ClassMethod SablonaProTisk(IdFa As %String, agendaCode As %String, templateId As %String = "", mlineIdFa As %String = {..#MlineIdFa}) As %DynamicObject
 {
     s agendaClass = ..AgendaClass(agendaCode)
 
-    // Krok 1: výslovná volba volajícího. Chybějící šablona je chyba, ne tichý přechod na výchozí -
+    // Krok 1: výslovná volba volajícího. Chybějící šablona nevede k tichému přechodu na výchozí -
     // uživatel by dostal jiný výtisk, než si vybral.
     i templateId '= "" {
         s sablona = ..NajdiSablonu(IdFa, agendaCode, templateId, mlineIdFa)
-        i '$isobject(sablona) $$$ThrowStatus($$$ERROR($$$GeneralError, "Vybraná šablona pro tisk v databázi není nebo patří jiné agendě. Vyberte šablonu znovu."))
+        i '$isobject(sablona) q ..BezSablony("Vybraná šablona pro tisk v databázi není nebo patří jiné agendě. Vyberte šablonu znovu.")
         s sablona.zdroj = "volajici"
         q sablona
     }
@@ -85,7 +90,19 @@ ClassMethod SablonaProTisk(IdFa As %String, agendaCode As %String, templateId As
         i $isobject(sablona) { s sablona.zdroj = "mline"  q sablona }
     }
 
-    $$$ThrowStatus($$$ERROR($$$GeneralError, "Pro agendu „"_..AgendaLabel(agendaClass)_""" není nastavená šablona pro tisk. Nastavte výchozí šablonu v návrháři sestav."))
+    q ..BezSablony("Pro agendu „"_..AgendaLabel(agendaClass)_""" není nastavená šablona pro tisk. Nastavte výchozí šablonu v návrháři sestav.")
+}
+
+/// Výsledek pravidla bez šablony: prázdné templateId a důvod pro uživatele.
+ClassMethod BezSablony(duvod As %String) As %DynamicObject
+{
+    s vysledek = ##class(%DynamicObject).%New()
+    s vysledek.templateId = ""
+    s vysledek.sourceIdFa = ""
+    s vysledek.name = ""
+    s vysledek.zdroj = ""
+    s vysledek.duvod = duvod
+    q vysledek
 }
 
 /// Šablony agendy pro výběr ve formuláři před tiskem: vlastní šablony firmy a pak šablony M-line, obojí
@@ -93,10 +110,8 @@ ClassMethod SablonaProTisk(IdFa As %String, agendaCode As %String, templateId As
 /// má ta, kterou by pravidlo vzalo bez volby volajícího.
 ClassMethod SeznamProTisk(IdFa As %String, agendaCode As %String, mlineIdFa As %String = {..#MlineIdFa}) As %DynamicArray
 {
-    d ..AgendaClass(agendaCode)
     // Bez výchozí šablony seznam pořád nabídne, co je - formulář pak žádnou nepředvybere.
-    s vychoziId = ""
-    try { s vychoziId = ..SablonaProTisk(IdFa, agendaCode, "", mlineIdFa).templateId } catch ex { }
+    s vychoziId = ..SablonaProTisk(IdFa, agendaCode, "", mlineIdFa).templateId
 
     // Firma, která sama je MLINE (autorování systémových šablon), by šablony vypsala dvakrát.
     s vetve = $lb(IdFa)

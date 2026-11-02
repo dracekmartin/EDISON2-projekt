@@ -24,10 +24,25 @@ public sealed record LaunchInput(string? AgendaCode, IReadOnlyDictionary<string,
     /// </summary>
     public const string FolderKey = "Slozka";
 
+    /// <summary>
+    /// Id šablony z databáze, kterou vybral uživatel ve formuláři tisku okna JŘ (krok 1 pravidla `API.SablonyProTisk`);
+    /// chybí = výchozí šablona firmy, jinak M-line (`B190`).
+    /// </summary>
+    public const string TemplateKey = "Sablona";
+
     public static readonly LaunchInput Empty = new(null, new Dictionary<string, string>());
 
     /// <summary>Hodnota klíče, null když ve vstupu není (prázdná hodnota je hodnota).</summary>
     public string? Get(string key) => Values.TryGetValue(key, out var v) ? v : null;
+
+    /// <summary>
+    /// Instance ze spuštění: hodnota klíče instance agendy, víc instancí čárkou (`LINKA_ID=0320157,0320150`
+    /// z hromadného tisku v okně JŘ). Pořadí volajícího zůstává, je to pořadí v PDF; prázdné a opakované vypadnou.
+    /// </summary>
+    public IReadOnlyList<string> Instances(string instanceKey) =>
+        Get(instanceKey) is { } value
+            ? [.. value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Distinct()]
+            : [];
 
     public bool WantsPdf => string.Equals(Get(OutputKey), "PDF", StringComparison.OrdinalIgnoreCase);
 

@@ -39,9 +39,11 @@ Věci, které se z kódu nepoznají a jejichž porušení něco rozbije uživate
   vybere linku a nastaví parametry; s `Vystup=PDF` okno neotevře, PDF vyrobí cestou tisku a ukáže ve
   výchozím prohlížeči. Uloží ho do složky z klíče `Slozka` (volí ji okno Porovnání linek v ISYJR2, smí
   obsahovat `%TEMP%`; chybí = `%TEMP%\EDISON\TemplateDesigner`). `Vystup` musí zůstat poslední: cesta
-  končící `\` těsně před uzavírací uvozovkou argumentu by ji zrušila. Šablonu pro PDF bere jen z `LaunchTemplates/` v exe, **ne z databáze** - tak
-  spouští rozdílový JŘ porovnání linek v ISYJR2 (repo EDISON, `TiskJRHelper.OpenRozdilovyJR`) a jeho
-  šablona se v návrháři nenabízí (Jan 23. 10.). Starší TD vstup nepozná, ISYJR2 ho smí posílat až s novým TD.
+  končící `\` těsně před uzavírací uvozovkou argumentu by ji zrušila. Rozdílový JŘ porovnání linek v ISYJR2
+  (repo EDISON, `TiskJRHelper.OpenRozdilovyJR`) bere šablonu pro PDF jen z `LaunchTemplates/` v exe, **ne
+  z databáze**, a v návrháři se nenabízí (Jan 23. 10.); ostatní agendy (hromadný tisk z okna JŘ, `B190`)
+  podle pravidla na serveru `API.SablonyProTisk` (`Sablona=` ze spuštění, výchozí šablona firmy, M-line).
+  `LINKA_ID` smí nést víc linek čárkou → jedno PDF v jejich pořadí. Starší TD vstup nepozná, ISYJR2 ho smí posílat až s novým TD.
   Bez argumentů běží TD standalone. Obecný kontrakt (`EdisonLaunchArgs`,
   MLRest ze session shellu) viz `EDControls/CLAUDE.md`. **Neprázdný `shellGuid` = sdílená
   shell session** (`GUID` + `CacheLocks=1`, parita s hostem legacy modulů): requesty TD drží

@@ -41,7 +41,7 @@ public partial class TemplateDesignerViewModel
     /// <summary>Nese spuštění linku k otevření (ne jen agendu)?</summary>
     public bool ShouldOpenFromLaunch(Config.LaunchInput input) =>
         CacheProvider is not null && TemplateStorage is not null && input.AgendaCode is not null
-        && !string.IsNullOrEmpty(input.Get(InstanceParamName(input.AgendaCode)));
+        && input.Instances(InstanceParamName(input.AgendaCode)).Count > 0;
 
     /// <summary>
     /// Otevře šablonu agendy ze spuštění, vybere v ní linku a nastaví parametry ze spuštění.
@@ -71,9 +71,8 @@ public partial class TemplateDesignerViewModel
                 StatusText = "Agenda nemá uloženou ani systémovou šablonu - otevřena prázdná šablona.";
             }
 
-            var instanceValue = input.Get(InstanceParamName(agenda!))!;
             var skupina = input.Get(Config.LaunchInput.SkupinaKey);
-            await SelectLaunchInstanceAsync(agenda!, skupina, instanceValue);
+            await SelectLaunchInstancesAsync(agenda!, skupina, input.Instances(InstanceParamName(agenda!)));
         }
         catch (Exception ex) { PopupDisplayer.Error(ex); }
     }
@@ -91,23 +90,26 @@ public partial class TemplateDesignerViewModel
         templates.OrderByDescending(m => m.ModifiedAt ?? m.CreatedAt ?? DateTime.MinValue).FirstOrDefault();
 
     /// <param name="loadPreview">false = PDF bez okna: data načte tisková cesta, náhled by je tahal podruhé.</param>
-    private async Task SelectLaunchInstanceAsync(string agenda, string? skupina, string instanceValue, bool loadPreview = true)
+    private async Task SelectLaunchInstancesAsync(string agenda, string? skupina, IReadOnlyList<string> values, bool loadPreview = true)
     {
         var provider = CacheProvider!;
-        var (instance, skupinaLabel) = await Task.Run(() =>
+        var (instances, skupinaLabel) = await Task.Run(() =>
         {
             // Popis linky („číslo - název") dá jen server; hledá se podle čísla ve zvolené skupině.
             // ⚠️ Číslo nese klíč linky jen v AD. MHD má klíč vnitřní ID, popis by se nenašel a ukázalo
             // by se holé ID - dnes MHD linku ve spuštění neposílá; kdo to zavede, musí hledat podle klíče.
-            var found = provider.GetAvailableInstances(agenda, instanceValue.TrimStart('0'), skupinaId: skupina);
+            // Hromadný tisk popis nehledá: server by se ptal za každou linku a v PDF ani v hláškách ho není potřeba.
+            List<AgendaInstance> found = values.Count == 1
+                ? [MatchLaunchInstance(provider.GetAvailableInstances(agenda, values[0].TrimStart('0'), skupinaId: skupina), values[0])]
+                : [.. values.Select(v => MatchLaunchInstance([], v))];
             var label = string.IsNullOrEmpty(skupina) ? null
                 : provider.GetAvailableSkupiny(agenda).FirstOrDefault(s => s.Value == skupina)?.Display;
-            return (MatchLaunchInstance(found, instanceValue), label);
+            return (found, label);
         });
 
         _activeSkupinaId = string.IsNullOrEmpty(skupina) ? null : skupina;
         _activeSkupinaLabel = string.IsNullOrEmpty(skupina) ? null : skupinaLabel ?? skupina;
-        _activeInstances = [instance];
+        _activeInstances = instances;
         _activeInstanceIndex = 0;
         OnActiveInstancesChanged(reloadData: loadPreview);
         OnPropertyChanged(nameof(ActiveSkupinaText));
@@ -115,38 +117,79 @@ public partial class TemplateDesignerViewModel
     }
 
     /// <summary>
-    /// PDF ze spuštění bez hlavního okna (rozdílový JŘ z porovnání linek v modulu JŘ). Šablona, linka
-    /// a parametry jdou toutéž cestou jako otevření v návrháři, data a kreslení touž cestou jako tisk
-    /// do PDF z tiskového okna. Vrátí cestu k PDF, nebo důvod pro uživatele, proč nevzniklo.
+    /// Šablona pro PDF ze spuštění podle pravidla na serveru (`API.SablonyProTisk`, `B190`): šablona ze spuštění
+    /// (<see cref="LaunchInput.TemplateKey"/>), jinak výchozí šablona firmy, jinak M-line. Vrátí šablonu, nebo důvod
+    /// pro uživatele, proč žádná není.
     /// </summary>
-    /// <param name="folder">Složka pro PDF; soubor se jmenuje podle šablony a linky.</param>
-    public async Task<(string? Path, string? Duvod)> ExportLaunchPdfAsync(LaunchInput input, Template template, string folder)
+    internal async Task<(Template? Template, string? Duvod)> ResolvePrintTemplateAsync(string agenda, string? templateId)
+    {
+        if (TemplateStorage is null) return (null, "Návrhář není připojený k databázi.");
+        var volba = await TemplateStorage.GetTemplateForPrintAsync(agenda, templateId);
+        if (volba.TemplateId is { } id)
+            return ((await TemplateStorage.LoadAsync(id, volba.SourceIdFa)).Template, null);
+
+        // Šablonu M-line nalévá do databáze až návrhář spuštěný s oknem; do té doby ji má jen .exe.
+        if (string.IsNullOrEmpty(templateId) && Guid.TryParse(AgendaEntry(agenda)?.VychoziSablonaMline, out var mline)
+            && await Task.Run(() => EmbeddedSystemTemplate(agenda)) is { } zabalena && zabalena.Id == mline)
+            return (zabalena, null);
+        return (null, volba.Duvod);
+    }
+
+    /// <summary>
+    /// PDF ze spuštění bez hlavního okna (rozdílový JŘ z porovnání linek, hromadný tisk z okna JŘ). Šablona,
+    /// linky a parametry jdou toutéž cestou jako otevření v návrháři, data a kreslení touž cestou jako tisk
+    /// do PDF z tiskového okna. Všechny linky jdou do jednoho PDF v pořadí ze spuštění (rozhodnutí Jan 2. 11.).
+    /// </summary>
+    /// <param name="folder">Složka pro PDF; soubor se jmenuje podle šablony a linky, u víc linek podle jejich počtu.</param>
+    /// <param name="stav">Text průběhu pro okno (načítání linek, kreslení).</param>
+    public async Task<LaunchPdfResult> ExportLaunchPdfAsync(LaunchInput input, Template template, string folder,
+                                                            IProgress<string>? stav = null)
     {
         var agenda = input.AgendaCode;
-        if (CacheProvider is null || agenda is null) return (null, "Návrhář není připojený k databázi.");
-        var instanceValue = input.Get(InstanceParamName(agenda));
-        if (string.IsNullOrEmpty(instanceValue)) return (null, $"Spuštění neurčuje {(AgendaEntry(agenda)?.Nazev ?? NazevInstance.Obecny).Akuzativ}.");
+        if (CacheProvider is null || agenda is null) return LaunchPdfResult.Nevzniklo("Návrhář není připojený k databázi.");
+        var nazev = AgendaEntry(agenda)?.Nazev ?? NazevInstance.Obecny;
+        var hodnoty = input.Instances(InstanceParamName(agenda));
+        if (hodnoty.Count == 0) return LaunchPdfResult.Nevzniklo($"Spuštění neurčuje {nazev.Akuzativ}.");
 
         State.CurrentTemplate = template;
         await RefreshFieldsList();
         UseLaunchParams(template.Id, input.Values);
         await ApplyPersistedPrintParamsAsync();
-        await SelectLaunchInstanceAsync(agenda, input.Get(LaunchInput.SkupinaKey), instanceValue, loadPreview: false);
+        await SelectLaunchInstancesAsync(agenda, input.Get(LaunchInput.SkupinaKey), hodnoty, loadPreview: false);
         var linka = CurrentActiveInstance!.Display;
 
         var load = NacitaniVsechLinek(out var vynechane);
-        if (load is null) return (null, "Návrhář není připojený k databázi.");
+        if (load is null) return LaunchPdfResult.Nevzniklo("Návrhář není připojený k databázi.");
         var paramsSnapshot = new Dictionary<string, object?>(_previewParams);
-        var pages = await Task.Run(() => load(paramsSnapshot, null));
+        IProgress<(int Hotovo, int Celkem, string Linka)>? prubeh = stav is null ? null
+            : new Progress<(int Hotovo, int Celkem, string Linka)>(p => stav.Report(p.Celkem > 1
+                ? $"Načítám data: {nazev.Jednotne} {p.Linka} ({p.Hotovo + 1} z {p.Celkem})…"
+                : $"Načítám data: {nazev.Jednotne} {p.Linka}…"));
+        var pages = await Task.Run(() => load(paramsSnapshot, prubeh));
         if (pages is null or { Count: 0 })
-            return (null, vynechane.FirstOrDefault().Duvod is { Length: > 0 } duvod
-                ? $"{NazevInstance.SVelkym(CurrentInstance.Jednotne)} {linka} nemá data: {duvod}"
-                : $"{NazevInstance.SVelkym(CurrentInstance.Jednotne)} {linka} nemá data.");
+        {
+            if (hodnoty.Count > 1)
+                return LaunchPdfResult.Nevzniklo($"{nazev.ZadnaVybrana} nemá data, PDF nevzniklo.\n\n{SeznamVynechanych(vynechane)}");
+            return LaunchPdfResult.Nevzniklo(vynechane.FirstOrDefault().Duvod is { Length: > 0 } duvod
+                ? $"{NazevInstance.SVelkym(nazev.Jednotne)} {linka} nemá data: {duvod}"
+                : $"{NazevInstance.SVelkym(nazev.Jednotne)} {linka} nemá data.");
+        }
 
-        var path = LaunchPdfPath(folder, $"{template.Name} - {linka}");
+        stav?.Report("Kreslím PDF…");
+        var path = LaunchPdfPath(folder, hodnoty.Count == 1 ? $"{template.Name} - {linka}" : $"{template.Name} - {nazev.Pocet(hodnoty.Count)}");
         var snapshot = TemplateSerializer.DeepClone(template);
         await Task.Run(() => new PreviewCanvas(State).RenderMultiDataToPdf(path, pages, template: snapshot));
-        return (path, null);
+        return new LaunchPdfResult(path, null, vynechane.Count > 0
+            ? $"V PDF chybí {nazev.Pocet(vynechane.Count)} bez dat:\n{SeznamVynechanych(vynechane)}"
+            : null);
+    }
+
+    /// <summary>Instance bez dat po řádcích s důvodem od agendy; dlouhý seznam se zkrátí, okno s hláškou by přeteklo.</summary>
+    internal static string SeznamVynechanych(IReadOnlyList<(string Linka, string? Duvod)> vynechane, int nejvys = 10)
+    {
+        var radky = vynechane.Take(nejvys).Select(v => $"{v.Linka}: {(string.IsNullOrEmpty(v.Duvod) ? "nemá data." : v.Duvod)}");
+        var zbytek = vynechane.Count > nejvys ? $"\n… a dalších {vynechane.Count - nejvys}" : "";
+        return string.Join("\n", radky) + zbytek;
     }
 
     /// <summary>
@@ -421,4 +464,13 @@ public partial class TemplateDesignerViewModel
         if (TemplateStorage is null) return await OfferJsonExportFallbackAsync();
         return await SaveToCacheAsync();
     }
+}
+
+/// <summary>
+/// Výsledek PDF ze spuštění: cesta k PDF, nebo důvod pro uživatele, proč nevzniklo. <see cref="Upozorneni"/> = PDF
+/// vzniklo, ale některé instance v něm chybějí (nemají data) - uživatel to má vědět, ne hledat v PDF.
+/// </summary>
+public record LaunchPdfResult(string? Path, string? Duvod, string? Upozorneni = null)
+{
+    public static LaunchPdfResult Nevzniklo(string duvod) => new(null, duvod);
 }

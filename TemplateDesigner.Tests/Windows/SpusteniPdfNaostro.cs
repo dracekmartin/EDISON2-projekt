@@ -13,7 +13,8 @@ namespace TemplateDesigner.Tests.Windows;
 /// <summary>
 /// Ruční zkouška PDF ze spuštění proti dev serveru: přesně ten vstup, který posílá porovnání linek
 /// v ISYJR2, a z něj PDF bez hlavního okna. Ověří, že PDF vznikne a že se opravdu porovnávalo
-/// (hlavička nehlásí „Neporovnáno").
+/// (hlavička nehlásí „Neporovnáno"). Přes <c>TD_SPUSTENI_VSTUP</c> i hromadný tisk z okna JŘ
+/// (<c>Agenda=LINKOVY_JR_AD;LINKA_ID=0330530,0330531;Vystup=PDF</c>, šablona podle pravidla na serveru).
 /// </summary>
 /// <remarks>
 /// Bez proměnné <c>TD_SPUSTENI_PDF</c> (složka pro PDF) nic nedělá. Připojení
@@ -49,9 +50,13 @@ public class SpusteniPdfNaostro(ITestOutputHelper output)
         // Načtení schématu pokračuje přes kontext synchronizace (v aplikaci dispatcher okna).
         SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
 
-        var sablona = EmbeddedTemplates.ForAgenda(EmbeddedTemplates.LaunchFolder, input.AgendaCode!)!;
         var vm = new TemplateDesignerViewModel(mlRest, null, agendas, input.AgendaCode);
-        var (cesta, duvod) = await vm.ExportLaunchPdfAsync(input, sablona, slozka);
+        // Jako okno průběhu: rozdílový JŘ ze šablony v .exe, ostatní agendy podle pravidla na serveru.
+        var sablona = EmbeddedTemplates.ForAgenda(EmbeddedTemplates.LaunchFolder, input.AgendaCode!)
+                      ?? (await vm.ResolvePrintTemplateAsync(input.AgendaCode!, input.Get(LaunchInput.TemplateKey))).Template;
+        Assert.True(sablona is not null, "agenda nemá šablonu pro tisk");
+        var (cesta, duvod, upozorneni) = await vm.ExportLaunchPdfAsync(input, sablona!, slozka);
+        if (upozorneni is not null) output.WriteLine(upozorneni);
 
         Assert.True(cesta is not null, duvod);
         output.WriteLine(cesta);

@@ -9,9 +9,10 @@ using TemplateDesigner.Services;
 namespace TemplateDesigner;
 
 /// <summary>
-/// PDF ze spuštění bez hlavního okna (<c>Vystup=PDF</c>, rozdílový JŘ z porovnání linek v modulu JŘ):
-/// ukazuje jen průběh, PDF otevře ve výchozím prohlížeči a zavře se. Šablonu bere jen z .exe
-/// (<see cref="EmbeddedTemplates.LaunchFolder"/>), ne z databáze - v návrháři se nenabízí.
+/// PDF ze spuštění bez hlavního okna (<c>Vystup=PDF</c>): ukazuje jen průběh, PDF otevře ve výchozím prohlížeči
+/// a zavře se. Rozdílový JŘ z porovnání linek bere šablonu jen z .exe (<see cref="EmbeddedTemplates.LaunchFolder"/>),
+/// v návrháři se nenabízí. Ostatní agendy (hromadný tisk z okna JŘ, `B190`) berou šablonu z databáze podle pravidla
+/// na serveru (<see cref="TemplateDesignerViewModel.ResolvePrintTemplateAsync"/>).
 /// </summary>
 public class LaunchPdfWindowViewModel : EDViewModel
 {
@@ -50,18 +51,17 @@ public class LaunchPdfWindowViewModel : EDViewModel
         try
         {
             var agenda = _input.AgendaCode ?? "";
-            var template = await Task.Run(() => EmbeddedTemplates.ForAgenda(EmbeddedTemplates.LaunchFolder, agenda));
-            if (template is null)
-            {
-                PopupDisplayer.Info($"Pro agendu {agenda} návrhář PDF nevytvoří - nemá k ní šablonu.");
-                return;
-            }
+            var sablonaZeSpusteni = _input.Get(LaunchInput.TemplateKey);
+            var porovnani = sablonaZeSpusteni is null
+                ? await Task.Run(() => EmbeddedTemplates.ForAgenda(EmbeddedTemplates.LaunchFolder, agenda))
+                : null;
 
-            StatusText = $"Připravuji PDF: {template.Name}…";
             var folder = OutputFolder(_input, Folder);
             if (!await Task.Run(() => CanWriteTo(folder)))
             {
-                PopupDisplayer.Info($"Do složky {folder} nejde zapisovat, PDF nevzniklo. Zvolte v okně Porovnání linek jinou složku.");
+                PopupDisplayer.Info($"Do složky {folder} nejde zapisovat, PDF nevzniklo. " + (porovnani is not null
+                    ? "Zvolte v okně Porovnání linek jinou složku."
+                    : "Zvolte ve formuláři tisku jinou složku."));
                 return;
             }
 
@@ -83,13 +83,26 @@ public class LaunchPdfWindowViewModel : EDViewModel
                 return;
             }
 
-            var (path, duvod) = await _createDesigner(registry.Agendas).ExportLaunchPdfAsync(_input, template, folder);
-            if (path is null)
+            var designer = _createDesigner(registry.Agendas);
+            var (template, bezSablony) = porovnani is not null
+                ? (porovnani, null)
+                : await designer.ResolvePrintTemplateAsync(agenda, sablonaZeSpusteni);
+            if (template is null)
             {
-                PopupDisplayer.Info(duvod ?? "PDF se nepodařilo vytvořit.");
+                PopupDisplayer.Info(bezSablony ?? $"Pro agendu {agenda} návrhář PDF nevytvoří - nemá k ní šablonu.");
                 return;
             }
-            OpenPdf(path);
+
+            StatusText = $"Připravuji PDF: {template.Name}…";
+            var vysledek = await designer.ExportLaunchPdfAsync(_input, template, folder,
+                new Progress<string>(text => StatusText = text));
+            if (vysledek.Path is null)
+            {
+                PopupDisplayer.Info(vysledek.Duvod ?? "PDF se nepodařilo vytvořit.");
+                return;
+            }
+            OpenPdf(vysledek.Path);
+            if (vysledek.Upozorneni is { } upozorneni) PopupDisplayer.Info(upozorneni);
         }
         catch (Serialization.CacheAgendaDataException ex)
         {

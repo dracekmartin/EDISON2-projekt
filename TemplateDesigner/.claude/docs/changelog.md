@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-11-02 (2) - PDF ze spuštění pro víc linek se šablonou z databáze (`B190` krok 2)
+
+Spuštění návrháře do PDF (`Vystup=PDF`) umělo jednu linku rozdílového JŘ se šablonou zabalenou v exe. Hromadný tisk z okna JŘ potřebuje víc linek a šablonu firmy.
+Teď `LINKA_ID` smí nést víc linek čárkou a vznikne jedno PDF v pořadí ze spuštění (rozhodnutí Jan 2. 11.), soubor se jmenuje podle šablony a počtu („… - 3 linky"). Okno průběhu ukazuje, kterou linku načítá.
+Šablonu vybere pravidlo na serveru z kroku 1: `Sablona=<id>` ze spuštění, jinak výchozí šablona firmy, jinak M-line. Šablonu M-line, kterou ještě nenalil žádný návrhář s oknem, vezme z exe. Rozdílový JŘ zůstává na šabloně z `LaunchTemplates/`.
+Linka bez dat se přeskočí a po otevření PDF hláška vyjmenuje přeskočené linky s důvodem; bez dat u všech PDF nevznikne. Hromadný tisk nehledá popis linky na serveru (dotaz za každou linku), v hláškách stojí číslo.
+Pravidlo na serveru vrací „šablona není" jako důvod pro uživatele (`duvod`), ne jako chybu programu; chyba zůstává jen u neznámé agendy.
+Ověřeno: skutečné spuštění TemplateDesigner.exe s argumenty okna JŘ (CB_CSADAD, linky 0330530-0330532: PDF za 2,3 s, 5 stran A4 naležato, linky v pořadí; se `Sablona=` A5 postskript PDF z ní), .NET testy 2692/2692 (nové `SpusteniPdfTests` pro rozdělení linek, zkrácený seznam linek bez dat a radu ke složce), integrační testy 50/50 (nové `SablonaProTiskTests` nad skutečnou odpovědí pravidla), Caché testy TemplateDesigneru 298/299 (1 přeskočený z dřívějška). Hláška o přeskočených linkách naostro neviděná (linky sady data mají).
+
 ## 2026-11-02 - Šablona pro tisk z okna JŘ: výchozí šablona firmy a M-line a pravidlo výběru (`B190` krok 1)
 
 Tisk z okna jízdních řádů bez návrháře potřebuje vědět, kterou šablonu vzít. Dosud spuštění bralo nejnověji upravenou šablonu firmy a úvodní obrazovka první šablonu M-line v pořadí souborů.
