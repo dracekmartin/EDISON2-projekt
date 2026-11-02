@@ -229,11 +229,13 @@ Rozsah `B190`:
 - serverová metoda pravidla: okno JŘ podle ní ukáže šablonu u tlačítka Tisk a bez šablony tlačítko zakáže;
 - spuštění bez okna rozšířené o víc linek, volitelné číslo šablony (`Sablona=`) a PDF ze šablony z databáze (dnes jen `LaunchTemplates/`).
 
-Rozhodnuto (Jan 2. 11.): výchozí šablona je za firmu - tisk na jeden klik dopadne stejně, ať tiskne kdokoli; výchozí za uživatele jde přidat jako další krok pravidla.
+Rozhodnuto (Jan 2. 11.):
+
+- výchozí šablona je za firmu - tisk na jeden klik dopadne stejně, ať tiskne kdokoli; výchozí za uživatele jde přidat jako další krok pravidla;
+- šablona u linky zatím ne: krok 2 zůstává v pravidle zapsaný, ale nedělá se a šablona se bere výš (firma, M-line); čtení od konkrétní linky se doladí, až se ukáže potřeba. Staré nastavení u linky ukazuje na staré šablony, převzít nejde. Kolik firem tiskne linky různými šablonami, změřené není.
 
 Otevřené otázky (doporučení v závorce):
 
-- šablona u linky teď, nebo později (později: staré údaje ukazují na staré šablony, převzít nejdou, byla by to nová data a nové okno);
 - víc linek: jedno PDF, nebo PDF za linku (výchozí jedno, volající smí chtít PDF za linku přes `__EXPORT_SPLIT`);
 - s kolegou: co okno JŘ ukáže a jak předá seznam linek.
 
