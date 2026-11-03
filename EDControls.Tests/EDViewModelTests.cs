@@ -181,9 +181,10 @@ public class EDViewModelTests
 
         Assert.NotNull(vm.Actions);
         Assert.Equal(3, vm.Actions!.Count);
-        Assert.Equal("Přidat", vm.Actions[0].Label);
+        // Názvy seznamů legacy EDISONu (vzor EDVZOR), rozhodnutí Jan 3. 11.
+        Assert.Equal("Nový", vm.Actions[0].Label);
         Assert.Equal("Upravit", vm.Actions[1].Label);
-        Assert.Equal("Smazat", vm.Actions[2].Label);
+        Assert.Equal("Odstranit", vm.Actions[2].Label);
     }
 
     [Fact]

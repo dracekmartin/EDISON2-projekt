@@ -114,6 +114,18 @@ public partial class EDComponentToolbar : UserControl
         set => SetValue(TitleProperty, value);
     }
 
+    public static readonly DependencyProperty ActionsProperty =
+        DependencyProperty.Register(nameof(Actions), typeof(IEnumerable<EDAction>), typeof(EDComponentToolbar),
+            new PropertyMetadata(null));
+
+    /// <summary>Akce nad položkami komponenty jako ikony v pruhu (popisek a zkratka v bublině);
+    /// typicky <c>EDViewModel.Actions</c> okna. Null = žádné.</summary>
+    public IEnumerable<EDAction>? Actions
+    {
+        get => (IEnumerable<EDAction>?)GetValue(ActionsProperty);
+        set => SetValue(ActionsProperty, value);
+    }
+
     public static readonly DependencyProperty ShowSearchProperty =
         DependencyProperty.Register(nameof(ShowSearch), typeof(bool), typeof(EDComponentToolbar),
             new PropertyMetadata(true));

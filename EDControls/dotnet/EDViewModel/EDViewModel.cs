@@ -240,6 +240,8 @@ public class EDViewModel : INotifyPropertyChanged
     /// <summary>
     /// Továrna pro standardní akce. Použití:
     /// <c>Actions = [StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete()];</c>
+    /// Názvy, ikony i zkratky jako seznamy legacy EDISONu (vzor EDVZOR, BaseForm2): Nový Ctrl+N, Upravit Ctrl+E,
+    /// Odstranit Ctrl+D - uživatel je tam zná z většiny modulů.
     /// </summary>
     protected StandardActionsAccessor StandardActions => new(this);
 
@@ -250,7 +252,7 @@ public class EDViewModel : INotifyPropertyChanged
         public EDAction Delete() => Delete(vm.DeleteCommand);
 
         public EDAction Add(ICommand command) =>
-            new(FindString("EDStrings.Add") ?? "Přidat",
+            new(FindString("EDStrings.Add") ?? "Nový",
                 command,
                 FindImage("EDIcons.Add"),
                 Key.N, ModifierKeys.Control);
@@ -262,7 +264,7 @@ public class EDViewModel : INotifyPropertyChanged
                 Key.E, ModifierKeys.Control);
 
         public EDAction Delete(ICommand command) =>
-            new(FindString("EDStrings.Delete") ?? "Smazat",
+            new(FindString("EDStrings.Delete") ?? "Odstranit",
                 command,
                 FindImage("EDIcons.Delete"),
                 Key.D, ModifierKeys.Control);

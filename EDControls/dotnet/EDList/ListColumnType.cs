@@ -7,7 +7,7 @@ namespace EDControls.EDList
         Date,
         DateTime,
         Bool,
-        /// <summary>Rezervováno: EDList ho zatím kreslí jako text (raw hodnota), kreslení až pro skutečného konzumenta.</summary>
+        /// <summary>Ikona 16 px; hodnota = klíč sdílené ikony (<c>EDIcons.*</c>), prázdná = bez ikony.</summary>
         Image,
         Color,
         HoursMinutes,

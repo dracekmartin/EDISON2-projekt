@@ -7,7 +7,8 @@ Property key As %String;
 Property label As %String;
 
 /// Datový typ: $$$ListColumnType* z EDList.inc (TEXT, NUMBER, DATE, ...); List neznámý odmítne (AddColumn i zápis).
-/// IMAGE a CODEBOOK jsou rezervované: projdou, ale klient je zatím kreslí jako text (raw hodnota).
+/// IMAGE hodnota v řádku: klíč sdílené ikony klienta (EDIcons.MlineLogo), prázdná = bez ikony; starší klient ji ukáže
+/// jako text. CODEBOOK je rezervovaný: projde, ale klient ho zatím kreslí jako text (raw kód).
 /// COLOR hodnota v řádku: hex #AARRGGBB / #RRGGBB jako EDInputForm; starší R;G;B klient čte dál.
 Property type As %String [ InitialExpression = "TEXT" ];
 
@@ -23,5 +24,9 @@ Property align As %String;
 Property sortable As %Boolean [ InitialExpression = 0 ];
 
 Property visible As %Boolean [ InitialExpression = 1 ];
+
+/// TEXT sloupec: klíč pole řádku s ikonou (hodnota jako u IMAGE, EDIcons.MlineLogo), kterou klient ukáže před textem;
+/// prázdný = bez ikony. Posílá se jen vyplněný, starší klient ho ignoruje a ukáže jen text.
+Property iconKey As %String;
 
 }

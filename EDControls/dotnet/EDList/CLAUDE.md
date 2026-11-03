@@ -41,8 +41,12 @@ v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
   `SortDescriptions` (ty řadí formátované stringy lexikograficky). Shift+klik = multi-sort.
   Přestavba sloupců (`SelectionMode`, `SetData`) řazení i šipky drží, zmizelý sloupec vypadne.
 - **NUMBER bez `format` se nijak neformátuje** - v UI zůstane „142.5" s tečkou.
-- **IMAGE a CODEBOOK jsou rezervované** - server je přijme, klient je kreslí jako text (raw hodnota).
-  Neparsovatelné datum se zobrazí raw, bez chyby. COLOR kreslí obdélník, ne podbarvení buňky.
+- **IMAGE i `iconKey` nesou klíč sdílené ikony** (`EDIcons.MlineLogo`), obrázek drží klient; ikona u textu
+  (`iconKey` TEXT sloupce = pole řádku s klíčem) se posílá jen vyplněná, starší klient ukáže jen text.
+  CODEBOOK je rezervovaný (kreslí se jako text). Neparsovatelné datum se zobrazí raw, bez chyby. COLOR kreslí
+  obdélník, ne podbarvení buňky.
+- **Akce nad řádky** (`Actions`, typicky `EDViewModel.Actions` okna) jsou ikony v pruhu, ne tlačítka v okně -
+  jako lišta legacy seznamů (`BaseForm2`); zkratky jim registruje `AttachToWindow`.
 - `align` je samostatná vlastnost sloupce, ne součást typu - legacy typy
   (`Tc`, `NL`, ...) se mapují na TEXT/NUMBER + vlastnost.
 

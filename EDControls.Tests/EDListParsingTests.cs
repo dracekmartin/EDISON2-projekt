@@ -89,6 +89,18 @@ public class EDListParsingTests
         Assert.Equal(ListColumnType.Number, column.Type);
     }
 
+    /// <summary>Ikona u textu: server pošle iconKey jen u sloupce, který ji má; chybějící = bez ikony.</summary>
+    [Fact]
+    public void ParseColumns_IconKey()
+    {
+        var output = new CVar();
+        output["1"] = new CVar("""[{"key":"name","type":"TEXT","iconKey":"ikona"},{"key":"agenda","type":"TEXT"}]""");
+
+        var columns = EDListParsing.ParseColumns(output);
+
+        Assert.Equal(["ikona", ""], columns.Select(c => c.IconKey));
+    }
+
     [Fact]
     public void ParseRows_FormatsValuesByColumnType()
     {

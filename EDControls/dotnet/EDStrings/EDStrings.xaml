@@ -2,9 +2,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
-    <sys:String x:Key="EDStrings.Add">Přidat</sys:String>
+    <!-- Akce nad položkou seznamu tak, jak je uživatel zná z legacy EDISONu (Nový / Upravit / Odstranit). -->
+    <sys:String x:Key="EDStrings.Add">Nový</sys:String>
     <sys:String x:Key="EDStrings.Edit">Upravit</sys:String>
-    <sys:String x:Key="EDStrings.Delete">Smazat</sys:String>
+    <sys:String x:Key="EDStrings.Delete">Odstranit</sys:String>
     <sys:String x:Key="EDStrings.Close">Zavřít</sys:String>
     <sys:String x:Key="EDStrings.Ok">OK</sys:String>
     <sys:String x:Key="EDStrings.Cancel">Storno</sys:String>

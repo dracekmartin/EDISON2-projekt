@@ -80,6 +80,18 @@ namespace EDControls.EDList
             set => SetValue(TitleProperty, value);
         }
 
+        /// <summary>Akce nad řádky (Nový, Upravit, Odstranit…) jako ikony v brandovém pruhu, typicky
+        /// <c>EDViewModel.Actions</c> okna - zkratky jim registruje <c>EDViewModel.AttachToWindow</c>.</summary>
+        public static readonly DependencyProperty ActionsProperty =
+            DependencyProperty.Register(nameof(Actions), typeof(IEnumerable<EDViewModel.EDAction>), typeof(EDList),
+                new PropertyMetadata(null));
+
+        public IEnumerable<EDViewModel.EDAction>? Actions
+        {
+            get => (IEnumerable<EDViewModel.EDAction>?)GetValue(ActionsProperty);
+            set => SetValue(ActionsProperty, value);
+        }
+
         public static readonly DependencyProperty SearchTextProperty =
             DependencyProperty.Register(nameof(SearchText), typeof(string), typeof(EDList),
                 new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnSearchTextChanged));

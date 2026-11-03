@@ -7,12 +7,13 @@
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600">
     <DockPanel>
-        <!-- Brandový pruh - vždy vidět, shodně s EDInputFormem; host plní jen Title.
+        <!-- Brandový pruh - vždy vidět, shodně s EDInputFormem; host plní Title a volitelně Actions.
              ShowHelp vypnuté - EDList nemá per-component nápovědu. -->
         <edct:EDComponentToolbar DockPanel.Dock="Top"
                                  x:Name="HeaderToolbar"
                                  ShowHelp="False"
                                  Title="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                 Actions="{Binding Actions, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                  SearchText="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"/>
         <DataGrid x:Name="DataGrid"
                   AutoGenerateColumns="False"

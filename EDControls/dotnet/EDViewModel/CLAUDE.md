@@ -43,6 +43,9 @@ aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out
 - `EDAction.IconElement` vrací **nový** `Image` při každém přístupu - `UIElement` smí mít
   jen jednoho rodiče (nutné pro `MenuItem.Icon` přes `ItemContainerStyle`).
 - `OnOk()`: bez `base.OnOk()` / `CloseDialog(true)` zůstane okno otevřené - využívá se pro validaci.
+- `StandardActions` = názvy a zkratky legacy seznamů (`EDVZOR`, `BaseForm2`): **Nový Ctrl+N, Upravit Ctrl+E,
+  Odstranit Ctrl+D** - uživatel je zná z většiny modulů. Okno se seznamem je dává do `EDList.Actions` (ikony
+  v pruhu) i do `Actions` VM (menu Akce v `EDFooter`). Výběrové okno = `EDFooter` OkCancel, dvojklik = OK.
 
 ## WindowNavigator
 

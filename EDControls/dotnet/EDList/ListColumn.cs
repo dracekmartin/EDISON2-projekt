@@ -14,5 +14,8 @@ namespace EDControls.EDList
         public ListColumnAlign Align { get; set; } = ListColumnAlign.Auto;
         public bool Sortable { get; set; } = false;
         public bool Visible { get; set; } = true;
+        /// <summary>Pole řádku s klíčem sdílené ikony (<c>EDIcons.*</c>), kterou textový sloupec ukáže před hodnotou;
+        /// prázdné = bez ikony. Odliší druh řádku přímo u názvu (šablona M-line × vlastní).</summary>
+        public string IconKey { get; set; } = "";
     }
 }

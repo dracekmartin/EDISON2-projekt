@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 using System.Windows.Shapes;
 
 namespace EDControls.EDList;
@@ -49,6 +50,38 @@ internal static class EDListColumnFactory
         return column;
     }
 
+    /// <summary>Text s ikonou z pole <see cref="ListColumn.IconKey"/> před ním; hledání a řazení dál jdou podle textu
+    /// (klíč sloupce v <c>Tag</c>).</summary>
+    private static DataGridColumn BuildTextWithIcon(ListColumn col, DataGridLength width)
+    {
+        var panel = new FrameworkElementFactory(typeof(DockPanel));
+        panel.SetValue(DockPanel.LastChildFillProperty, true);
+
+        var image = new FrameworkElementFactory(typeof(Image));
+        image.SetValue(FrameworkElement.WidthProperty, 16.0);
+        image.SetValue(FrameworkElement.HeightProperty, 16.0);
+        image.SetValue(FrameworkElement.MarginProperty, new Thickness(2, 0, 6, 0));
+        image.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        image.SetValue(RenderOptions.BitmapScalingModeProperty, BitmapScalingMode.HighQuality);
+        image.SetBinding(Image.SourceProperty,
+            new Binding($"[{col.IconKey}]") { Converter = new ListIconKeyToImageConverter() });
+        panel.AppendChild(image);
+
+        var text = new FrameworkElementFactory(typeof(TextBlock));
+        text.SetBinding(TextBlock.TextProperty, new Binding($"[{col.Key}]"));
+        text.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        text.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+        panel.AppendChild(text);
+
+        return new DataGridTemplateColumn
+        {
+            Header = col.Label,
+            Width = width,
+            CellTemplate = new DataTemplate { VisualTree = panel },
+            CanUserSort = col.Sortable,
+        };
+    }
+
     private static DataGridColumn BuildByType(ListColumn col)
     {
         var width = col.Width > 0
@@ -73,7 +106,27 @@ internal static class EDListColumnFactory
             };
         }
 
-        // Sem padá i rezervovaný IMAGE a CODEBOOK - zobrazí raw hodnotu.
+        if (col.Type == ListColumnType.Text && col.IconKey.Length > 0)
+            return BuildTextWithIcon(col, width);
+
+        if (col.Type == ListColumnType.Image)
+        {
+            var image = new FrameworkElementFactory(typeof(Image));
+            image.SetValue(FrameworkElement.WidthProperty, 16.0);
+            image.SetValue(FrameworkElement.HeightProperty, 16.0);
+            image.SetValue(RenderOptions.BitmapScalingModeProperty, BitmapScalingMode.HighQuality);
+            image.SetBinding(Image.SourceProperty,
+                new Binding($"[{col.Key}]") { Converter = new ListIconKeyToImageConverter() });
+            return new DataGridTemplateColumn
+            {
+                Header = col.Label,
+                Width = width,
+                CellTemplate = new DataTemplate { VisualTree = image },
+                CanUserSort = col.Sortable,
+            };
+        }
+
+        // Sem padá i rezervovaný CODEBOOK - zobrazí raw hodnotu.
         var textCol = new DataGridTextColumn
         {
             Header = col.Label,

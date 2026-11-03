@@ -76,6 +76,7 @@ Method WriteColumnsToOut()
         s obj.align    = col.align
         s obj.sortable = col.sortable
         s obj.visible  = col.visible
+        s:col.iconKey'="" obj.iconKey = col.iconKey
         d arr.%Push(obj)
     }
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()

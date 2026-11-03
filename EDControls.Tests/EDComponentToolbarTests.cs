@@ -35,6 +35,46 @@ public class EDComponentToolbarTests
         });
     }
 
+    /// <summary>Akce nad položkami jsou ikony v pruhu s popiskem a zkratkou v bublině, jako lišta nad seznamem
+    /// legacy formulářů; bez akcí v pruhu žádné nejsou (stávající hostitelé se nezmění).</summary>
+    [Fact]
+    public void Actions_AreIconButtonsWithShortcutTooltip()
+    {
+        RunSta(() =>
+        {
+            ICommand prikaz = new RoutedCommand();
+            var akce = new[]
+            {
+                new EDViewModel.EDAction("Nový", prikaz, null, Key.N, ModifierKeys.Control),
+                new EDViewModel.EDAction("Odstranit", prikaz, null, Key.D, ModifierKeys.Control),
+            };
+
+            Assert.Equal(["Nový [Ctrl+N]", "Odstranit [Ctrl+D]"], TooltipyAkci(new Toolbar { Actions = akce }));
+            Assert.Empty(TooltipyAkci(new Toolbar()));
+        });
+    }
+
+    private static List<string> TooltipyAkci(Toolbar toolbar)
+    {
+        var root = new Grid();
+        root.Children.Add(toolbar);
+        root.Measure(new Size(800, 100));
+        root.Arrange(new Rect(0, 0, 800, 100));
+        root.UpdateLayout();
+        return Potomci(toolbar).OfType<Button>().Where(b => b.DataContext is EDViewModel.EDAction)
+            .Select(b => b.ToolTip as string ?? "").ToList();
+    }
+
+    private static IEnumerable<DependencyObject> Potomci(DependencyObject rodic)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(rodic); i++)
+        {
+            var dite = VisualTreeHelper.GetChild(rodic, i);
+            yield return dite;
+            foreach (var dalsi in Potomci(dite)) yield return dalsi;
+        }
+    }
+
     /// <summary>Ikona nápovědy je v XAML `StaticResource` - chybějící klíč shodí toolbar
     /// hned při načtení, ne až při kliku.</summary>
     [Fact]

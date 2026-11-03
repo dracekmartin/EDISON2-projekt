@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:EDControls.EDComponentToolbar"
              xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox"
+             xmlns:edvm="clr-namespace:EDControls.EDViewModel"
              mc:Ignorable="d"
              d:DesignHeight="32" d:DesignWidth="800">
     <UserControl.Resources>
@@ -50,8 +51,9 @@
         </Style>
     </UserControl.Resources>
 
-    <!-- Brandový pruh - jediný vzhled komponentové hlavičky (EDList i EDInputForm). -->
-    <Border Background="{DynamicResource EDTheme.Accent.Header}" Padding="6,4">
+    <!-- Brandový pruh - jediný vzhled komponentové hlavičky (EDList i EDInputForm). Výšku určuje pole hledání;
+         okraje pruhu i pole jsou úsporné, s běžnými působil pruh nad seznamem příliš vysoký (Jan 3. 11.). -->
+    <Border Background="{DynamicResource EDTheme.Accent.Header}" Padding="6,2">
         <!-- Grid, ne DockPanel: search má být pružný. V dlaždici miniaplikace (min 200 px)
              by se pevný box nevešel a DockPanel by ho ořízl místo zmenšení. -->
         <Grid>
@@ -61,21 +63,44 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Title - left edge, prominent. Anchor co je v komponentě. -->
-            <TextBlock Grid.Column="0"
-                       Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                       Style="{StaticResource ToolbarTextStyle}"
-                       FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Title}"
-                       VerticalAlignment="Center" Margin="2,0,12,0"
-                       TextTrimming="CharacterEllipsis"
-                       Visibility="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NonEmptyToVis}}"/>
+            <!-- Title - left edge, prominent. Anchor co je v komponentě. Akce nad položkami (Nový, Upravit,
+                 Odstranit) jako ikony za ním, u hledání - jako lišta nad seznamem legacy formulářů (BaseForm2). -->
+            <DockPanel Grid.Column="0">
+                <ItemsControl DockPanel.Dock="Right" Margin="0,0,8,0" VerticalAlignment="Center" Focusable="False"
+                              ItemsSource="{Binding Actions, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type edvm:EDAction}">
+                            <Button Style="{StaticResource ToolbarButtonStyle}" Margin="1,0"
+                                    Command="{Binding Command}" ToolTip="{Binding ToolTipText}"
+                                    ToolTipService.ShowOnDisabled="True"
+                                    AutomationProperties.Name="{Binding Label}">
+                                <Image Source="{Binding Icon}"
+                                       Width="{DynamicResource EDTheme.IconSize.Default}"
+                                       Height="{DynamicResource EDTheme.IconSize.Default}"
+                                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           Style="{StaticResource ToolbarTextStyle}"
+                           FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Title}"
+                           VerticalAlignment="Center" Margin="2,0,12,0"
+                           TextTrimming="CharacterEllipsis"
+                           Visibility="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NonEmptyToVis}}"/>
+            </DockPanel>
 
             <!-- Hledání - vpravo, vedle ikony nápovědy. Placeholder, křížek i Esc
                  řeší EDSearchTextBox interně. Navigace mezi nálezy tu není záměrně:
                  konzumenti hledáním filtrují (nematchující položky zmizí), takže skákat
                  mezi výskyty nemá co. -->
             <edstx:EDSearchTextBox Grid.Column="1" x:Name="SearchTextBox"
-                                   VerticalAlignment="Center" Margin="0,0,8,0"
+                                   VerticalAlignment="Center" Margin="0,0,8,0" Padding="6,2"
                                    Placeholder="{Binding EffectiveSearchPlaceholder, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                    Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
                                    Visibility="{Binding ShowSearch, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>

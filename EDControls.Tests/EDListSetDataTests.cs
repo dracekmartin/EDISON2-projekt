@@ -191,7 +191,8 @@ public class EDListSetDataTests
     private static void Raise(List list, RoutedEvent routedEvent) =>
         list.RaiseEvent(new RoutedEventArgs(routedEvent, list));
 
-    /// <summary>IMAGE a CODEBOOK jsou rezervované: textový sloupec s raw hodnotou, dokud je někdo nezačne kreslit.</summary>
+    /// <summary>CODEBOOK je rezervovaný: textový sloupec s raw hodnotou, dokud ho někdo nezačne kreslit. IMAGE se kreslí
+    /// jako ikona od 3. 11. (EDListImageColumnTests); hodnota řádku zůstává klíčem ikony.</summary>
     [Fact]
     public void SetData_ReservedTypes_RenderAsRawText()
     {
@@ -206,7 +207,8 @@ public class EDListSetDataTests
 
             list.SetData(reserved, [new Dictionary<string, string?> { ["id"] = "1", ["logo"] = "EDIcons.Bus", ["druh"] = "07" }]);
 
-            Assert.All(list.DataGrid.Columns, c => Assert.IsType<DataGridTextColumn>(c));
+            Assert.IsType<DataGridTemplateColumn>(list.DataGrid.Columns[0]);
+            Assert.IsType<DataGridTextColumn>(list.DataGrid.Columns[1]);
             Assert.Equal("EDIcons.Bus", list.Rows[0]["logo"]);
             Assert.Equal("07", list.Rows[0]["druh"]);
         });
