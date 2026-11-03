@@ -1,6 +1,6 @@
 # Pruh podpory - poznámky pro vývojáře
 
-Widgety `podpora.m-line.cz` (kanál IT → uživatelé) v hlavním i přihlašovacím okně. Zbytek shellu
+Widget `podpora.m-line.cz` (kanál IT → uživatelé) v hlavním okně; přihlašovací okno ho nemá. Zbytek shellu
 v [../../CLAUDE.md](../../CLAUDE.md), dock miniaplikací v [MiniApps/CLAUDE.md](../MiniApps/CLAUDE.md).
 
 - Pruh je v shellu (`Border SupportStrip` v `EdisonMainWindow.xaml`) **mimo dock**, aby ho nešlo zavřít; garanci drží

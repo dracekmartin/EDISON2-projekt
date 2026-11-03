@@ -44,15 +44,12 @@ public enum SwitchUserResult
 /// <param name="opener">Cesta po loginu sdílená se startem.</param>
 /// <param name="closeAllWindows">Zavření všech oken a legacy modulů staré session;
 /// <c>false</c> = okno zavření vetovalo a switch se musí zrušit.</param>
-/// <param name="windowState">Sdílená geometrie hlavního okna - login dialog z ní jen čte,
-/// ať naskočí na monitoru shellu, ne na primárním.</param>
 /// <param name="shutdown">Ukončení aplikace bez potvrzení (<see cref="ShellShutdown.Force"/>).</param>
 public class SessionSwitcher(
     EDServices services,
     Func<System.Windows.Window?> ownerWindow,
     SessionOpener opener,
     Func<bool> closeAllWindows,
-    IWindowStateStore windowState,
     Action shutdown)
 {
     /// <summary>
@@ -115,7 +112,7 @@ public class SessionSwitcher(
         return true;
     }
 
-    /// <summary>Login dialog pro user switch - owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
+    /// <summary>Login dialog pro user switch - malý, vycentrovaný na shell (owner), prázdné pole (uživatel zadá od začátku).</summary>
     protected virtual LoginResult? PromptLogin(IMLRest connection)
     {
         var vm = LoginViewModel.ForReauth(services, connection);
@@ -123,8 +120,6 @@ public class SessionSwitcher(
         {
             Owner = ownerWindow(),
         };
-        // Jen přebírá, ať naskočí na monitoru shellu; zapisovat sdílený záznam má shell.
-        WindowStatePersistence.Attach(loginWindow, new ReadOnlyWindowStateStore(windowState));
         return loginWindow.ShowDialog() == true ? vm.Result : null;
     }
 

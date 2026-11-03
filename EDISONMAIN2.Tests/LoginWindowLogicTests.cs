@@ -5,10 +5,9 @@ namespace EDISONMAIN2.Tests;
 public class LoginWindowLogicTests
 {
     [Theory]
-    [InlineData("jan", "tajne")]  // zapamatované heslo → převzetí jiným uživatelem
-    [InlineData(null, "tajne")]
-    public void PickInitialFocus_PrefilledPassword_FocusesUsername(string? username, string? password) =>
-        Assert.Equal(LoginFocus.Username, LoginWindowLogic.PickInitialFocus(username, password));
+    [InlineData("jan", "tajne")]  // zapamatované heslo → stačí Enter
+    public void PickInitialFocus_RememberedPassword_FocusesLoginButton(string? username, string? password) =>
+        Assert.Equal(LoginFocus.LoginButton, LoginWindowLogic.PickInitialFocus(username, password));
 
     [Theory]
     [InlineData("jan", null)]     // jen jméno → rovnou na heslo
@@ -17,10 +16,11 @@ public class LoginWindowLogicTests
         Assert.Equal(LoginFocus.Password, LoginWindowLogic.PickInitialFocus(username, password));
 
     [Theory]
-    [InlineData(null, null)]
+    [InlineData(null, null)]      // první start, přihlášení jiného uživatele
     [InlineData("", "")]
-    public void PickInitialFocus_NoPrefill_Default(string? username, string? password) =>
-        Assert.Equal(LoginFocus.Default, LoginWindowLogic.PickInitialFocus(username, password));
+    [InlineData(null, "tajne")]   // heslo bez jména se nepředvyplňuje, ale ani tak nejde přeskočit jméno
+    public void PickInitialFocus_NoUsername_FocusesUsername(string? username, string? password) =>
+        Assert.Equal(LoginFocus.Username, LoginWindowLogic.PickInitialFocus(username, password));
 
     [Fact]
     public void ShouldForgetRememberedPassword_OnlyWhenRejectedPasswordIsThePrefilledOne()

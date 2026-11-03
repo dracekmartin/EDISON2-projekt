@@ -385,9 +385,7 @@ public class AppBootstrapper
     {
         // Owner login dialogu: shell okno vzniká až pod VM, který switcher potřebuje.
         EdisonMainWindow? shell = null;
-        var sessionSwitcher = new SessionSwitcher(services, () => shell, opener,
-                                                  nav.TryCloseAll, new ShellWindowStateStore(prefs, prep.Server, prep.Port),
-                                                  _shutdown.Force);
+        var sessionSwitcher = new SessionSwitcher(services, () => shell, opener, nav.TryCloseAll, _shutdown.Force);
         bool testRun = _options.TestRun is not null;
         var viewModel = CreateShellViewModel(prep.Companies, services, nav, prefs, sessionSwitcher.Switch);
         _shutdown.AttachShell(viewModel.SuppressCloseConfirm);

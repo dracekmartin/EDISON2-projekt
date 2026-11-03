@@ -1,17 +1,17 @@
 namespace EDISONMAIN2.Windows.LoginWindow
 {
-    internal enum LoginFocus { Default, Username, Password }
+    internal enum LoginFocus { Username, Password, LoginButton }
 
     /// <summary>Rozhodovací logika login oken bez WPF - okna jen mapují pole na volání.</summary>
     internal static class LoginWindowLogic
     {
-        /// <summary>Předvyplněné heslo → fokus (a select) na jméno, ať přihlášení snadno
-        /// převezme jiný uživatel; jen jméno → rovnou na heslo.</summary>
+        /// <summary>Fokus na první věc, kterou uživatel udělá: bez jména (první start, přihlášení jiného
+        /// uživatele) jméno, se jménem heslo, se zapamatovaným heslem rovnou tlačítko (stačí Enter).</summary>
         internal static LoginFocus PickInitialFocus(string? initialUsername, string? initialPassword)
         {
-            if (!string.IsNullOrEmpty(initialPassword)) return LoginFocus.Username;
-            if (!string.IsNullOrEmpty(initialUsername)) return LoginFocus.Password;
-            return LoginFocus.Default;
+            if (string.IsNullOrEmpty(initialUsername)) return LoginFocus.Username;
+            if (string.IsNullOrEmpty(initialPassword)) return LoginFocus.Password;
+            return LoginFocus.LoginButton;
         }
 
         /// <summary>Server odmítl přesně to heslo, které bylo předvyplněné ze zapamatovaného -

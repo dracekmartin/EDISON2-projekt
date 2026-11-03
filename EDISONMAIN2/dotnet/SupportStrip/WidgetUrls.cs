@@ -1,8 +1,7 @@
 namespace EDISONMAIN2.SupportStrip;
 
 /// <summary>
-/// URL widgetu podpora.m-line.cz na jednom místě - sdílí ho fixní pruh podpory v shellu
-/// i přihlašovací obrazovka (<see cref="Windows.LoginWindow.LoginWindow"/>).
+/// URL widgetu podpora.m-line.cz pro fixní pruh podpory v shellu.
 /// </summary>
 internal static class WidgetUrls
 {
@@ -13,8 +12,7 @@ internal static class WidgetUrls
     private static readonly string Key = EDControls.EDSupportPanel.SupportActions.WidgetKey;
 
     /// <summary>Centrální widget shellu - jeden blok místo tří dílčích (fixní pruh nahoře). Nese IdFa,
-    /// přihlášeného uživatele a jeho e-mail (podpora podle nich cílí sdělení); prázdné jde jako prázdný parametr.
-    /// Přihlašovací obrazovka posílá jen IdFa - uživatel ještě není ověřený.</summary>
+    /// přihlášeného uživatele a jeho e-mail (podpora podle nich cílí sdělení); prázdné jde jako prázdný parametr.</summary>
     internal static string Edison2(string idfa, string user, string email) =>
         $"{Base}edison2?key={Key}&idfa={Uri.EscapeDataString(idfa)}&user={Uri.EscapeDataString(user)}&email={Uri.EscapeDataString(email)}";
 }

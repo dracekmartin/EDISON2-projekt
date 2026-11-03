@@ -103,6 +103,14 @@ public class LoginViewModelTests
     }
 
     [Fact]
+    public void LayoutFollowsMode_StartupFillsWindow_ReauthIsCompactDialog()
+    {
+        // Start zůstává podkladem průběhu až do vykreslení shellu, reauth je dialog nad běžícím shellem.
+        Assert.False(Startup(Server(Accepted())).IsCompact);
+        Assert.True(LoginViewModel.ForReauth(Services(), Server(Accepted())).IsCompact);
+    }
+
+    [Fact]
     public void ServerRejects_ShowsMessageAndStaysEditable()
     {
         var vm = Startup(Server("-107"));
@@ -264,8 +272,8 @@ public class LoginViewModelTests
         Assert.Equal("heslo", vm.InitialPassword);
         Assert.True(vm.RememberPassword);
         Assert.True(vm.ShowRemember);
-        // Předvyplněné heslo → fokus na jméno, ať přihlášení snadno převezme jiný uživatel.
-        Assert.Equal(LoginFocus.Username, vm.InitialFocus);
+        // Zapamatované heslo → fokus na tlačítko, přihlásí Enter.
+        Assert.Equal(LoginFocus.LoginButton, vm.InitialFocus);
     }
 
     [Fact]
@@ -384,44 +392,8 @@ public class LoginViewModelTests
         Assert.Equal("", vm.UserName);
         Assert.Equal("", vm.InitialPassword);
         Assert.False(vm.ShowRemember);
-        Assert.Equal(LoginFocus.Default, vm.InitialFocus);
+        Assert.Equal(LoginFocus.Username, vm.InitialFocus);
         Assert.Equal("CB_DP", vm.Idfa);
-    }
-
-    [Fact]
-    public void Cancel_StartupBeforeLogin_ClosesWindow()
-    {
-        var vm = Startup(Server(Accepted()));
-        var closes = CloseRequests(vm);
-
-        vm.Cancel();
-
-        Assert.Equal([null], closes);
-    }
-
-    [Fact]
-    public void Cancel_InProgress_IsIgnored()
-    {
-        var vm = Startup(Server(Accepted()));
-        vm.UserName = "jan";
-        vm.Login("heslo");
-        var closes = CloseRequests(vm);
-
-        vm.Cancel();
-
-        Assert.Empty(closes);
-        Assert.True(vm.IsInProgress);
-    }
-
-    [Fact]
-    public void Cancel_Reauth_LeavesClosingToModalDialog()
-    {
-        var vm = LoginViewModel.ForReauth(Services(), Server(Accepted()));
-        var closes = CloseRequests(vm);
-
-        vm.Cancel();
-
-        Assert.Empty(closes);
     }
 
     [Fact]

@@ -134,6 +134,16 @@
     <Color x:Key="EDTheme.Accent.Header.Color">#FF0D47A1</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.Header" Color="{StaticResource EDTheme.Accent.Header.Color}"/>
 
+    <!-- Primární tlačítko (EDTheme.PrimaryButton) - plná modrá s bílým textem (EDTheme.OnAccent.Text)
+         jako tlačítko přihlášení portálu podpora.m-line.cz. Vlastní tokeny, ne Accent.Blue: ten je
+         v dark světlejší a bílý text by na něm neměl kontrast. -->
+    <Color x:Key="EDTheme.PrimaryButton.Bg.Color">#FF2563EB</Color>
+    <SolidColorBrush x:Key="EDTheme.PrimaryButton.Bg" Color="{StaticResource EDTheme.PrimaryButton.Bg.Color}"/>
+    <Color x:Key="EDTheme.PrimaryButton.BgHover.Color">#FF1D4ED8</Color>
+    <SolidColorBrush x:Key="EDTheme.PrimaryButton.BgHover" Color="{StaticResource EDTheme.PrimaryButton.BgHover.Color}"/>
+    <Color x:Key="EDTheme.PrimaryButton.BgPressed.Color">#FF1E40AF</Color>
+    <SolidColorBrush x:Key="EDTheme.PrimaryButton.BgPressed" Color="{StaticResource EDTheme.PrimaryButton.BgPressed.Color}"/>
+
     <!-- ═══════════════════════════════════════════════════════════════════
          COLORS - Focus (klávesový focus ring, EDTheme.FocusVisual)
          Vlastní tokeny, ne Accent.Blue: ring potřebuje v dark vyšší jasnost než accent
@@ -164,6 +174,28 @@
     <!-- M-line hnědá - Molecule ikona, EDFooter accent -->
     <Color x:Key="EDTheme.Brand.Color">#FFA07840</Color>
     <SolidColorBrush x:Key="EDTheme.Brand" Color="{StaticResource EDTheme.Brand.Color}"/>
+
+    <!-- Logo M-line (EDIcons.MlineMarkGeometry) na ploše okna. Sada log ho povoluje jen
+         v modré #003979, nebo bílé, proto dark režim přepíná na bílou, ne na světlejší modrou. -->
+    <Color x:Key="EDTheme.MlineLogo.Color">#FF003979</Color>
+    <SolidColorBrush x:Key="EDTheme.MlineLogo" Color="{StaticResource EDTheme.MlineLogo.Color}"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         COLORS - BrandPanel (tmavá brandová plocha přihlašovacího okna)
+         Hodnoty má i přihlášení portálu podpora.m-line.cz, aby přihlášení do produktů
+         M-line vypadala stejně. Plocha je stabilní v obou režimech, proto se tyto tokeny
+         v EDThemeDark.xaml NEpřepisují; bílý text na ní nese EDTheme.OnAccent.Text.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Color x:Key="EDTheme.BrandPanel.Bg.Color">#FF0F172A</Color>
+    <SolidColorBrush x:Key="EDTheme.BrandPanel.Bg" Color="{StaticResource EDTheme.BrandPanel.Bg.Color}"/>
+
+    <!-- Doprovodný text a odkazy na ploše -->
+    <Color x:Key="EDTheme.BrandPanel.TextMuted.Color">#FFCBD5E1</Color>
+    <SolidColorBrush x:Key="EDTheme.BrandPanel.TextMuted" Color="{StaticResource EDTheme.BrandPanel.TextMuted.Color}"/>
+
+    <!-- Odkaz pod myší (M-line oranžová) -->
+    <Color x:Key="EDTheme.BrandPanel.LinkHover.Color">#FFF5A83C</Color>
+    <SolidColorBrush x:Key="EDTheme.BrandPanel.LinkHover" Color="{StaticResource EDTheme.BrandPanel.LinkHover.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
          COLORS - Support panel (EDSupportPanel)
@@ -293,8 +325,11 @@
     <!-- Large - zvýraznění (výjimečně) -->
     <sys:Double x:Key="EDTheme.FontSize.Large">17</sys:Double>
 
-    <!-- Display - hero wordmark login okna (mimo ladder běžného UI textu) -->
+    <!-- Display - slogan na brandové ploše login okna (mimo ladder běžného UI textu) -->
     <sys:Double x:Key="EDTheme.FontSize.Display">26</sys:Double>
+
+    <!-- Hero - wordmark „M-line EDISON" na brandové ploše login okna -->
+    <sys:Double x:Key="EDTheme.FontSize.Hero">36</sys:Double>
 
     <!-- ═══════════════════════════════════════════════════════════════════
          ICON SIZE - rozměr ikon v toolbarech a menu. FontService škáluje

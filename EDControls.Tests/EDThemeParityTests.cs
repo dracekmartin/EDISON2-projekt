@@ -25,13 +25,20 @@ public class EDThemeParityTests
 
     /// <summary>
     /// Tokeny, které v dark režimu záměrně zůstávají světlé. Brandový pruh
-    /// (<c>Accent.Header</c> + <c>OnAccent.*</c> obsah na něm) drží stejnou barvu v obou
-    /// režimech; <c>Module.*</c> jsou datové barvy tekoucí jako hex do HexToBrush.
+    /// (<c>Accent.Header</c> + <c>OnAccent.*</c> obsah na něm) a brandová plocha přihlášení
+    /// (<c>BrandPanel.*</c>) drží stejnou barvu v obou režimech; <c>Module.*</c> jsou datové
+    /// barvy tekoucí jako hex do HexToBrush.
     /// </summary>
     private static readonly HashSet<string> LightOnly =
     [
         "EDTheme.Accent.Header",
         "EDTheme.Accent.Header.Color",
+        "EDTheme.BrandPanel.Bg",
+        "EDTheme.BrandPanel.Bg.Color",
+        "EDTheme.BrandPanel.TextMuted",
+        "EDTheme.BrandPanel.TextMuted.Color",
+        "EDTheme.BrandPanel.LinkHover",
+        "EDTheme.BrandPanel.LinkHover.Color",
         "EDTheme.OnAccent.Text",
         "EDTheme.OnAccent.Text.Color",
         "EDTheme.OnAccent.HoverOverlay",

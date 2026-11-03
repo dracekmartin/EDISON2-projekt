@@ -5,7 +5,7 @@ namespace EDISONMAIN2.SupportStrip;
 
 /// <summary>
 /// Plní hostitelský <see cref="Border"/> webovým widgetem podpora.m-line.cz - jediný funnel
-/// pro pruh podpory v shellu i widgety přihlašovací obrazovky. V screenshot módu
+/// pro pruh podpory v shellu. V screenshot módu
 /// (<c>EDISON_SCREENSHOT_MODE=1</c>, anonymizované obrazovky) místo webu ukáže neutrální popisek:
 /// WebView2 vůbec nevznikne, takže nic nesahá na síť ani na dark-mode Hidden logiku widgetu.
 /// </summary>

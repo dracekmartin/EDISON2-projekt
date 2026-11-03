@@ -31,7 +31,7 @@ public class SessionSwitcherTests
 
         private TestableSessionSwitcher(EDServices services, WireSpy wire, TestableSessionOpener opener,
                                         Func<bool> closeAllWindows, Action shutdown)
-            : base(services, () => null, opener, closeAllWindows, Substitute.For<IWindowStateStore>(), shutdown)
+            : base(services, () => null, opener, closeAllWindows, shutdown)
         {
             _wire = wire;
             Opener = opener;

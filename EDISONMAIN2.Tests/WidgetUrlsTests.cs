@@ -26,13 +26,4 @@ public class WidgetUrlsTests
 
         Assert.EndsWith("&idfa=&user=&email=", url);
     }
-
-    [Fact]
-    public void Edison2_PreLogin_CarriesIdfaOnly()
-    {
-        // Přihlašovací obrazovka zná firmu z pre-login MLRest, uživatele ani e-mail ještě ne.
-        var url = WidgetUrls.Edison2("ALVA", "", "");
-
-        Assert.EndsWith("&idfa=ALVA&user=&email=", url);
-    }
 }

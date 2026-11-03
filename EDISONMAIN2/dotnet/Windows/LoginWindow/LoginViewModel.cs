@@ -64,6 +64,10 @@ namespace EDISONMAIN2.Windows.LoginWindow
         /// <summary>Checkbox jen při startu - reauth session nepersistuje, byl by mrtvý.</summary>
         public bool ShowRemember => _prefs is not null;
 
+        /// <summary>Přihlášení jiného uživatele je malý dialog nad shellem. Start zabírá celé okno:
+        /// zůstává jako podklad průběhu, dokud se nevykreslí shell, a přebírá jeho geometrii.</summary>
+        public bool IsCompact => _prefs is null;
+
         /// <summary>Heslo do <c>PasswordBox</c> (nebindovatelný) při otevření okna.</summary>
         public string InitialPassword { get; }
 
@@ -175,12 +179,6 @@ namespace EDISONMAIN2.Windows.LoginWindow
             {
                 _prefs.SetRememberedPassword(_rest.Server, _rest.Port, null);
             }
-        }
-
-        /// <summary>Modální dialog (reauth) zavírá <c>IsCancel</c> sám; startup okno běží přes Show.</summary>
-        internal void Cancel()
-        {
-            if (_prefs is not null && !IsInProgress) CloseDialog(null);
         }
 
         internal void ShowProgress(string message) => ProgressMessage = message;

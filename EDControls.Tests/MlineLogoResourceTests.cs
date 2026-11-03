@@ -8,9 +8,10 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Vektorová loga sady: značka M-line (<c>EDIcons.MlineLogo</c>, ruční převod <c>mline-logo.svg</c>,
-/// složení dvou SVG matic, FillRule Nonzero) a logo EDISON (<c>EDIcons.Molecule</c>, <c>MoleculeLarge</c>).
+/// složení dvou SVG matic, FillRule Nonzero; <c>EDIcons.MlineMarkGeometry</c> z aktuální sady log pro
+/// přihlašovací okno) a logo EDISON (<c>EDIcons.Molecule</c>, <c>MoleculeLarge</c>).
 /// Regrese, kterou to hlídá: chyba v path datech nebo v matici se neprojeví výjimkou, jen prázdným /
-/// deformovaným <see cref="Image"/> (patička a hlavička přihlášení, ikona okna).
+/// deformovaným obrázkem (logo nad přihlášením, ikona okna).
 /// </summary>
 public class MlineLogoResourceTests
 {
@@ -20,6 +21,8 @@ public class MlineLogoResourceTests
 
     private const string IconsUri  = "pack://application:,,,/EDControls;component/EDIcons/EDIcons.xaml";
     private const string StylesUri = "pack://application:,,,/EDControls;component/EDControlStyles/EDControlStyles.xaml";
+    private const string ThemeUri  = "pack://application:,,,/EDControls;component/EDTheme/EDTheme.xaml";
+    private const string DarkUri   = "pack://application:,,,/EDControls;component/EDTheme/EDThemeDark.xaml";
 
     [Theory]
     [InlineData("EDIcons.MlineLogo")]
@@ -65,6 +68,30 @@ public class MlineLogoResourceTests
                                                .ToList();
 
             Assert.Equal(new[] { Color.FromRgb(0x1D, 0x5A, 0x82) }, brushes);
+        });
+    }
+
+    [Fact]
+    public void MlineMark_IsSquareGeometryFillingItsCanvas()
+    {
+        // Path s Stretch="Uniform" škáluje podle bounds: posunutá nebo useknutá data by logo zmenšila či zdeformovala.
+        EDTesting.Sta.Run(() =>
+        {
+            var mark = Load(IconsUri)["EDIcons.MlineMarkGeometry"] as Geometry;
+            Assert.NotNull(mark);
+            Assert.Equal(new Rect(0, 0, 614, 614), mark!.Bounds);
+            Assert.Equal(FillRule.EvenOdd, ((PathGeometry)PathGeometry.CreateFromGeometry(mark)).FillRule);
+        });
+    }
+
+    [Fact]
+    public void MlineLogoColor_IsBrandBlueInLightAndWhiteInDark()
+    {
+        // Sada log povoluje logo M-line jen v modré #003979, nebo bílé - jiný odstín v dark by porušil značku.
+        EDTesting.Sta.Run(() =>
+        {
+            Assert.Equal(Color.FromRgb(0x00, 0x39, 0x79), ((SolidColorBrush)Load(ThemeUri)["EDTheme.MlineLogo"]).Color);
+            Assert.Equal(Colors.White, ((SolidColorBrush)Load(DarkUri)["EDTheme.MlineLogo"]).Color);
         });
     }
 

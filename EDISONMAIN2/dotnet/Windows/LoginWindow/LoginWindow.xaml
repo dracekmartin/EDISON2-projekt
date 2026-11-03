@@ -1,7 +1,6 @@
 <Window x:Class="EDISONMAIN2.Windows.LoginWindow.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:edlogo="clr-namespace:EDControls.EDLogo;assembly=EDControls"
         Title="Přihlášení EDISON"
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
@@ -11,105 +10,111 @@
         Icon="{StaticResource EDIcons.Molecule}">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <!-- Accent.Blue z LinkButtonu by na tmavé brandové ploše zanikl. -->
+        <Style x:Key="BrandLink" TargetType="Button" BasedOn="{StaticResource EDTheme.LinkButton}">
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.BrandPanel.TextMuted}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource EDTheme.BrandPanel.LinkHover}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="440"/>
+            <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Border x:Name="LoginCard" Grid.Column="0"
-                Background="{DynamicResource EDTheme.Bg.Panel}"
-                BorderBrush="{DynamicResource EDTheme.Border.Light}"
-                BorderThickness="0,0,1,0">
+        <!-- Brandová plocha podle přihlášení portálu podpory. Dialog přihlášení jiného uživatele ji skrývá. -->
+        <Border x:Name="BrandPanel" Grid.Column="0" Padding="48,40"
+                Background="{DynamicResource EDTheme.BrandPanel.Bg}">
             <Grid>
-                <Border VerticalAlignment="Top" Height="160"
-                        Background="{DynamicResource EDTheme.Bg.PanelAlt}"
-                        BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <edlogo:EDLogo Width="56" Height="56" AnimationMode="Once"/>
-                        <TextBlock Text="EDISON" FontSize="{DynamicResource EDTheme.FontSize.Display}" FontWeight="Bold"
-                                   Foreground="{DynamicResource EDTheme.Text.Header}"
-                                   HorizontalAlignment="Center" Margin="0,8,0,0"/>
-                    </StackPanel>
-                </Border>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="360">
-                    <TextBlock Text="Uživatel:" Foreground="{DynamicResource EDTheme.Text.Primary}"
-                               Margin="0,0,0,4"/>
-                    <!-- PropertyChanged: OK přes Enter (IsDefault) přijde, než pole ztratí fokus. -->
-                    <TextBox x:Name="UsernameBox" Margin="0,0,0,12"
-                             Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}"
-                             IsEnabled="{Binding IsEditable}"/>
+                <TextBlock Grid.Row="0" Text="M-line EDISON" FontWeight="Bold"
+                           FontSize="{DynamicResource EDTheme.FontSize.Hero}"
+                           Foreground="{DynamicResource EDTheme.OnAccent.Text}"/>
 
-                    <TextBlock Text="Heslo:" Foreground="{DynamicResource EDTheme.Text.Primary}"
-                               Margin="0,0,0,4"/>
-                    <PasswordBox x:Name="PasswordBox" Margin="0,0,0,12" IsEnabled="{Binding IsEditable}"/>
-
-                    <CheckBox x:Name="RememberBox" Content="Zapamatovat heslo" Margin="0,0,0,12"
-                              IsChecked="{Binding RememberPassword}" IsEnabled="{Binding IsEditable}"
-                              Visibility="{Binding ShowRemember, Converter={StaticResource BoolToVis}}"/>
-
-                    <TextBlock x:Name="ErrorText" Foreground="{DynamicResource EDTheme.Semantic.Danger}"
-                               TextWrapping="Wrap" Margin="0,0,0,12" Text="{Binding ErrorMessage}"
-                               Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"/>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <!-- Progress startupu po úspěšném loginu - jen text, spinner by na blokovaném UI threadu
-                             zamrzl. Vlevo od tlačítek, ať zobrazení nehne layoutem. -->
-                        <TextBlock x:Name="ProgressText" Grid.Column="0" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                                   TextWrapping="Wrap" Margin="0,0,8,0" Text="{Binding ProgressMessage}"
-                                   Visibility="{Binding HasProgress, Converter={StaticResource BoolToVis}}"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button x:Name="OkBtn" Content="{StaticResource EDStrings.Ok}" Width="90"
-                                    IsDefault="True" Click="OkBtn_Click" Margin="0,0,8,0"
-                                    IsEnabled="{Binding IsEditable}"/>
-                            <Button x:Name="CancelBtn" Content="{StaticResource EDStrings.Cancel}" Width="90"
-                                    IsCancel="True" Click="CancelBtn_Click" IsEnabled="{Binding IsEditable}"/>
-                        </StackPanel>
-                    </Grid>
+                <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Left" MaxWidth="440">
+                    <TextBlock Text="Software pro veřejnou dopravu." TextWrapping="Wrap" FontWeight="SemiBold"
+                               FontSize="{DynamicResource EDTheme.FontSize.Display}"
+                               Foreground="{DynamicResource EDTheme.OnAccent.Text}"/>
+                    <TextBlock Margin="0,12,0,0" TextWrapping="Wrap"
+                               Text="Jízdní řády, plánování a řízení provozu, vozidla, tržby i ekonomika dopravce v jednom systému."
+                               Foreground="{DynamicResource EDTheme.BrandPanel.TextMuted}"/>
                 </StackPanel>
 
-                <!-- Patička karty: značka dodavatele + prokliky na web a portál podpory.
-                     Musí zůstat v levém sloupci - přes WebView2 widgety vpravo se WPF obsah
-                     kvůli airspace nevykreslí. -->
-                <Border VerticalAlignment="Bottom" Padding="16,10"
-                        Background="{DynamicResource EDTheme.Bg.PanelAlt}"
-                        BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Image Source="{StaticResource EDIcons.MlineLogo}" Width="36" Height="36"
-                               VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="M-line software s.r.o."
-                                       Foreground="{DynamicResource EDTheme.Text.Primary}"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                <Button Style="{StaticResource EDTheme.LinkButton}" Margin="0,0,12,0"
-                                        Content="www.m-line.cz" Click="MlineWeb_Click"/>
-                                <Button Style="{StaticResource EDTheme.LinkButton}"
-                                        Content="podpora.m-line.cz" Click="MlineSupport_Click"/>
-                            </StackPanel>
-                        </StackPanel>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Text="M-line software s.r.o."
+                               Foreground="{DynamicResource EDTheme.BrandPanel.TextMuted}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <Button Style="{StaticResource BrandLink}" Content="www.m-line.cz" Click="MlineWeb_Click"/>
+                        <TextBlock Text="·" Margin="8,0"
+                                   Foreground="{DynamicResource EDTheme.BrandPanel.TextMuted}"/>
+                        <Button Style="{StaticResource BrandLink}" Content="podpora.m-line.cz" Click="MlineSupport_Click"/>
                     </StackPanel>
-                </Border>
+                </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Týž widget podpory jako fixní pruh shellu - jeden blok, ne mirror tří miniaplikací. -->
-        <Grid x:Name="SupportPanel" Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <Border Grid.Row="0" Background="{DynamicResource EDTheme.Bg.Footer}" Padding="12,6">
-                <TextBlock Text="Informace podpory" FontWeight="SemiBold"
-                           Foreground="{DynamicResource EDTheme.Text.Header}"/>
-            </Border>
-            <Border x:Name="SupportHost" Grid.Row="1" Background="{DynamicResource EDTheme.Bg.Base}"/>
+        <Grid x:Name="FormArea" Grid.Column="1">
+            <!-- Glyph a popisek nastavuje code-behind podle aktuálního motivu. -->
+            <Button x:Name="ThemeToggle" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="12"
+                    Style="{StaticResource EDTheme.ToolbarButton}" Click="ThemeToggle_Click">
+                <TextBlock x:Name="ThemeGlyph" FontFamily="Segoe MDL2 Assets"
+                           FontSize="{DynamicResource EDTheme.IconSize.Default}"
+                           Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+            </Button>
+
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="360" Margin="32">
+                <Path Width="112" Height="112" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,36"
+                      Data="{StaticResource EDIcons.MlineMarkGeometry}" Fill="{DynamicResource EDTheme.MlineLogo}"/>
+
+                <TextBlock Text="Uživatel" Style="{StaticResource FieldLabel}"/>
+                <!-- PropertyChanged: OK přes Enter (IsDefault) přijde, než pole ztratí fokus. -->
+                <TextBox x:Name="UsernameBox" Margin="0,0,0,12"
+                         Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsEditable}"/>
+
+                <TextBlock Text="Heslo" Style="{StaticResource FieldLabel}"/>
+                <PasswordBox x:Name="PasswordBox" Margin="0,0,0,12" IsEnabled="{Binding IsEditable}"/>
+
+                <CheckBox x:Name="RememberBox" Content="Zapamatovat heslo" Margin="0,0,0,12"
+                          IsChecked="{Binding RememberPassword}" IsEnabled="{Binding IsEditable}"
+                          Visibility="{Binding ShowRemember, Converter={StaticResource BoolToVis}}"/>
+
+                <TextBlock x:Name="ErrorText" Foreground="{DynamicResource EDTheme.Semantic.Danger}"
+                           TextWrapping="Wrap" Margin="0,0,0,12" Text="{Binding ErrorMessage}"
+                           Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"/>
+
+                <!-- Zrušení je křížek okna nebo Esc (code-behind). -->
+                <Button x:Name="OkBtn" Content="Přihlásit se" Style="{StaticResource EDTheme.PrimaryButton}" Margin="0,4,0,0"
+                        IsDefault="True" Click="OkBtn_Click" IsEnabled="{Binding IsEditable}"/>
+
+                <!-- Progress startupu po úspěšném loginu - jen text, spinner by na blokovaném UI threadu
+                     zamrzl. Hidden, ne Collapsed: řádek je rezervovaný a zobrazení nehne vycentrovaným formulářem. -->
+                <TextBlock x:Name="ProgressText" Margin="0,12,0,0" TextWrapping="Wrap"
+                           Foreground="{DynamicResource EDTheme.Text.Secondary}" Text="{Binding ProgressMessage}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasProgress}" Value="False">
+                                    <Setter Property="Visibility" Value="Hidden"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
         </Grid>
     </Grid>
 </Window>

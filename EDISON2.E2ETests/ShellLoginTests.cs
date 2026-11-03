@@ -36,7 +36,7 @@ public class ShellLoginTests
     }
 
     [E2EFact]
-    public void Login_UnknownUserThenCancel_ExitsWithoutShell()
+    public void Login_UnknownUserThenClosed_ExitsWithoutShell()
     {
         using var shell = ShellSession.StartWithLogin();
         var login = shell.WaitForStartupWindow(LoginTitle);
@@ -48,7 +48,8 @@ public class ShellLoginTests
         shell.WaitFor(() => login.FindFirstDescendant(cf => cf.ByAutomationId("ErrorText")) is { Name.Length: > 0 } error
                           ? error : null, "chyba přihlášení v okně");
         Assert.False(shell.HasMainWindow, "Shell vznikl bez přihlášení.");
-        shell.Button(login, "CancelBtn").Invoke();
+        // Okno nemá Storno, zrušení je křížek.
+        login.Close();
         shell.WaitForExit();
 
         Assert.Equal(0, shell.ExitCode);

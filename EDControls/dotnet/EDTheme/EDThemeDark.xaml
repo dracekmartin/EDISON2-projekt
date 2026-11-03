@@ -75,6 +75,14 @@
     <Color x:Key="EDTheme.Accent.BlueBorder.Color">#FF3A5F86</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueBorder" Color="{StaticResource EDTheme.Accent.BlueBorder.Color}"/>
 
+    <!-- Primární tlačítko - plocha zůstává sytá kvůli bílému textu, hover naopak zesvětlí (jako portál podpory) -->
+    <Color x:Key="EDTheme.PrimaryButton.Bg.Color">#FF2563EB</Color>
+    <SolidColorBrush x:Key="EDTheme.PrimaryButton.Bg" Color="{StaticResource EDTheme.PrimaryButton.Bg.Color}"/>
+    <Color x:Key="EDTheme.PrimaryButton.BgHover.Color">#FF3B82F6</Color>
+    <SolidColorBrush x:Key="EDTheme.PrimaryButton.BgHover" Color="{StaticResource EDTheme.PrimaryButton.BgHover.Color}"/>
+    <Color x:Key="EDTheme.PrimaryButton.BgPressed.Color">#FF1D4ED8</Color>
+    <SolidColorBrush x:Key="EDTheme.PrimaryButton.BgPressed" Color="{StaticResource EDTheme.PrimaryButton.BgPressed.Color}"/>
+
     <!-- Focus - ring jasnější než Accent.Blue (1,5px linka v accent odstínu je na
          Bg.Surface slabá), halo tmavé, aby ring vystoupil i na světlém brandovém pruhu. -->
     <Color x:Key="EDTheme.Focus.Ring.Color">#FF7CC4FF</Color>
@@ -91,6 +99,10 @@
     <!-- Brand (o něco světlejší pro kontrast na tmavém) -->
     <Color x:Key="EDTheme.Brand.Color">#FFC79A5A</Color>
     <SolidColorBrush x:Key="EDTheme.Brand" Color="{StaticResource EDTheme.Brand.Color}"/>
+
+    <!-- Logo M-line - sada log povoluje jen modrou, nebo bílou -->
+    <Color x:Key="EDTheme.MlineLogo.Color">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="EDTheme.MlineLogo" Color="{StaticResource EDTheme.MlineLogo.Color}"/>
 
     <!-- Support panel. Accent nese bílou šipku úchytu i titulek na tmavé kartě - proto
          středně tmavá zelená (světlejší odstín by bílou šipku utopil, kontrast < 2:1). -->

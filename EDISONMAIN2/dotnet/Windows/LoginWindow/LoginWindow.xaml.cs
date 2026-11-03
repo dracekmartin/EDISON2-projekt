@@ -1,18 +1,14 @@
 using System.Windows;
+using System.Windows.Automation;
+using EDControls;
 using EDControls.EDSupportPanel;
-using EDISONMAIN2.SupportStrip;
+using EDControls.EDTheme;
 
 namespace EDISONMAIN2.Windows.LoginWindow
 {
     public partial class LoginWindow : Window
     {
         private readonly LoginViewModel _vm;
-
-        // Přechodně vypnuto: přihlášení zabere celé okno místo pravého sloupce s widgetem a WebView2 nevznikne.
-        private const bool SupportWidgetEnabled = false;
-
-        // Widget podpory (WebView2) - pre-login, bez session.
-        private IDisposable? _supportWidget;
 
         internal LoginWindow(LoginViewModel vm)
         {
@@ -33,35 +29,71 @@ namespace EDISONMAIN2.Windows.LoginWindow
                 if (e.PropertyName == nameof(LoginViewModel.IsInProgress))
                     Cursor = _vm.IsInProgress ? System.Windows.Input.Cursors.Wait : null;
             };
+            // Esc jako dřív tlačítko Storno: start tím končí aplikaci, dialog vrací zrušení.
+            // Během progress fáze zavření vetuje Closing.
+            PreviewKeyDown += (_, e) =>
+            {
+                if (e.Key != System.Windows.Input.Key.Escape) return;
+                e.Handled = true;
+                Close();
+            };
 
             PasswordBox.Password = vm.InitialPassword;
             switch (vm.InitialFocus)
             {
                 case LoginFocus.Username:
                     UsernameBox.Focus();
-                    UsernameBox.SelectAll();
                     break;
                 case LoginFocus.Password:
                     PasswordBox.Focus();
                     break;
+                case LoginFocus.LoginButton:
+                    OkBtn.Focus();
+                    break;
             }
 
-            if (!SupportWidgetEnabled)
+            if (vm.IsCompact)
             {
-                SupportPanel.Visibility = Visibility.Collapsed;
-                System.Windows.Controls.Grid.SetColumnSpan(LoginCard, 2);
-                LoginCard.BorderThickness = new Thickness(0);
+                UseDialogLayout();
                 return;
             }
 
-            // Týž widget podpory jako fixní pruh shellu; pre-login nese jen IdFa - uživatel
-            // ještě není ověřený. Dekorace: jeho (ne)načtení nesmí blokovat login.
-            _supportWidget = SupportWidgetHost.Fill(SupportHost,
-                WidgetUrls.Edison2(vm.Idfa, "", ""),
-                "Informační panel podpory - novinky a upozornění IT pro uživatele");
-            // FontZoomWebView drží statické eventy (Font/Theme) → bez dispose leak; Closed jde na OK i Cancel.
-            Closed += (_, _) => _supportWidget?.Dispose();
+            UpdateThemeToggle();
+            ThemeService.Applied += UpdateThemeToggle;
+            // Statický event - bez odhlášení by zavřené okno zůstalo v paměti.
+            Closed += (_, _) => ThemeService.Applied -= UpdateThemeToggle;
         }
+
+        // Malý dialog uprostřed shellu: brandová plocha přes celou obrazovku by zakryla rozdělanou práci.
+        private void UseDialogLayout()
+        {
+            BrandPanel.Visibility = Visibility.Collapsed;
+            // Shell má přepínač motivu v menu Nastavení.
+            ThemeToggle.Visibility = Visibility.Collapsed;
+            WindowState = WindowState.Normal;
+            ClearValue(WidthProperty);
+            ClearValue(HeightProperty);
+            MinWidth = 0;
+            MinHeight = 0;
+            SizeToContent = SizeToContent.WidthAndHeight;
+            ResizeMode = ResizeMode.NoResize;
+            ShowInTaskbar = false;
+            Loaded += (_, _) => OwnerWindowCentering.CenterOnOwner(this);
+        }
+
+        private void UpdateThemeToggle()
+        {
+            bool dark = ThemeService.Current == AppTheme.Dark;
+            // Segoe MDL2: E706 slunce, E708 měsíc - ikona ukazuje režim, na který se přepne.
+            ThemeGlyph.Text = dark ? "" : "";
+            var label = dark ? "Světlý režim" : "Tmavý režim";
+            ThemeToggle.ToolTip = label;
+            AutomationProperties.SetName(ThemeToggle, label);
+        }
+
+        // Preference je per Windows uživatel a sdílená mezi procesy, session k ní není potřeba.
+        private void ThemeToggle_Click(object sender, RoutedEventArgs e) =>
+            ThemeService.SetDarkMode(ThemeService.Current != AppTheme.Dark);
 
         private void MlineWeb_Click(object sender, RoutedEventArgs e) => OpenExternal(SupportActions.WebUrl);
 
@@ -87,7 +119,5 @@ namespace EDISONMAIN2.Windows.LoginWindow
             PasswordBox.Clear();
             PasswordBox.Focus();
         }
-
-        private void CancelBtn_Click(object sender, RoutedEventArgs e) => _vm.Cancel();
     }
 }

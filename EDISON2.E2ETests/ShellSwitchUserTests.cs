@@ -67,7 +67,8 @@ public class ShellSwitchUserTests
         // Login okno naskočí hned po potvrzení, čekání na zavření potvrzení by ho vzalo za nečekané.
         var login = shell.WaitForWindow(LoginTitle);
         shell.WaitUntilClosed("Potvrzení");
-        shell.Button(login, "CancelBtn").Invoke();
+        // Okno nemá Storno, zrušení je křížek.
+        login.Close();
         shell.WaitUntilClosed(LoginTitle);
 
         Assert.Contains(DebugUser, shell.StatusBarTexts());

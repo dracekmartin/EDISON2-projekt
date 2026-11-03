@@ -368,4 +368,9 @@
         </DrawingImage.Drawing>
     </DrawingImage>
 
+    <!-- Značka M-line z aktuální sady log (mline-m-*.svg, plátno 614×614, FillRule EvenOdd = default
+         WPF). Holá geometrie, ne DrawingImage: logo smí být jen modré, nebo bílé, takže ho kreslí Path
+         s tokenem EDTheme.MlineLogo, který dark režim přepíná. -->
+    <Geometry x:Key="EDIcons.MlineMarkGeometry">M56,0H558C588.93,0 614,25.07 614,56V558C614,588.93 588.93,614 558,614H56C25.07,614 0,588.93 0,558V56C0,25.07 25.07,0 56,0ZM56,23.5H558C575.95,23.5 590.5,38.05 590.5,56V558C590.5,575.95 575.95,590.5 558,590.5H56C38.05,590.5 23.5,575.95 23.5,558V56C23.5,38.05 38.05,23.5 56,23.5ZM83.5,555 L212,555 L212,430 L307,574.5 L402,430 L402,555 L530.5,555 L555.5,59 L370,59 L307,205 L244,59 L58.5,59ZM228.55,82.5 L307,264.31 L385.45,82.5 L530.79,82.5 L508.15,531.5 L425.5,531.5 L425.5,351.48 L307,531.72 L188.5,351.48 L188.5,531.5 L105.85,531.5 L83.21,82.5Z</Geometry>
+
 </ResourceDictionary>

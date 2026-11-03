@@ -19,7 +19,8 @@ bootstrapperu jedou s falešným. Login okno (jen dialog cesta, ne `DevLogin`) p
 se až na shell `ContentRendered`; `HandOff` (všechny cesty) musí dát `Application.MainWindow` na shell **před**
 `OnMainWindowClose` (v dialog cestě ho drží otevřené login okno) - jinak app umře, nebo proces nemá konec.
 Geometrie (`ShellWindowBoundsByServer`) je **jedna pro shell i login okno** (před loginem není session): login ji jen
-**čte**, zapisuje ji shell a jednou bootstrapper hned po přihlášení (při zavření je pozdě, shell ji čte dřív). Ona,
+**čte**, zapisuje ji shell a jednou bootstrapper hned po přihlášení (při zavření je pozdě, shell ji čte dřív); přihlášení
+jiného uživatele je malý dialog vycentrovaný na shell (`LoginViewModel.IsCompact`) a geometrii nebere. Ona,
 firma, jméno i heslo (DPAPI blob, předvyplní se jen ke jménu z blobu) jsou **per server** (`ServerPrefs`, `server:port`).
 Globální hodnoty starší verze se jen čtou: geometrie pro server bez záznamu, firma, dokud žádný server nemá vlastní.
 

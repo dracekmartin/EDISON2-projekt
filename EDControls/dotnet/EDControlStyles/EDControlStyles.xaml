@@ -1817,7 +1817,7 @@
     </Style>
 
     <!-- Odkaz vypadající jako odkaz: tlačítko bez plochy, akcentová barva, podtržení na hover.
-         Keyed - opt-in (akční odkaz EDInfoBaru, patička přihlašovací obrazovky shellu).
+         Keyed - opt-in (akční odkaz EDInfoBaru, odkazy na brandové ploše přihlašovací obrazovky shellu).
          BasedOn kvůli font tokenům: šablona je holý TextBlock, takže bez něj by odkaz
          nereagoval na user škálování fontu. -->
     <Style x:Key="EDTheme.LinkButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
@@ -1831,6 +1831,47 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Glyph" Property="TextDecorations" Value="Underline"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Primární akce formuláře (Přihlásit se): plná modrá s bílým textem jako na portálu podpory.
+         Keyed - opt-in. Vlastní šablona: implicitní Button na hover přebarví plochu na Bg.Hover
+         a bílý text by na ní zmizel. BasedOn kvůli font tokenům a focus visual. -->
+    <Style x:Key="EDTheme.PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Background" Value="{DynamicResource EDTheme.PrimaryButton.Bg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource EDTheme.OnAccent.Text}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}" CornerRadius="6" SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          RecognizesAccessKey="True">
+                            <!-- Implicitní styl TextBlocku z aplikace nastavuje Text.Primary i textu v šabloně
+                                 a přebil by zděděnou bílou; v light by text na modré ztmavl. -->
+                            <ContentPresenter.Resources>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Setter Property="Foreground"
+                                            Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.PrimaryButton.BgHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.PrimaryButton.BgPressed}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.6"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
