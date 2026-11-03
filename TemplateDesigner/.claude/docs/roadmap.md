@@ -26,10 +26,9 @@
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **do příští verze (Jan 2. 11.)**, obě strany děláme my.
   Okno JŘ → Tisky → „Tisk linkového JŘ (nový)": formulář se šablonou, parametry a složkou, PDF bez návrháře.
   Hotové kroky 1-3 (linkový JŘ AD); položka je zákazníkům skrytá, na DEV ji zapne `^JRR("TiskNovymNavrharem")=1`.
-  Krok 4 (2. 11.): výchozí šablonu nastavuje okno šablon (Ctrl+O); do vydání je v okně schované vše o tisku (tlačítko,
-  řádek „Pro tisk" ve stromu, sloupec a tučná šablona v seznamu - Jan 3. 11., mátlo). Vrátit s popisem, k čemu slouží.
-  Zbývá: odladit nastavení výchozí šablony (např. u varianty ve stromu), výchozí šablona M-line i pro ostatní agendy JŘ
-  (dnes jen linkový AD), zastávkový JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
+  Krok 4: výchozí šablona se napojí na sjednocené okno šablon (3. 11., archiv) - do formuláře Upravit nebo do řádku pod
+  seznamem; do té doby je tam vše o tisku schované (mátlo). Zbývá i výchozí šablona M-line pro ostatní agendy JŘ (dnes jen
+  linkový AD) a zastávkový JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
 
 - **Vyřazení a oprava šablon M-line u zákazníků** [M] (Jan 3. 11.). Návrhář šablony M-line při startu do databáze
   zapisuje, odebrat je neumí: vyřazená šablona zůstane u zákazníka napořád (první případ: linkový JŘ AD má 3 šablony M-line,
@@ -37,14 +36,10 @@
   seznam vyřazených šablon v návrháři, soubor A5 přesunout k testům (vzor pro import z PDF a zkoušku tisku).
   Promyslet i opravu („patch") už doručené šablony a vztah ke kanálu z helpdesku.
 
-- **Kdo smí měnit a odstraňovat šablony firmy, osobní šablony, nová verze předlohy M-line** [?] (Jan 3. 11., k rozmyšlení
-  spolu s `B189`). Dnes šablonu firmy upraví i odstraní kdokoli z firmy; autor se ukládá, ale nepoužívá.
-
-- **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
-  dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),
-  mezi firmami jen *Exportovat do souboru* / *Importovat ze souboru*, a M-line rozesílá systémové
-  šablony kanálem z helpdesku (`SystemTemplateChannelSync`). Otevřené: mezi firmami, nebo uvnitř
-  firmy (sdílet / nabídnout konkrétnímu kolegovi)?
+- **`B189` Sdílení šablon** [?] (podnět Jan 7. 10., rozšířeno 3. 11., **návrh s Janem**, nic se nedělá). Dnes šablony
+  patří firmě: upraví i odstraní je kdokoli z firmy (autor se ukládá, nepoužívá), mezi firmami jen export a import souboru,
+  M-line rozesílá své kanálem z helpdesku. Otevřené: sdílení mezi firmami, nebo uvnitř firmy (kolegovi, osobní šablony),
+  kdo smí měnit a odstraňovat, a upozornění, že vyšla novější předloha M-line, ze které je kopie.
 
 - **Vyhledávač odjezdů pro cestující** [M] (zadání Jan 13. 10.). QR u sloupku (zastávka a stanoviště)
   otevře aplikaci v ISYCloud: cestující zadá cíl a dozví se nejbližší přímé spoje odsud, data z CIS.
