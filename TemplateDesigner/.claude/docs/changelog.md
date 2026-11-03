@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-11-03 (2) - Okno šablon do verze bez nastavování výchozí šablony a bez sloupců Kým a Autor
+
+Tisk z okna JŘ, kterému výchozí šablona slouží, do verze nejde (domluva s kolegou), a ovládání při zkoušení mátlo: šablona M-line nastavená jako výchozí firmy vzala výchozí šabloně M-line označení a seznam s víc agendami ukazoval víc „výchozích firmy".
+Tlačítko „Nastavit jako výchozí pro tisk" je proto do příští verze schované (Jan 3. 11.); okno dál ukazuje, která šablona je výchozí, takže uživatel vidí výchozí šablonu M-line. Testovací výchozí šablony firmy CB_CSADAD na DEV jsou smazané.
+Sloupce Kým a Autor jsou skryté (údaje se dál ukládají), v přehledu uživateli nic neříkaly.
+Sjednocení s oknem „Změnit agendu" je v roadmapě k rozmyšlení.
+
 ## 2026-11-03 - Úvodní obrazovka přes celé okno, bez nabídky SQL a CSV (příprava verze)
 
 Úvodní obrazovka ležela jen v ploše plátna: panel náhledu ji při roztažení odsunul nebo ořízl a na rozcestník působila divně (Jan).
