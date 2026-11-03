@@ -155,7 +155,7 @@ Method TestVyrazeniSablonyMline()
 	do ..Uloz(..#Mline, "ML-A5", "A5 postskript", ..#Agenda)
 	do ##class(ALVA.TemplateDesigner.API.SablonyProTisk).WriteVychoziFirmy(..#Firma, ..#Agenda, "ML-A5", ..#Mline)
 
-	do $$$AssertEquals(..Vyrad("ML-A5", 0), "", "bez distribuce: chyba")
+	do $$$AssertEquals(..Vyrad("ML-A5", 0), "chyba", "bez distribuce: chyba")
 	do $$$AssertTrue($data(^ALVA.TemplateDesigner.Templates(..#Mline,"DTA","ML-A5")), "bez distribuce šablona zůstala")
 
 	do $$$AssertEquals(..Vyrad("ML-A5"), "1", "vyřazení: šablona ve větvi byla")
@@ -169,7 +169,7 @@ Method TestVyrazeniSablonyMline()
 	do $$$AssertEquals(..Vyrad("ML-A5"), "0", "opakované vyřazení: nic k smazání, bez chyby")
 }
 
-/// Vyřadí šablonu přes API v testovací větvi M-line; vrací OUT deleted, při chybě "".
+/// Vyřadí šablonu přes API v testovací větvi M-line; vrací OUT deleted, při chybě API "chyba" (chyba je v ^||ML("ERR")).
 Method Vyrad(templateId As %String, distribuce As %Boolean = 1) As %String
 {
 	kill ^||ML
@@ -178,7 +178,7 @@ Method Vyrad(templateId As %String, distribuce As %Boolean = 1) As %String
 	set ^||ML("IN","targetIdFa")   = ..#Mline
 	set:distribuce ^||ML("IN","distribution") = "1"
 	do ##class(ALVA.TemplateDesigner.API.Sablony).RetireTemplate(.sys)
-	set vysledek = $select($data(^||ML("OUT","ERR")):"", 1:$get(^||ML("OUT","deleted")))
+	set vysledek = $select($get(^||ML("ERR"))'="":"chyba", 1:$get(^||ML("OUT","deleted")))
 	kill ^||ML
 	quit vysledek
 }

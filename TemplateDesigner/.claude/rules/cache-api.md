@@ -87,7 +87,9 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
   `OblastPrace` (větev stromu šablon v okně Ctrl+O, kód z `AgendyRegistr.OblastiPrace`; neznámá = Ostatní, hlídá `StromSablonTest`), `ElementKind`,
   `InstanceParamName`, `CustomColumns`, `VariantyTras`, `RozdilyVerzi`, `Released` (bez něj se agenda uživatelům nenabízí),
   `InstanceTvary` + `InstanceRod` (jak se jmenuje to, co agenda tiskne - tvary pádů a rod; návrhář z nich skládá
-  texty oken a hlášek, obecný text „linku" napevno nepíše, hlídá `NazevInstanceTests`).
+  texty oken a hlášek, obecný text „linku" napevno nepíše, hlídá `NazevInstanceTests`),
+  `ParametryJenVeFirme` (předpony parametrů sestavy s číslem z číselníku firmy - šablona poslaná jiné firmě
+  jejich hodnoty nenese; čte jen server, registr ho návrháři neposílá).
 - **Každá metoda s `ByRef sys`** dodržuje pravidla 14-15 níž, nebo jen přesměruje na metodu jiné agendy
   (`q ##class(…).X(.sys)`); hlídá `OsetreniChybAgendTests`.
 - **Vzorem jsou agendy JŘ** (`ZastavkoveJrAd`, `LinkovyJrAd`). Ukázková agenda Faktury bez zdroje dat je od 30. 10. smazaná

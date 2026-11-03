@@ -52,6 +52,9 @@ Parameter InstanceTvary As %String = "linka,linky,linku,linky,linek";
 /// agendy (Jan 3. 11.).
 Parameter VychoziSablonaMline As %String = "bde92703-ccd9-4fe0-adf2-f6fbf976041f";
 
+/// Výběr typů provozu - id typu je číslo v rámci firmy (`ParametrTypuProvozu`).
+Parameter ParametryJenVeFirme As %String = "TYP_PROVOZU_";
+
 /// Vrátí DataSchema - shodné s LinkovyJrAd (stejný wire formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {

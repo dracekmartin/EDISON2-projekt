@@ -93,6 +93,11 @@ Parameter RozdilyVerzi As %Boolean = 0;
 /// M-line vydáním třídy; prázdné = agenda výchozí šablonu M-line nemá.
 Parameter VychoziSablonaMline As %String = "";
 
+/// Předpony názvů parametrů sestavy, jejichž hodnota platí jen ve firmě (číslo z číselníku firmy), čárkou.
+/// Šablona poslaná jiné firmě je nenese (`API.SdileniSablon`, `B189`): u příjemce by znamenaly jiný záznam.
+/// Předpona, ne výčet z nabídky - uložená hodnota může patřit typu, který firma mezitím zablokovala.
+Parameter ParametryJenVeFirme As %String = "";
+
 /// Druh JŘ elementů, které agenda podporuje - řídí kontextové menu/paletu okna.
 /// "STOP" = zastávkové (StopList/DepartureGrid/NotesLegend), "LINE" = knižní/linkové
 /// (LineTable), "" = bez JŘ kontextu (okno ukáže všechny). C# vlastní mapování druh→typy.

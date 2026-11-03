@@ -13,13 +13,14 @@ Class ALVA.TemplateDesigner.API.StromSablon Extends %RegisteredObject
 Parameter MlineIdFa = "MLINE";
 
 /// OUT["1"] = JSON
-///   { "tiskZModulu", "oblasti": [ { "code", "label", "agendy": [ { "code", "label",
+///   { "tiskZModulu", "sdileni", "oblasti": [ { "code", "label", "agendy": [ { "code", "label",
 ///       "varianty": [ { "code" (AgendaVariantCode), "label", "pocet", "tiskne", "vychozi": { "templateId", "name", "zdroj" } } ]
 ///   } ] } ] }
 /// Varianta s prázdným `label` = agenda bez variant (Obecná, agendy report generátoru); `tiskne` = agenda se tiskne
 /// z modulu a smí mít výchozí šablonu (Obecná ne); `vychozi.zdroj` = firma | mline, bez šablony pro tisk prázdný objekt.
 /// `tiskZModulu` = tisk z okna jízdních řádů je zapnutý (týž přepínač jako položka v okně JŘ, repo EDISON
 /// `ISYJR2/TEMPLATES/Tisk.cls`): bez něj okno šablon výchozí šablonu neukazuje, nastavení by nemělo účinek.
+/// `sdileni` = okno nabízí posílání šablon jiným firmám (`API.SdileniSablon.JeZapnute`, `B189`).
 ClassMethod GetStrom(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -28,6 +29,7 @@ ClassMethod GetStrom(ByRef sys As %String) As %Status
 
         s strom = ..Strom(IdFa)
         d strom.%Set("tiskZModulu", ##class(ALVA.TemplateDesigner.API.SablonyProTisk).JeTiskZModulu(dataDB), "boolean")
+        d strom.%Set("sdileni", ##class(ALVA.TemplateDesigner.API.SdileniSablon).JeZapnute(), "boolean")
         s ^||ML("OUT","1") = strom.%ToJSON()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK

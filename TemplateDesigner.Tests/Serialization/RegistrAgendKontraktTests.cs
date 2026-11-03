@@ -21,11 +21,17 @@ public class RegistrAgendKontraktTests
         return Regex.Match(zdroj, @"ClassMethod ListAgendy\(.*?\n\}", RegexOptions.Singleline).Value;
     }
 
+    /// <summary>Parametry agendy, které čte jen server; návrháři je registr neposílá.</summary>
+    private static readonly Dictionary<string, string> JenProServer = new()
+    {
+        ["ParametryJenVeFirme"] = "čte ho jen odeslání šablony jiné firmě (API.SdileniSablon), návrhář s ním nepracuje",
+    };
+
     [Fact]
     public void RegistrPosilaKazdyParametrAgendy()
     {
         var parametry = ParametrTridy.Matches(File.ReadAllText(RepoCesty.Cache("Agendy", "BaseAgenda.cls")))
-            .Select(m => m.Groups[1].Value).ToList();
+            .Select(m => m.Groups[1].Value).Where(p => !JenProServer.ContainsKey(p)).ToList();
         var cteRegistr = Regex.Matches(ListAgendy(), @"\$parameter\(className, ""(\w+)""\)").Select(m => m.Groups[1].Value).ToHashSet();
 
         Assert.True(parametry.Count >= 10, $"v BaseAgenda se našlo jen {parametry.Count} parametrů - hledání je rozbité");
