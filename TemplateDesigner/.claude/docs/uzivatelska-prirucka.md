@@ -1332,7 +1332,8 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 ### 6. Postup krok za krokem (linkový JŘ)
 
 1. **Založte šablonu se správnou agendou** - `Nástroje → Změnit agendu` (Ctrl+Shift+A), Linkový JŘ.
-   Rychlejší start: otevřete jednu ze dvou výchozích šablon se zdrojem **M-line** (Ctrl+O) -
+   Rychlejší start: otevřete jednu z výchozích šablon se zdrojem **M-line** (Ctrl+O) -
+   *poznámky pod tabulkou A4* (A4 na šířku, poznámky přes celou šířku pod tabulkou; výchozí šablona agendy),
    *postskriptový vzhled A5* (A5 na šířku, poznámky pod tabulkou, jako starý postskriptový tisk)
    nebo *poznámky vedle tabulky A4* (A4 na šířku, poznámky vpravo vedle tabulky).
 2. **Postavte hlavičku** - textové prvky s poli linky; sekci nechte „na každé stránce".
