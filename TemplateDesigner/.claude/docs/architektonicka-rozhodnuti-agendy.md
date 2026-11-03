@@ -374,7 +374,7 @@ tatáž oprava na víc místech a nikdo neví, na kterých.
 
 ---
 
-## R9. Sdílení šablon mezi firmami (`B189`) - NÁVRH 3. 11. 2026
+## R9. Sdílení šablon mezi firmami (`B189`) - rozhodnuto 3. 11. 2026, odeslání i příjem zatím jen na DEV
 
 **Cesta.** Obecné sdílení dat mezi firmami EDISONu v ISYCloudu (edwcore `apps/isycloud/docs/sdileni/api-edison.md`):
 zásilka od firmy pro 1 až 100 firem se soubory, stav u každého příjemce, e-mail o přijetí, vlákno v portálu.
@@ -385,17 +385,19 @@ Vlastní kanál návrhář nestaví. Sdílení firmě povoluje administrátor IS
   výběr v okně šablon, každá šablona jeden soubor JSON ve tvaru exportu. API dovolí 20 souborů v zásilce.
 - **Hodnoty platné jen ve firmě** (vybrané typy provozu, skupiny linek…) se při odeslání vymažou a u příjemce
   platí výchozí, stejně jako u šablon M-line (`B191f`).
-- **Přijaté šablony jsou v okně šablon** (uzel Přijaté šablony). Když firmě něco přijde, návrhář ukáže pruh
-  s informací, který jde zavřít; vzhled se doladí.
+- **Přijaté šablony jsou v okně šablon** (uzel Přijaté šablony, řádek = zásilka). Když firmě něco přijde, hlavní okno
+  ukáže pruh s tlačítkem Zobrazit (okno šablon v Přijatých) a křížkem; zavřený se vrátí s další zásilkou. Vzhled se doladí.
+- **Zásilka se převezme nebo odmítne celá** (Jan 3. 11.; API odmítne jen celou): akce Převzít a Odmítnout u řádku
+  zásilky. Šablona, kterou převzít nejde, zastaví převzetí celé zásilky dřív, než se cokoli uloží.
 - **Převzatá šablona je vlastní šablonou firmy** (nové Id) a pamatuje si původ: firmu odesílatele a Id šablony u ní.
   Přijde-li šablona téhož původu znovu, okno nabídne aktualizaci; u převzaté, kterou firma mezitím upravila,
   se zeptá, zda přepsat, nebo uložit jako novou. Vazba nejde přes `externiId` - to platí pro celou zásilku.
+  Upravená = od převzetí uložená nebo přejmenovaná (značka `PuvodBezUprav`, `API.Sablony.WriteMetadata` ji maže).
+  Uložení jako nové přenese původ na novou kopii a dřívější převzatá je dál obyčejnou vlastní šablonou, aktualizace
+  pak míří vždy na jednu šablonu (volba při implementaci 3. 11., Jan může vetovat).
 - **Převzít jde jen šablonu agendy, kterou příjemce má, a formátu, který jeho návrhář umí**; jinak hláška.
 - **Firma bez povoleného sdílení:** akce zůstane vidět, po kliknutí řekne, že sdílení povoluje podpora M-line.
 - **Návrhář jen odesílá a přijímá.** Kdo komu co poslal a kdo převzal, ukazuje portál ISYCloudu.
-
-**Navrženo, k potvrzení:** z víceprvkové zásilky uživatel převezme vybrané šablony a zbytek odmítne; ISYCloudu
-se zásilka ohlásí jako načtená, až je vyřízená celá (odmítnout jde v API jen celou zásilku).
 
 **Typ dat `SABLONA`** si přidala agenda sama migrací v edwcore (`TypSablona`, 3. 11., každá agenda si typ dělá sama):
 bez kontroly obsahu, atribut `sablony` = názvy pro portál, `verzeStruktury` 1 (verze formátu je uvnitř JSON).
@@ -403,8 +405,11 @@ Typ `SOUBOR` ne: typ zásilky je filtr příjmu, se `SOUBOR` by se šablony míc
 **Klient API běží v Caché** (`Sdileni.Klient`), ne v návrháři: API chce klíč firmy na serveru. Klíč leží
 v `^["MLINE"]ALVA.SdileniDat`, protože ISYCloud vydá firmě jediný klíč pro všechny agendy (převezme ho ISYJR).
 Vývojový server bez nastavené adresy ostrý ISYCloud nevolá - registroval by tam firmy z DEV dat.
-**Testuje se proti ISYCloudu na Railway:** DEV server nenaváže spojení na počítač připojený přes VPN, lokální
-ISYCloud z něj vidět není. Tok API s typem `SABLONA` je ověřený proti lokálnímu ISYCloudu z počítače vývojáře.
+**Testuje se proti testovacímu ISYCloudu na Railway** (`https://mline-isycloud-test.up.railway.app`, od 3. 11.): DEV
+server nenaváže spojení na počítač připojený přes VPN. Adresu má DEV server nastavenou (`Sdileni.Klient.SetAdresa`),
+firmy CB_CSADAD a CB_DP jsou v testu založené přes správní API (test MLWebu zápisy firem blokuje) a mají povolené sdílení.
+Příjem si o šablonách zásilky drží název, agendu, verzi a Id u odesílatele (`PRIJATE`), ať se soubory nestahují při
+každém zobrazení seznamu.
 
 Mimo R9 zůstává sdílení uvnitř firmy (práva k šablonám, osobní šablony) - otevřené v `B189`.
 

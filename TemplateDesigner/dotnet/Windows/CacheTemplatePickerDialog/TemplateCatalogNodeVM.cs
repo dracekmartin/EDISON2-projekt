@@ -5,8 +5,9 @@ using TemplateDesigner.Services;
 namespace TemplateDesigner;
 
 /// <summary>
-/// Uzel stromu v okně šablon: Všechny šablony, oblast práce, agenda, varianta (`B190`). Uzel jen zužuje seznam
-/// vpravo na své kódy agend; agenda s jedinou variantou je jeden uzel, úroveň varianty by nic nerozlišovala.
+/// Uzel stromu v okně šablon: Všechny šablony, oblast práce, agenda, varianta (`B190`) a Přijaté šablony (`B189`).
+/// Uzel jen zužuje seznam vpravo na své kódy agend; agenda s jedinou variantou je jeden uzel, úroveň varianty by nic
+/// nerozlišovala. Přijaté šablony místo šablon ukazují zásilky od jiných firem.
 /// </summary>
 public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
 {
@@ -82,8 +83,13 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
 
     public const string AllKey = "";
 
-    /// <summary>Uzly stromu: první Všechny šablony, pak oblasti práce v pořadí serveru. Oblasti jsou rozbalené.</summary>
-    public static IReadOnlyList<TemplateCatalogNodeVM> Build(TemplateCatalog catalog)
+    /// <summary>Uzel zásilek šablon od jiných firem (`B189`); okno si ho jako poslední uzel nepamatuje - otevřel by se
+    /// příště dotazem na ISYCloud.</summary>
+    public const string ReceivedKey = "prijate";
+
+    /// <summary>Uzly stromu: první Všechny šablony, pak oblasti práce v pořadí serveru (rozbalené) a se sdílením na konci
+    /// Přijaté šablony s počtem nevyřízených zásilek (<paramref name="receivedCount"/>, null = ještě nenačtený).</summary>
+    public static IReadOnlyList<TemplateCatalogNodeVM> Build(TemplateCatalog catalog, int? receivedCount = null)
     {
         var nodes = new List<TemplateCatalogNodeVM> { new(AllKey, "Všechny šablony", null, null, []) };
         foreach (var area in catalog.Areas)
@@ -92,7 +98,18 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
             nodes.Add(new TemplateCatalogNodeVM($"oblast:{area.Code}", area.Label, agendas.Sum(a => a.Count ?? 0), null,
                 [.. agendas.SelectMany(a => a.AgendaCodes)], agendas) { Kind = TemplateCatalogNodeKind.Area, IsExpanded = true });
         }
+        if (catalog.Sharing)
+            nodes.Add(new TemplateCatalogNodeVM(ReceivedKey, "Přijaté šablony", receivedCount, null, [])
+                { Kind = TemplateCatalogNodeKind.Received });
         return nodes;
+    }
+
+    /// <summary>Počet doplněný až po načtení (zásilky od jiných firem se zjišťují v ISYCloudu, strom na ně nečeká).</summary>
+    public void SetCount(int? count)
+    {
+        if (_count == count) return;
+        _count = count;
+        OnPropertyChanged(nameof(Count));
     }
 
     private static TemplateCatalogNodeVM AgendaNode(CatalogAgenda agenda)
@@ -187,5 +204,5 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
     }
 }
 
-/// <summary>Úroveň uzlu ve stromu šablon.</summary>
-public enum TemplateCatalogNodeKind { All, Area, Agenda, Variant }
+/// <summary>Úroveň uzlu ve stromu šablon; <see cref="Received"/> = zásilky šablon od jiných firem.</summary>
+public enum TemplateCatalogNodeKind { All, Area, Agenda, Variant, Received }

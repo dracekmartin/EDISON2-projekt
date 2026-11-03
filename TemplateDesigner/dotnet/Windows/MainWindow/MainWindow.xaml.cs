@@ -281,6 +281,15 @@ public partial class MainWindow : Window
             };
             Loaded += start;
         }
+
+        // Šablony od jiných firem (`B189`): pruh se doplní, až server odpoví, start na něj nečeká.
+        RoutedEventHandler? received = null;
+        received = async (_, _) =>
+        {
+            Loaded -= received;
+            await _vm.CheckReceivedTemplatesAsync();
+        };
+        Loaded += received;
     }
 
     private void OnPreferencesLoaded()

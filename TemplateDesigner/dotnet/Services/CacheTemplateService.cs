@@ -26,6 +26,10 @@ public class CacheTemplateService : ITemplateSharing
 
     public CacheTemplateService(MLRest mlRest) => _mlRest = mlRest;
 
+    /// <summary>Služba nad klonem téže session pro dotaz na pozadí: souběžná volání na sdílené instanci by si prohodila
+    /// stav odpovědi (root CLAUDE.md, MLRest). Konstruktor klonu dělá DNS dotaz, volat mimo UI vlákno.</summary>
+    public CacheTemplateService Clone() => new(((EDControls.MLRestAdapter)new EDControls.MLRestAdapter(_mlRest).With()).Inner);
+
     // ─── ListTemplates ────────────────────────────────────────────────────────
 
     /// <summary>
@@ -250,6 +254,34 @@ public class CacheTemplateService : ITemplateSharing
             var result = QuerySharing("SendSablony", inVar);
             return new SharingSendResult(int.TryParse(result["sablon"]?.Value?.ToString(), out var sablon) ? sablon : 0,
                 int.TryParse(result["zasilek"]?.Value?.ToString(), out var zasilek) ? zasilek : 0);
+        });
+
+    public Task<ReceivedSummary> GetReceivedSummaryAsync()
+        => Task.Run(() => ReceivedSummary.Parse(QuerySharing("GetSouhrnPrijatych", new CVar())["1"]?.Value?.ToString()));
+
+    public Task<IReadOnlyList<ReceivedTemplate>> GetShipmentTemplatesAsync(string shipmentId)
+        => Task.Run(() =>
+        {
+            var inVar = new CVar();
+            inVar["zasilkaId"] = new CVar(shipmentId);
+            return ReceivedTemplate.ParseList(QuerySharing("GetObsahZasilky", inVar)["1"]?.Value?.ToString());
+        });
+
+    public Task<IReadOnlyList<TakenTemplate>> AcceptShipmentAsync(string shipmentId, IReadOnlyCollection<string> overwriteFileIds)
+        => Task.Run(() =>
+        {
+            var inVar = new CVar();
+            inVar["zasilkaId"] = new CVar(shipmentId);
+            inVar["prepsat"]   = new CVar(string.Join(",", overwriteFileIds));
+            return TakenTemplate.ParseList(QuerySharing("AcceptZasilka", inVar)["1"]?.Value?.ToString());
+        });
+
+    public Task RejectShipmentAsync(string shipmentId)
+        => Task.Run(() =>
+        {
+            var inVar = new CVar();
+            inVar["zasilkaId"] = new CVar(shipmentId);
+            QuerySharing("RejectZasilka", inVar);
         });
 
     /// <summary>Chyby sdílení píše server pro uživatele (firma nemá povolené sdílení, ISYCloud je nedostupný),

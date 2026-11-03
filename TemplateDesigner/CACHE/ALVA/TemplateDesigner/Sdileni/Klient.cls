@@ -124,17 +124,25 @@ ClassMethod Klic(IdFa As %String) As %String
 ClassMethod Send(metoda As %String, cesta As %String, klic As %String, ByRef stav As %Integer, telo As %DynamicAbstractObject = "", bajty As %String = "") As %String
 {
     s req = ..NewRequest(klic, .zaklad)
+    d ..WriteTelo(req, telo, bajty)
+    $$$ThrowOnError(..CheckSpojeni(req.Send(metoda, zaklad_cesta)))
+    s stav = req.HttpResponse.StatusCode
+    q ..ReadData(req.HttpResponse)
+}
+
+/// Tělo požadavku: JSON jako text, soubor v syrových bajtech s kontrolním součtem.
+/// JSON na UTF-8 převede sám %Net.HttpRequest podle charset v ContentType. Převedený předem by se převedl podruhé
+/// a čeština by v ISYCloudu zůstala rozbitá (3. 11. název a zpráva zásilky „LinkovÃ½ JÅ…").
+ClassMethod WriteTelo(req As %Net.HttpRequest, telo As %DynamicAbstractObject = "", bajty As %String = "")
+{
     i $isobject(telo) {
         s req.ContentType = "application/json; charset=utf-8"
-        d req.EntityBody.Write($zcvt(telo.%ToJSON(), "O", "UTF8"))
+        d req.EntityBody.Write(telo.%ToJSON())
     } elseif bajty '= "" {
         s req.ContentType = "application/octet-stream"
         d req.SetHeader("X-Obsah-Sha256", ..Sha256Hex(bajty))
         d req.EntityBody.Write(bajty)
     }
-    $$$ThrowOnError(..CheckSpojeni(req.Send(metoda, zaklad_cesta)))
-    s stav = req.HttpResponse.StatusCode
-    q ..ReadData(req.HttpResponse)
 }
 
 ClassMethod NewRequest(klic As %String, ByRef zaklad As %String) As %Net.HttpRequest

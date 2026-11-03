@@ -480,16 +480,20 @@ public partial class TemplateDesignerViewModel
     private Task OpenFromCacheAsync() => OpenTemplateWindowAsync(preselectAgendaCode: null);
 
     /// <param name="preselectAgendaCode">Agenda, jejíž uzel se ve stromu vybere; null = uzel z posledního otevření.</param>
-    private async Task OpenTemplateWindowAsync(string? preselectAgendaCode)
+    /// <param name="startNodeKey">Uzel, kde okno začne místo posledního (pruh o přijatých šablonách).</param>
+    private async Task OpenTemplateWindowAsync(string? preselectAgendaCode, string? startNodeKey = null)
     {
         if (TemplateStorage is null) return;
 
         // Confirmace neuložených změn AŽ po explicitním Otevřít - dialog funguje i jako
         // správce (smazat / přejmenovat) bez intent načíst do editoru.
-        var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, TemplatePickerNode, preselectAgendaCode);
+        var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, startNodeKey ?? TemplatePickerNode, preselectAgendaCode);
         bool confirmed = Dialogs?.ShowCacheTemplatePicker(vm) == true;
-        TemplatePickerNode = vm.SelectedNodeKey;
+        // Přijaté šablony se nepamatují: okno by se příště otevíralo dotazem na ISYCloud.
+        if (vm.SelectedNodeKey != TemplateCatalogNodeVM.ReceivedKey) TemplatePickerNode = vm.SelectedNodeKey;
         ApplyRenameOfOpenTemplate(vm.Renamed);
+        // Zásilky vyřízené v okně pruh zavřou.
+        if (HasReceivedNotice) _ = CheckReceivedTemplatesAsync();
         if (!confirmed) return;
 
         if (vm.NewTemplateAgendaCode is { } agendaCode)

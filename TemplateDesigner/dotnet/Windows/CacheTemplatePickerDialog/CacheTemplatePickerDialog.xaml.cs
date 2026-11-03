@@ -69,8 +69,10 @@ public partial class CacheTemplatePickerDialog : Window
             }
             catch (Exception ex) { _vm.PopupDisplayer.Error(ex); }
 
-            // Dotaz na kanál až po zobrazení seznamu a bez čekání: nabídka nových šablon se
-            // doplní, až přijde odpověď. Přehled se kvůli helpdesku nesmí zdržet ani spadnout.
+            // Dotaz na kanál a na zásilky od jiných firem až po zobrazení seznamu a bez čekání: nabídka nových šablon
+            // i počet přijatých se doplní, až přijde odpověď. Přehled se kvůli helpdesku ani ISYCloudu nesmí zdržet.
+            // Po sobě, ne souběžně: obojí jde přes totéž spojení MLRest.
+            await _vm.LoadReceivedCountAsync();
             await _vm.CheckChannelAsync();
         };
     }

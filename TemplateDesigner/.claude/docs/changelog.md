@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-11-03 (14) - Příjem šablon od jiné firmy (`B189`, zatím jen na DEV)
+
+Šablony poslané jinou firmou šly jen stáhnout v portálu ISYCloudu. Teď je firma vidí v okně šablon v uzlu **Přijaté šablony** (řádek = zásilka, sloupec Zdroj = odesílatel, pod seznamem kdo poslal, které šablony a zpráva) a vyřídí je akcemi **Převzít** a **Odmítnout**, vždy celou zásilku (rozhodnutí Jan 3. 11.).
+Převzatá šablona je vlastní šablonou firmy s novým Id a pamatuje si původ. Přijde-li znovu, okno se zeptá, jestli ji nahradit, u upravené jestli přepsat úpravy, jinak se uloží jako další šablona. Agenda, kterou firma nemá, nebo formát novější než návrhář převzetí celé zásilky zastaví s vysvětlením.
+Hlavní okno po startu ukáže pruh „Firma X vám poslala šablonu…" s tlačítkem Zobrazit; křížek ho schová do další zásilky. Server ISYCloud nevolá, dokud firma sdílení nepoužila (nemá klíč).
+**Oprava odeslání:** název a zpráva zásilky s češtinou docházely do ISYCloudu rozbité („LinkovÃ½ JÅ…") - `Sdileni.Klient` převáděl JSON na UTF-8 a `%Net.HttpRequest` podle `charset` podruhé. Soubory šablon to netrefilo (jdou binárně) a první zkušební zásilka diakritiku neměla.
+Ověřeno: Caché `SdileniSablonTest` 19/19 (převzetí, přepsání, poznání úprav, úklid původu při odstranění, obsah po kusech v ASCII, řádek zásilky, kontrola zásilky, tělo JSON jednou v UTF-8), mutace chycené (přejmenování nemaže značku úprav, odstranění nechá původ, dvojí převod); celý balík TD 326/327 (1 starý skip); .NET 2763/2763 (nové `PrevzetiSablonTests` 23, mutace verze formátu a volby přepsání chycené); integrační `SdileniSablonTests`. Proti testovacímu ISYCloudu voláním serveru: zásilka z CB_CSADAD do CB_DP se ukáže v seznamu, převezme (u odesílatele „načtená", ze seznamu zmizí), další zásilka téže šablony pozná převzatou, čeština zásilky po opravě prošla. Okno a pruh strojově neproklikané.
+
 ## 2026-11-03 (13) - Odeslání šablon jiné firmě přes sdílení dat ISYCloudu (`B189`, zatím jen na DEV)
 
 Šablony šly mezi firmami jen exportem a importem souboru. Rozhodnutí Jan 3. 11. (R9): posílají se přes obecné sdílení dat ISYCloudu, vlastní šablony firmy, víc najednou.

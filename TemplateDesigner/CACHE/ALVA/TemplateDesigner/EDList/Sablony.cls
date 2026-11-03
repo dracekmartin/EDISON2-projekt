@@ -48,6 +48,11 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
         s col.visible = 0
         s col = list.AddColumn("vychozi", "Výchozí pro tisk", "TEXT")
         s col.visible = 0
+        // Skryté u zásilky od jiné firmy (uzel Přijaté šablony, `API.SdileniSablon`): okno z nich skládá nápovědu.
+        f klic = "prijata", "odeslal", "zprava", "sablony" {
+            s col = list.AddColumn(klic, $case(klic, "prijata":"Přijatá zásilka", "odeslal":"Odeslal", "zprava":"Zpráva", :"Šablony"), "TEXT")
+            s col.visible = 0
+        }
         d list.WriteColumnsToOut()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
@@ -56,15 +61,22 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
 /// Vrátí řádky šablon. Volitelný filtr (sub-subscript pod "filter"):
 ///   IN["filter","agendaCodes"] = kódy agend čárkou - uzel stromu šablon (oblast, agenda nebo varianta)
 ///   IN["filter","agendaCode"]  = jeden kód agendy (starší tvar); oba prázdné = všechny šablony
+///   IN["filter","prijate"]     = "1" - místo šablon nevyřízené zásilky šablon od jiných firem (uzel Přijaté šablony)
 ClassMethod LoadList(ByRef sys As %String) As %Status
 {
     s err = ""
     try {
         $$$FillParams
 
+        s list = ##class(ALVA.EDControls.EDList.List).%New()
+        if $g(^||ML("IN","filter","prijate")) = "1" {
+            d ##class(ALVA.TemplateDesigner.API.SdileniSablon).AddPrijateRows(list, IdFa)
+            d list.WriteRowsToOut()
+            ret $$$OK
+        }
+
         s kody = $g(^||ML("IN","filter","agendaCodes"))
         s:kody="" kody = $g(^||ML("IN","filter","agendaCode"))
-        s list = ##class(ALVA.EDControls.EDList.List).%New()
         s tiskZModulu = ##class(ALVA.TemplateDesigner.API.SablonyProTisk).JeTiskZModulu(dataDB)
 
         s vetve =##class(ALVA.TemplateDesigner.API.Sablony).VetveFirmy(IdFa)

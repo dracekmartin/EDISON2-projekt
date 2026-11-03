@@ -33,6 +33,8 @@
     <Compile Include="..\TemplateDesigner\dotnet\Services\PrintTemplateChoice.cs" Link="TemplateDesigner\PrintTemplateChoice.cs" />
     <!-- Strom šablon (StromSablonTests): parser odpovědi stromu. -->
     <Compile Include="..\TemplateDesigner\dotnet\Services\TemplateCatalog.cs" Link="TemplateDesigner\TemplateCatalog.cs" />
+    <!-- Sdílení šablon (SdileniSablonTests): parsery odpovědí příjmu. -->
+    <Compile Include="..\TemplateDesigner\dotnet\Services\TemplateSharing.cs" Link="TemplateDesigner\TemplateSharing.cs" />
   </ItemGroup>
 
   <ItemGroup>

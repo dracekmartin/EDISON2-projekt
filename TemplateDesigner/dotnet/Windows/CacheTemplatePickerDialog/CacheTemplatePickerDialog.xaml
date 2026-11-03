@@ -144,6 +144,15 @@
                                     <DataTrigger Binding="{Binding Kind}" Value="Agenda">
                                         <Setter TargetName="Popisek" Property="FontWeight" Value="SemiBold"/>
                                     </DataTrigger>
+                                    <!-- Zásilky od jiných firem jsou nadpis jako oblast; počet přijde až z ISYCloudu. -->
+                                    <DataTrigger Binding="{Binding Kind}" Value="Received">
+                                        <Setter TargetName="Znacka" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="Popisek" Property="FontWeight" Value="SemiBold"/>
+                                        <Setter TargetName="Popisek" Property="Foreground" Value="{DynamicResource EDTheme.Text.Header}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Count}" Value="{x:Null}">
+                                        <Setter TargetName="Pocet" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
                                 </HierarchicalDataTemplate.Triggers>
                             </HierarchicalDataTemplate>
                         </TreeView.ItemTemplate>

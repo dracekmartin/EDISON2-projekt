@@ -17,6 +17,8 @@ Include GENERAL
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data", n)          = n-tý kus JSON blobu (jen velký blob)
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "DEFAULT", AgendaCode) = TemplateID - výchozí pro tisk (`API.SablonyProTisk`)
+///   Šablona převzatá od jiné firmy: Metadata "PuvodFirma", "PuvodSablona", "PuvodBezUprav" a index
+///   (IdFa, "IDX", "ByPuvod", firma, Id u ní, TemplateID); přijaté zásilky (IdFa, "PRIJATE", …) - `API.SdileniSablon`
 ///
 /// Blob: MALÝ (vejde se do 1 kusu) se ukládá jednoklíčově - formát čitelný i staršími klienty
 /// bez podpory kusů (#13013). VELKÝ po kusech, nikdy jako jeden řetězec - překročil by limit
@@ -162,25 +164,7 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
             ret $$$OK
         }
 
-        s nowIso = $zdt($h, 3)
-        s existed = $d(^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId))
-
-        // Při update: udržet původní CreatedAt + Author; při novém: nastavit aktuální
-        if existed {
-            s oldAgenda = $g(^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","AgendaCode"))
-            if (oldAgenda '= "") && (oldAgenda '= agendaCode) {
-                k ^ALVA.TemplateDesigner.Templates(targetIdFa,"IDX","ByAgenda",oldAgenda,templateId)
-            }
-        } else {
-            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","CreatedAt") = nowIso
-            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","Author")    = userID
-        }
-
-        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","Name")       = name
-        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","AgendaCode") = agendaCode
-        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","Version")    = version
-        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","ModifiedAt") = nowIso
-        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","ModifiedBy") = userID
+        d ..WriteMetadata(targetIdFa, templateId, name, agendaCode, version, userID)
 
         // Blob: malý (1 kus / legacy vstup) ulož JEDNOKLÍČOVĚ - přečte ho i starší klient bez
         // podpory kusů (#13013: mix nové úložiště × produkční .exe → „šablona porušená").
@@ -198,8 +182,6 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
         } else {
             s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data") = $g(^||ML("IN","data"))
         }
-
-        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"IDX","ByAgenda",agendaCode,templateId) = ""
 
         s ^||ML("OUT","templateId") = templateId
     } catch (ex) { $$$CatchErrRest }
@@ -225,6 +207,8 @@ ClassMethod DeleteTemplate(ByRef sys As %String) As %Status
                 // Výchozí šablona firmy pro tisk (`API.SablonyProTisk`) by ukazovala do prázdna.
                 k:$g(^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",agendaCode))=templateId ^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",agendaCode)
             }
+            // Šablona převzatá od jiné firmy: příští zásilka téhož původu by jinak hledala šablonu, která není.
+            d ##class(ALVA.TemplateDesigner.API.SdileniSablon).RemovePuvod(IdFa, templateId)
             k ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId)
             s ^||ML("OUT","deleted") = "1"
         } else {
@@ -308,6 +292,7 @@ ClassMethod RenameTemplate(ByRef sys As %String) As %Status
         s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","Name")       = newName
         s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","ModifiedAt") = $zdt($h, 3)
         s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","ModifiedBy") = userID
+        k ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","PuvodBezUprav")
 
         s ^||ML("OUT","renamed") = "1"
     } catch (ex) { $$$CatchErrRest }
@@ -338,6 +323,49 @@ ClassMethod AppendMetadata(arr As %DynamicArray, IdFa As %String, templateId As 
     if '$d(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId)) q
     s obj = ..BuildMetadataObject(IdFa, templateId)
     d arr.%Push(obj)
+}
+
+/// Nejvýš znaků jednoho kusu obsahu, jako u uložení z návrháře (`CacheBlobChunking.DefaultMaxChunkChars`): delší
+/// kus by nepřešel limit délky řádku na wire.
+Parameter MaxZnakuKusu = 20000;
+
+/// Metadata šablony a index podle agendy - uložení z návrháře i převzetí šablony od jiné firmy. Existující šablona
+/// si nechá datum založení a autora. Šablona převzatá od jiné firmy tím přestane být „bez úprav"
+/// (`API.SdileniSablon`); převzetí si značku po zápisu nastaví znovu.
+ClassMethod WriteMetadata(vetev As %String, templateId As %String, name As %String, agendaCode As %String, version As %String, userID As %String)
+{
+    s nowIso = $zdt($h, 3)
+    if $d(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId)) {
+        s oldAgenda = $g(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","AgendaCode"))
+        if (oldAgenda '= "") && (oldAgenda '= agendaCode) {
+            k ^ALVA.TemplateDesigner.Templates(vetev,"IDX","ByAgenda",oldAgenda,templateId)
+        }
+    } else {
+        s ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","CreatedAt") = nowIso
+        s ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","Author")    = userID
+    }
+    s ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","Name")       = name
+    s ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","AgendaCode") = agendaCode
+    s ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","Version")    = version
+    s ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","ModifiedAt") = nowIso
+    s ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","ModifiedBy") = userID
+    k ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","PuvodBezUprav")
+    s ^ALVA.TemplateDesigner.Templates(vetev,"IDX","ByAgenda",agendaCode,templateId) = ""
+}
+
+/// Obsah šablony (JSON jako text) ve stejném tvaru jako uložení z návrháře: malý jedním uzlem, velký po kusech.
+ClassMethod WriteData(vetev As %String, templateId As %String, text As %String)
+{
+    k ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Data")
+    i $l(text) <= ..#MaxZnakuKusu {
+        s ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Data") = text
+        q
+    }
+    s n = 0
+    f zacatek = 1:..#MaxZnakuKusu:$l(text) {
+        s ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Data",$i(n)) = $e(text, zacatek, zacatek + ..#MaxZnakuKusu - 1)
+    }
+    s ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Data") = n
 }
 
 // ── Šablony, které firma vidí ────────────────────────────────────────────────

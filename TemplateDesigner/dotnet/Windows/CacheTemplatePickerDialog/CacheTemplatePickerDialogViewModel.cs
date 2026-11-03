@@ -30,10 +30,12 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         {
             if (value is null || ReferenceEquals(value, _selectedNode)) return;
             bool changed = value.Key != _selectedNodeKey;
+            bool actionsChange = (value.Kind == TemplateCatalogNodeKind.Received) != IsReceivedNode;
             _selectedNode = value;
             _selectedNodeKey = value.Key;
             OnPropertyChanged();
             NotifySelectionTexts();
+            if (actionsChange) BuildActions();
             System.Windows.Input.CommandManager.InvalidateRequerySuggested();
             if (changed) RequestReload?.Invoke();
         }
@@ -44,7 +46,22 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
 
     /// <summary>Řádek pod seznamem: co uživatel nad výběrem může udělat - jak založit novou šablonu, která jde jen ve
     /// vybrané agendě a variantě, a proč šablonu M-line nejde upravit ani odstranit.</summary>
-    public string Hint => HintFor(Nodes, _selectedNode, IsSelectedSystem) + PrintDefaultHint(_selectedNode, ShowsPrintDefault);
+    public string Hint => IsReceivedNode
+        ? ReceivedHint(Selected, _selectedNode?.Count)
+        : HintFor(Nodes, _selectedNode, IsSelectedSystem) + PrintDefaultHint(_selectedNode, ShowsPrintDefault);
+
+    /// <summary>Nápověda v Přijatých šablonách: bez výběru co uzel ukazuje, u zásilky od koho je, co obsahuje a zpráva.</summary>
+    public static string ReceivedHint(EDListRow? row, int? count)
+    {
+        if (row is null || row["prijata"] != "1")
+            return count == 0
+                ? "Žádná jiná firma vám teď šablony neposlala. Až nějaké pošle, najdete je tady."
+                : "Šablony, které vám poslaly jiné firmy. Zásilku převezmete akcí Převzít a šablony pak najdete mezi vlastními "
+                  + "šablonami ve své agendě. Zásilku, kterou nechcete, odmítněte.";
+        var odeslal = string.IsNullOrEmpty(row["odeslal"]) ? "" : $" (poslal {row["odeslal"]})";
+        var zprava = string.IsNullOrWhiteSpace(row["zprava"]) ? "" : $" Zpráva: {row["zprava"]}";
+        return $"Od firmy {row["zdroj"]}{odeslal}: {row["sablony"]}.{zprava} Převezměte ji akcí Převzít, nebo ji odmítněte.";
+    }
 
     /// <summary>Proč je šablona tučně a jak výchozí přesunout - jen u uzlu jedné agendy se zapnutým tiskem z okna JŘ.</summary>
     public static string PrintDefaultHint(TemplateCatalogNodeVM? node, bool showsPrintDefault) =>
@@ -78,11 +95,17 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         OnPropertyChanged(nameof(Hint));
     }
 
-    /// <summary>Filtr seznamu šablon podle vybraného uzlu; Všechny šablony = bez filtru.</summary>
+    /// <summary>Filtr seznamu šablon podle vybraného uzlu; Všechny šablony = bez filtru, Přijaté šablony = zásilky.</summary>
     public IReadOnlyDictionary<string, string> CurrentFilter =>
-        _selectedNode is { AgendaCodes.Count: > 0 } node
+        IsReceivedNode ? new Dictionary<string, string> { ["prijate"] = "1" }
+        : _selectedNode is { AgendaCodes.Count: > 0 } node
             ? new Dictionary<string, string> { ["agendaCodes"] = node.FilterValue }
             : new Dictionary<string, string>();
+
+    private bool IsReceivedNode => _selectedNode?.Kind == TemplateCatalogNodeKind.Received;
+
+    /// <summary>Vybraný řádek je zásilka od jiné firmy, ne šablona - otevřít, upravit ani odstranit nejde.</summary>
+    private bool IsSelectedReceived => Selected?["prijata"] == "1";
 
     private EDListRow? _selected;
     /// <summary>Code-behind plní z <c>EDList.SelectionChanged</c>.</summary>
@@ -103,6 +126,11 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     protected override void OnOk()
     {
         if (Selected is null) { PopupDisplayer.Info("Vyberte šablonu, kterou chcete otevřít."); return; }
+        if (IsSelectedReceived)
+        {
+            PopupDisplayer.Info("Zásilku od jiné firmy převezmete akcí Převzít. Šablony pak otevřete z jejich agendy.");
+            return;
+        }
         Open();
     }
 
@@ -159,9 +187,17 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     }
 
     /// <summary>Nový, Upravit, Odstranit, se zapnutým tiskem z okna JŘ za oddělovačem výchozí šablona pro tisk
-    /// a se zapnutým sdílením za dalším odeslání šablon jiné firmě.</summary>
+    /// a se zapnutým sdílením za dalším odeslání šablon jiné firmě. V Přijatých šablonách jen Převzít a Odmítnout -
+    /// řádek je zásilka, ne šablona.</summary>
     private void BuildActions()
     {
+        if (IsReceivedNode)
+        {
+            Actions = [StandardActions.Custom("Převzít", AcceptShipmentCommand, "EDIcons.Save"),
+                       StandardActions.Custom("Odmítnout", RejectShipmentCommand, "EDIcons.Delete")];
+            OnPropertyChanged(nameof(Actions));
+            return;
+        }
         List<EDAction> akce = [StandardActions.Add(NewTemplateCommand), StandardActions.Edit(EditTemplateCommand),
                                StandardActions.Delete(DeleteTemplateCommand)];
         if (ShowsPrintDefault)
@@ -209,6 +245,56 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
 
+    public AsyncRelayCommand AcceptShipmentCommand { get; }
+    public AsyncRelayCommand RejectShipmentCommand { get; }
+
+    private ReceivedShipments? _shipments;
+    private ReceivedShipments Shipments => _shipments ??= new ReceivedShipments(_service, PopupDisplayer);
+
+    private int? _receivedCount;
+
+    /// <summary>Počet nevyřízených zásilek u uzlu Přijaté šablony. Zjišťuje se v ISYCloudu, proto až po zobrazení
+    /// okna a bez čekání - nedostupný ISYCloud okno nezdrží, uzel jen zůstane bez počtu.</summary>
+    public async Task LoadReceivedCountAsync()
+    {
+        if (!ShowsSharing) return;
+        // Na klonu spojení: uživatel mezitím kliká a seznam se načítá přes tutéž session.
+        try { _receivedCount = (await (await Task.Run(_service.Clone)).GetReceivedSummaryAsync()).Shipments; }
+        catch (Exception) { _receivedCount = null; }
+        TemplateCatalogNodeVM.Find(Nodes, TemplateCatalogNodeVM.ReceivedKey)?.SetCount(_receivedCount);
+        if (IsReceivedNode) OnPropertyChanged(nameof(Hint));
+    }
+
+    private async Task AcceptShipmentAsync()
+    {
+        if (Selected is not { } row || !IsSelectedReceived) return;
+        try
+        {
+            if (!await Shipments.AcceptAsync(row.Id, row["zdroj"] ?? "")) return;
+            await AfterShipmentHandledAsync();
+        }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+    }
+
+    private async Task RejectShipmentAsync()
+    {
+        if (Selected is not { } row || !IsSelectedReceived) return;
+        try
+        {
+            if (!await Shipments.RejectAsync(row.Id, row["name"] ?? "", row["zdroj"] ?? "")) return;
+            await AfterShipmentHandledAsync();
+        }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+    }
+
+    /// <summary>Vyřízená zásilka zmizí ze seznamu; převzaté šablony přibydou v počtech agend.</summary>
+    private async Task AfterShipmentHandledAsync()
+    {
+        await LoadCatalogAsync();
+        RequestReload?.Invoke();
+        await LoadReceivedCountAsync();
+    }
+
     /// <summary>
     /// Načte strom ze serveru a vybere naposledy vybraný uzel (jinak Všechny šablony). Seznam nenačítá - volající
     /// pak zavolá <see cref="RequestReload"/>, aby se seznam načetl jednou. Bez stromu (chyba serveru) zůstanou
@@ -223,7 +309,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
             PopupDisplayer.Error(ex);
         }
         // Stejný strom se jen obnoví na místě - nový by ve WPF zahodil výběr (okno skočilo na Všechny šablony) i rozbalení.
-        var nove = TemplateCatalogNodeVM.Build(_catalog);
+        var nove = TemplateCatalogNodeVM.Build(_catalog, _receivedCount);
         if (!TemplateCatalogNodeVM.UpdateInPlace(Nodes, nove))
         {
             TemplateCatalogNodeVM.KeepExpansion(Nodes, nove);
@@ -231,8 +317,6 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
             OnPropertyChanged(nameof(Nodes));
         }
         OnPropertyChanged(nameof(ShowsPrintDefault));
-        BuildActions();
-        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
 
         // Uzel se vybere dřív, než ho strom ukáže; strom pak výběr ohlásí stejným uzlem a seznam se znovu nenačte.
         // Předvybraná agenda platí jen při otevření - po smazání nebo přejmenování zůstane uzel, kde uživatel je.
@@ -246,6 +330,9 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         target.IsSelected = true;
         OnPropertyChanged(nameof(SelectedNode));
         NotifySelectionTexts();
+        // Akce až po výběru uzlu: Přijaté šablony mají jiné (okno otevřené z pruhu v hlavním okně začíná rovnou tam).
+        BuildActions();
+        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
     }
 
     // ── Nové šablony od M-line (distribuční kanál) ────────────────────────────
@@ -338,13 +425,15 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         _preselectAgendaCode = preselectAgendaCode;
 
         // Systémové (M-line) jsou read-only - otevřít lze, upravit a odstranit ne.
-        OpenCommand           = Command(Open,             () => Selected is not null);
+        OpenCommand           = Command(Open,             () => Selected is not null && !IsSelectedReceived);
         NewTemplateCommand    = Command(NewTemplate,      () => SelectedNode?.NewTemplateAgendaCode is not null);
-        DeleteTemplateCommand = CommandAsync(DeleteAsync, () => Selected is not null && !IsSelectedSystem);
-        EditTemplateCommand   = CommandAsync(EditAsync,   () => Selected is not null && !IsSelectedSystem);
+        DeleteTemplateCommand = CommandAsync(DeleteAsync, () => Selected is not null && !IsSelectedSystem && !IsSelectedReceived);
+        EditTemplateCommand   = CommandAsync(EditAsync,   () => Selected is not null && !IsSelectedSystem && !IsSelectedReceived);
         SetDefaultCommand     = CommandAsync(SetDefaultAsync,
             () => Selected is not null && CanSetDefault(Selected["vychozi"], CanPrint(Selected["agendaCode"])));
         SendTemplatesCommand  = CommandAsync(SendTemplatesAsync);
+        AcceptShipmentCommand = CommandAsync(AcceptShipmentAsync, () => IsSelectedReceived);
+        RejectShipmentCommand = CommandAsync(RejectShipmentAsync, () => IsSelectedReceived);
 
         // Ikony v pruhu nad seznamem a zkratky Ctrl+N/E/D jako seznamy legacy EDISONu.
         BuildActions();

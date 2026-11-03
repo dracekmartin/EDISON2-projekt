@@ -536,6 +536,23 @@
             </StackPanel>
         </Border>
 
+        <!-- Šablony od jiných firem (`B189`): oznámení, ne otázka. Zobrazit otevře okno šablon v Přijatých šablonách,
+             křížek pruh schová, dokud nepřijde další zásilka. Vzhled jako nabídka šablon M-line v okně šablon. -->
+        <Border DockPanel.Dock="Top" Padding="10,5"
+                Background="{DynamicResource EDTheme.Bg.InfoBanner}"
+                BorderBrush="{DynamicResource EDTheme.Accent.Blue}" BorderThickness="0,0,0,1"
+                Visibility="{Binding HasReceivedNotice, Converter={StaticResource BoolToVis}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="×" Padding="8,1" ToolTip="Zavřít"
+                        Command="{Binding DismissReceivedNoticeCommand}"/>
+                <Button DockPanel.Dock="Right" Content="Zobrazit" Padding="12,1" Margin="12,0,8,0"
+                        Command="{Binding ShowReceivedTemplatesCommand}"/>
+                <Image Source="{StaticResource EDIcons.Company}" Width="16" Height="16" Margin="0,0,8,0"
+                       VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                <TextBlock Text="{Binding ReceivedNotice}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </DockPanel>
+        </Border>
+
         <!-- ═══ Hlavní obsah ═══ -->
         <Grid x:Name="MainGrid">
             <Grid.ColumnDefinitions>
