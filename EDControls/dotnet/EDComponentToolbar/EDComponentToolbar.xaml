@@ -75,15 +75,26 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type edvm:EDAction}">
-                            <Button Style="{StaticResource ToolbarButtonStyle}" Margin="1,0"
-                                    Command="{Binding Command}" ToolTip="{Binding ToolTipText}"
-                                    ToolTipService.ShowOnDisabled="True"
-                                    AutomationProperties.Name="{Binding Label}">
-                                <Image Source="{Binding Icon}"
-                                       Width="{DynamicResource EDTheme.IconSize.Default}"
-                                       Height="{DynamicResource EDTheme.IconSize.Default}"
-                                       RenderOptions.BitmapScalingMode="HighQuality"/>
-                            </Button>
+                            <Grid>
+                                <Button x:Name="Akce" Style="{StaticResource ToolbarButtonStyle}" Margin="1,0"
+                                        Command="{Binding Command}" ToolTip="{Binding ToolTipText}"
+                                        ToolTipService.ShowOnDisabled="True"
+                                        AutomationProperties.Name="{Binding Label}">
+                                    <Image Source="{Binding Icon}"
+                                           Width="{DynamicResource EDTheme.IconSize.Default}"
+                                           Height="{DynamicResource EDTheme.IconSize.Default}"
+                                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </Button>
+                                <!-- EDAction.Separator: svislá čára mezi skupinami akcí v barvě textu pruhu. -->
+                                <Border x:Name="Oddelovac" Width="1" Margin="5,3" Visibility="Collapsed"
+                                        Background="{DynamicResource EDTheme.OnAccent.Text}" Opacity="0.5"/>
+                            </Grid>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsSeparator}" Value="True">
+                                    <Setter TargetName="Akce" Property="Visibility" Value="Collapsed"/>
+                                    <Setter TargetName="Oddelovac" Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

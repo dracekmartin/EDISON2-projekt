@@ -54,6 +54,25 @@ public class EDComponentToolbarTests
         });
     }
 
+    /// <summary>Oddělovač skupiny akcí je v pruhu svislá čára, ne tlačítko bez ikony.</summary>
+    [Fact]
+    public void ActionSeparator_IsLineNotButton()
+    {
+        RunSta(() =>
+        {
+            ICommand prikaz = new RoutedCommand();
+            var toolbar = new Toolbar
+            {
+                Actions = [new EDViewModel.EDAction("Nový", prikaz), EDViewModel.EDAction.Separator,
+                           new EDViewModel.EDAction("Výchozí", prikaz)],
+            };
+
+            Assert.Equal(["Nový", "Výchozí"], TooltipyAkci(toolbar));
+            Assert.Single(Potomci(toolbar).OfType<Border>(),
+                b => b.Name == "Oddelovac" && b.Visibility == Visibility.Visible);
+        });
+    }
+
     private static List<string> TooltipyAkci(Toolbar toolbar)
     {
         var root = new Grid();
@@ -61,7 +80,8 @@ public class EDComponentToolbarTests
         root.Measure(new Size(800, 100));
         root.Arrange(new Rect(0, 0, 800, 100));
         root.UpdateLayout();
-        return Potomci(toolbar).OfType<Button>().Where(b => b.DataContext is EDViewModel.EDAction)
+        return Potomci(toolbar).OfType<Button>()
+            .Where(b => b.DataContext is EDViewModel.EDAction && b.Visibility == Visibility.Visible)
             .Select(b => b.ToolTip as string ?? "").ToList();
     }
 

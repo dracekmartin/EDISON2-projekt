@@ -4,3 +4,5 @@ EDControls.EDViewModel.PopupDisplayer.ConfirmSystem(string message, System.Windo
 EDControls.EDViewModel.PopupDisplayer.InfoSystem(string message, System.Windows.Window owner = null) -> void
 *REMOVED*EDControls.EDViewModel.IPopupDisplayer.ConfirmExit(string message, System.Windows.Window owner = null) -> bool
 *REMOVED*EDControls.EDViewModel.PopupDisplayer.ConfirmExit(string message, System.Windows.Window owner = null) -> bool
+EDControls.EDViewModel.EDAction.IsSeparator.get -> bool
+static readonly EDControls.EDViewModel.EDAction.Separator -> EDControls.EDViewModel.EDAction

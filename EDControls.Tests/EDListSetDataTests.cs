@@ -297,10 +297,12 @@ public class EDListSetDataTests
             Assert.Null(list.DataGrid.ContextMenu);
 
             var prikaz = Substitute.For<System.Windows.Input.ICommand>();
-            list.Actions = [new EDAction("Nový", prikaz), new EDAction("Odstranit", prikaz)];
+            list.Actions = [new EDAction("Nový", prikaz), new EDAction("Odstranit", prikaz), EDAction.Separator,
+                            new EDAction("Výchozí", prikaz)];
 
             var nabidka = Assert.IsType<ContextMenu>(list.DataGrid.ContextMenu);
-            Assert.Equal(["Nový", "Odstranit"], nabidka.Items.OfType<MenuItem>().Select(m => m.Header as string));
+            Assert.Equal(["Nový", "Odstranit", "-", "Výchozí"],
+                nabidka.Items.Cast<object>().Select(p => p is MenuItem m ? m.Header as string : p is Separator ? "-" : "?"));
 
             list.Actions = null;
             Assert.Null(list.DataGrid.ContextMenu);
