@@ -2,17 +2,7 @@ abstract EDControls.EDFilter.EDFilterFieldBase.GetValue() -> string
 abstract EDControls.EDFilter.EDFilterFieldBase.RestoreValue(string value) -> void
 abstract EDControls.MiniApps.EDMiniAppViewModel.Title.get -> string
 const EDControls.EdisonLaunchArgs.LaunchMarker = "EDISONMAIN2" -> string
-const EDControls.ErrorReporting.ErrorReport.InternalSuffix = "-internal" -> string
-const EDControls.ErrorReporting.ErrorReport.StageAuto = "auto" -> string
-const EDControls.ErrorReporting.ErrorReport.StageUser = "user" -> string
-const EDControls.ErrorReporting.ErrorThrottle.DefaultMaxReports = 50 -> int
-const EDControls.UserFonts.FontCatalog.DefaultFamily = "Segoe UI" -> string
 const EDControls.UserPrefs.CacheUserPrefsService.CacheClass = "ALVA.EDControls.UserData" -> string
-EDControls.CacheWindowStateStore
-EDControls.CacheWindowStateStore.CacheWindowStateStore(string formId) -> void
-EDControls.CacheWindowStateStore.CacheWindowStateStore(string formId, System.Func<EDControls.IMLRest> mlRestSource) -> void
-EDControls.CacheWindowStateStore.Load() -> EDControls.WindowGeometry
-EDControls.CacheWindowStateStore.Save(System.Windows.Rect bounds, bool maximized) -> void
 EDControls.EDActionInProgress.EDActionInProgress
 EDControls.EDActionInProgress.EDActionInProgress.EDActionInProgress() -> void
 EDControls.EDActionInProgress.EDActionInProgress.IsActive.get -> bool
@@ -65,13 +55,6 @@ EDControls.EDFilter.EDFilterFieldBase.Label.get -> string
 EDControls.EDFilter.EDFilterFieldBase.Label.set -> void
 EDControls.EDFilter.EDFilterFieldBase.RaiseValueChanged() -> void
 EDControls.EDFilter.EDFilterFieldBase.ValueChanged -> System.EventHandler
-EDControls.EDFilter.EDFilterPrefs
-EDControls.EDFilter.EDFilterPrefs.EDFilterPrefs() -> void
-EDControls.EDFilter.EDFilterPrefs.Values.get -> System.Collections.Generic.Dictionary<string, string>
-EDControls.EDFilter.EDFilterPrefs.Values.set -> void
-EDControls.EDFilter.EDFilterPrefs.Version.get -> int
-EDControls.EDFilter.EDFilterPrefs.Version.set -> void
-EDControls.EDFilter.EDFilterPrefsSerializer
 EDControls.EDFilterComboBox.EDFilterComboBox
 EDControls.EDFilterComboBox.EDFilterComboBox.EDFilterComboBox() -> void
 EDControls.EDFilterComboBox.EDFilterComboBox.KeyLabelSeparator.get -> string
@@ -102,14 +85,6 @@ EDControls.EDInfoBar.EDInfoBar.Icon.get -> System.Windows.Media.ImageSource
 EDControls.EDInfoBar.EDInfoBar.Icon.set -> void
 EDControls.EDInfoBar.EDInfoBar.Text.get -> string
 EDControls.EDInfoBar.EDInfoBar.Text.set -> void
-EDControls.EDInputForm.Base64ToImageSourceConverter
-EDControls.EDInputForm.Base64ToImageSourceConverter.Base64ToImageSourceConverter() -> void
-EDControls.EDInputForm.Base64ToImageSourceConverter.Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture) -> object
-EDControls.EDInputForm.Base64ToImageSourceConverter.ConvertBack(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture) -> object
-EDControls.EDInputForm.ColorPreviewHexToBrushConverter
-EDControls.EDInputForm.ColorPreviewHexToBrushConverter.ColorPreviewHexToBrushConverter() -> void
-EDControls.EDInputForm.ColorPreviewHexToBrushConverter.Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture) -> object
-EDControls.EDInputForm.ColorPreviewHexToBrushConverter.ConvertBack(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture) -> object
 EDControls.EDInputForm.DesignTimeData.EDInputFormDesignTimeData
 EDControls.EDInputForm.DesignTimeData.EDInputFormDesignTimeData.EDInputFormDesignTimeData() -> void
 EDControls.EDInputForm.DesignTimeData.EDInputFormDesignTimeData.Items.get -> System.Collections.Generic.IEnumerable<EDControls.EDInputForm.Item>
@@ -149,7 +124,6 @@ EDControls.EDInputForm.EDInputFormController.Items.get -> System.Collections.Gen
 EDControls.EDInputForm.EDInputFormController.Save() -> bool
 EDControls.EDInputForm.EDInputFormController.StateChanged -> System.Action
 EDControls.EDInputForm.EDInputFormController.Validate(string changedKey = null) -> bool
-EDControls.EDInputForm.EDNumericInput
 EDControls.EDInputForm.Field
 EDControls.EDInputForm.Field.BoolValue.get -> bool
 EDControls.EDInputForm.Field.BoolValue.set -> void
@@ -210,7 +184,6 @@ EDControls.EDInputForm.FieldType.Image = 10 -> EDControls.EDInputForm.FieldType
 EDControls.EDInputForm.FieldType.List = 6 -> EDControls.EDInputForm.FieldType
 EDControls.EDInputForm.FieldType.Number = 1 -> EDControls.EDInputForm.FieldType
 EDControls.EDInputForm.FieldType.Text = 0 -> EDControls.EDInputForm.FieldType
-EDControls.EDInputForm.FieldTypeWire
 EDControls.EDInputForm.Group
 EDControls.EDInputForm.Group.Group() -> void
 EDControls.EDInputForm.Group.GroupName.get -> string
@@ -222,7 +195,6 @@ EDControls.EDInputForm.Group.Key.set -> void
 EDControls.EDInputForm.HelpTextMode
 EDControls.EDInputForm.HelpTextMode.Column = 1 -> EDControls.EDInputForm.HelpTextMode
 EDControls.EDInputForm.HelpTextMode.Tooltip = 0 -> EDControls.EDInputForm.HelpTextMode
-EDControls.EDInputForm.HelpTextModeWire
 EDControls.EDInputForm.Item
 EDControls.EDInputForm.Item.HelpText.get -> string
 EDControls.EDInputForm.Item.HelpText.set -> void
@@ -239,7 +211,6 @@ EDControls.EDInputForm.ItemVisibility.Collapsed = 1 -> EDControls.EDInputForm.It
 EDControls.EDInputForm.ItemVisibility.ProgrammerHidden = 3 -> EDControls.EDInputForm.ItemVisibility
 EDControls.EDInputForm.ItemVisibility.UserHidden = 2 -> EDControls.EDInputForm.ItemVisibility
 EDControls.EDInputForm.ItemVisibility.Visible = 0 -> EDControls.EDInputForm.ItemVisibility
-EDControls.EDInputForm.ItemVisibilityWire
 EDControls.EDInputForm.ValidationTrigger
 EDControls.EDInputForm.ValidationTrigger.BeforeSave = 2 -> EDControls.EDInputForm.ValidationTrigger
 EDControls.EDInputForm.ValidationTrigger.Change = 1 -> EDControls.EDInputForm.ValidationTrigger
@@ -289,23 +260,6 @@ EDControls.EdisonLaunchArgs.UserDirectory.get -> string
 EDControls.EdisonLaunchArgs.UserDirectory.init -> void
 EDControls.EdisonLaunchArgs.UserEmail.get -> string
 EDControls.EdisonLaunchArgs.UserEmail.init -> void
-EDControls.EDList.ColumnLayout
-EDControls.EDList.ColumnLayout.ColumnLayout() -> void
-EDControls.EDList.ColumnLayout.Columns.get -> System.Collections.Generic.List<EDControls.EDList.ColumnPref>
-EDControls.EDList.ColumnLayout.Columns.set -> void
-EDControls.EDList.ColumnLayout.Sort.get -> System.Collections.Generic.List<EDControls.EDList.SortPref>
-EDControls.EDList.ColumnLayout.Sort.set -> void
-EDControls.EDList.ColumnLayout.Version.get -> int
-EDControls.EDList.ColumnLayout.Version.set -> void
-EDControls.EDList.ColumnLayoutSerializer
-EDControls.EDList.ColumnPref
-EDControls.EDList.ColumnPref.ColumnPref() -> void
-EDControls.EDList.ColumnPref.DisplayIndex.get -> int
-EDControls.EDList.ColumnPref.DisplayIndex.set -> void
-EDControls.EDList.ColumnPref.Key.get -> string
-EDControls.EDList.ColumnPref.Key.set -> void
-EDControls.EDList.ColumnPref.Width.get -> double
-EDControls.EDList.ColumnPref.Width.set -> void
 EDControls.EDList.EDList
 EDControls.EDList.EDList.ApplyFilterAsync(System.Collections.Generic.IReadOnlyDictionary<string, string> filter) -> System.Threading.Tasks.Task
 EDControls.EDList.EDList.CacheClass.get -> string
@@ -338,7 +292,6 @@ EDControls.EDList.EDList.SetChecked(string rowId, bool isChecked) -> void
 EDControls.EDList.EDList.SetData(System.Collections.Generic.IReadOnlyList<EDControls.EDList.ListColumn> columns, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyDictionary<string, string>> rows) -> void
 EDControls.EDList.EDList.Title.get -> string
 EDControls.EDList.EDList.Title.set -> void
-EDControls.EDList.EDListFilter
 EDControls.EDList.EDListRow
 EDControls.EDList.EDListRow.EDListRow(string id, System.Collections.Generic.Dictionary<string, string> values) -> void
 EDControls.EDList.EDListRow.EDListRow(string id, System.Collections.Generic.Dictionary<string, string> values, System.Collections.Generic.IReadOnlyDictionary<string, object> sortKeys) -> void
@@ -384,12 +337,6 @@ EDControls.EDList.ListColumnType.Text = 0 -> EDControls.EDList.ListColumnType
 EDControls.EDList.ListSelectionMode
 EDControls.EDList.ListSelectionMode.Check = 1 -> EDControls.EDList.ListSelectionMode
 EDControls.EDList.ListSelectionMode.Single = 0 -> EDControls.EDList.ListSelectionMode
-EDControls.EDList.SortPref
-EDControls.EDList.SortPref.Direction.get -> string
-EDControls.EDList.SortPref.Direction.set -> void
-EDControls.EDList.SortPref.Key.get -> string
-EDControls.EDList.SortPref.Key.set -> void
-EDControls.EDList.SortPref.SortPref() -> void
 EDControls.EDSearchTextBox.EDSearchTextBox
 EDControls.EDSearchTextBox.EDSearchTextBox.EDSearchTextBox() -> void
 EDControls.EDSearchTextBox.EDSearchTextBox.Placeholder.get -> string
@@ -400,11 +347,6 @@ EDControls.EDTheme.AppTheme
 EDControls.EDTheme.AppTheme.Dark = 1 -> EDControls.EDTheme.AppTheme
 EDControls.EDTheme.AppTheme.Light = 0 -> EDControls.EDTheme.AppTheme
 EDControls.EDTheme.ThemeService
-EDControls.EDTheme.UserThemePreference
-EDControls.EDTheme.UserThemePreference.DarkMode.get -> bool
-EDControls.EDTheme.UserThemePreference.DarkMode.set -> void
-EDControls.EDTheme.UserThemePreference.Save() -> void
-EDControls.EDTheme.UserThemePreference.UserThemePreference() -> void
 EDControls.EDViewModel.AccessTable
 EDControls.EDViewModel.AccessTable.AccessTable(System.Collections.Generic.HashSet<string> allowed, bool isAllAccess) -> void
 EDControls.EDViewModel.AccessTable.Contains(string elementId) -> bool
@@ -586,69 +528,7 @@ EDControls.EDViewModel.WindowNavigator.TryCloseAll() -> bool
 EDControls.EDViewModel.WindowNavigator.TryCloseShellWindows() -> bool
 EDControls.EDViewModel.WindowNavigator.WindowNavigator() -> void
 EDControls.EDViewModel.WindowNavigator.WindowNavigator(System.Func<EDControls.EDViewModel.EDServices> services) -> void
-EDControls.ErrorReporting.ErrorAttachment
-EDControls.ErrorReporting.ErrorAttachment.<Clone>$() -> EDControls.ErrorReporting.ErrorAttachment
-EDControls.ErrorReporting.ErrorAttachment.Data.get -> string
-EDControls.ErrorReporting.ErrorAttachment.Data.init -> void
-EDControls.ErrorReporting.ErrorAttachment.Deconstruct(out string FileName, out string MimeType, out string Data) -> void
-EDControls.ErrorReporting.ErrorAttachment.Equals(EDControls.ErrorReporting.ErrorAttachment other) -> bool
-EDControls.ErrorReporting.ErrorAttachment.ErrorAttachment(string FileName, string MimeType, string Data) -> void
-EDControls.ErrorReporting.ErrorAttachment.FileName.get -> string
-EDControls.ErrorReporting.ErrorAttachment.FileName.init -> void
-EDControls.ErrorReporting.ErrorAttachment.MimeType.get -> string
-EDControls.ErrorReporting.ErrorAttachment.MimeType.init -> void
-EDControls.ErrorReporting.ErrorContext
-EDControls.ErrorReporting.ErrorContext.<Clone>$() -> EDControls.ErrorReporting.ErrorContext
-EDControls.ErrorReporting.ErrorContext.AppId.get -> string
-EDControls.ErrorReporting.ErrorContext.AppId.init -> void
-EDControls.ErrorReporting.ErrorContext.AppVersion.get -> string
-EDControls.ErrorReporting.ErrorContext.AppVersion.init -> void
-EDControls.ErrorReporting.ErrorContext.Equals(EDControls.ErrorReporting.ErrorContext other) -> bool
-EDControls.ErrorReporting.ErrorContext.ErrorContext() -> void
-EDControls.ErrorReporting.ErrorContext.FullName.get -> string
-EDControls.ErrorReporting.ErrorContext.FullName.init -> void
-EDControls.ErrorReporting.ErrorContext.Idfa.get -> string
-EDControls.ErrorReporting.ErrorContext.Idfa.init -> void
-EDControls.ErrorReporting.ErrorContext.IsInternal.get -> bool
-EDControls.ErrorReporting.ErrorContext.IsInternal.init -> void
-EDControls.ErrorReporting.ErrorContext.LoginName.get -> string
-EDControls.ErrorReporting.ErrorContext.LoginName.init -> void
-EDControls.ErrorReporting.ErrorContext.MachineName.get -> string
-EDControls.ErrorReporting.ErrorContext.MachineName.init -> void
-EDControls.ErrorReporting.ErrorContext.Mlp.get -> string
-EDControls.ErrorReporting.ErrorContext.Mlp.init -> void
-EDControls.ErrorReporting.ErrorContext.WindowNamespace.get -> string
-EDControls.ErrorReporting.ErrorContext.WindowNamespace.init -> void
-EDControls.ErrorReporting.ErrorContext.WindowTitle.get -> string
-EDControls.ErrorReporting.ErrorContext.WindowTitle.init -> void
-EDControls.ErrorReporting.ErrorReport
-EDControls.ErrorReporting.ErrorReport.Attachments.get -> System.Collections.Generic.IReadOnlyList<EDControls.ErrorReporting.ErrorAttachment>
-EDControls.ErrorReporting.ErrorReport.Attachments.init -> void
-EDControls.ErrorReporting.ErrorReport.Data.get -> System.Text.Json.Nodes.JsonObject
-EDControls.ErrorReporting.ErrorReport.Data.init -> void
-EDControls.ErrorReporting.ErrorReport.Description.get -> string
-EDControls.ErrorReporting.ErrorReport.Description.init -> void
-EDControls.ErrorReporting.ErrorReport.ErrorReport() -> void
-EDControls.ErrorReporting.ErrorReport.Module.get -> string
-EDControls.ErrorReporting.ErrorReport.Module.init -> void
-EDControls.ErrorReporting.ErrorReport.Name.get -> string
-EDControls.ErrorReporting.ErrorReport.Name.init -> void
-EDControls.ErrorReporting.ErrorReport.Partner.get -> string
-EDControls.ErrorReporting.ErrorReport.Partner.init -> void
-EDControls.ErrorReporting.ErrorReport.RefId.get -> string
-EDControls.ErrorReporting.ErrorReport.RefId.init -> void
-EDControls.ErrorReporting.ErrorReport.Source.get -> string
-EDControls.ErrorReporting.ErrorReport.Source.init -> void
-EDControls.ErrorReporting.ErrorReport.ToJson() -> System.Text.Json.Nodes.JsonObject
-EDControls.ErrorReporting.ErrorReport.Type.get -> string
-EDControls.ErrorReporting.ErrorReport.Type.init -> void
-EDControls.ErrorReporting.ErrorReportBuilder
-EDControls.ErrorReporting.ErrorReporter
 EDControls.ErrorReporting.ErrorReports
-EDControls.ErrorReporting.ErrorThrottle
-EDControls.ErrorReporting.ErrorThrottle.ErrorThrottle(System.TimeSpan? window = null, int maxReportsPerRun = 50) -> void
-EDControls.ErrorReporting.ErrorThrottle.Register(string key, System.DateTime now) -> EDControls.ErrorReporting.ThrottleDecision
-EDControls.ErrorReporting.ErrorThrottle.SentCount.get -> int
 EDControls.ErrorReporting.LegacyHostCrashedException
 EDControls.ErrorReporting.LegacyHostCrashedException.ExeName.get -> string
 EDControls.ErrorReporting.LegacyHostCrashedException.ExitCode.get -> int
@@ -656,20 +536,6 @@ EDControls.ErrorReporting.LegacyHostCrashedException.FormFqn.get -> string
 EDControls.ErrorReporting.LegacyHostCrashedException.LegacyHostCrashedException(string exeName, string formFqn, int exitCode) -> void
 EDControls.ErrorReporting.LegacyHostCrashedException.LegacyHostCrashedException(string exeName, string formFqn, int exitCode, string cause) -> void
 EDControls.ErrorReporting.MlineEnvironment
-EDControls.ErrorReporting.ThrottleAction
-EDControls.ErrorReporting.ThrottleAction.Send = 0 -> EDControls.ErrorReporting.ThrottleAction
-EDControls.ErrorReporting.ThrottleAction.SendSummary = 2 -> EDControls.ErrorReporting.ThrottleAction
-EDControls.ErrorReporting.ThrottleAction.Suppress = 1 -> EDControls.ErrorReporting.ThrottleAction
-EDControls.ErrorReporting.ThrottleDecision
-EDControls.ErrorReporting.ThrottleDecision.Action.get -> EDControls.ErrorReporting.ThrottleAction
-EDControls.ErrorReporting.ThrottleDecision.Action.init -> void
-EDControls.ErrorReporting.ThrottleDecision.Deconstruct(out EDControls.ErrorReporting.ThrottleAction Action, out int RepeatCount) -> void
-EDControls.ErrorReporting.ThrottleDecision.Equals(EDControls.ErrorReporting.ThrottleDecision other) -> bool
-EDControls.ErrorReporting.ThrottleDecision.RepeatCount.get -> int
-EDControls.ErrorReporting.ThrottleDecision.RepeatCount.init -> void
-EDControls.ErrorReporting.ThrottleDecision.ThrottleDecision() -> void
-EDControls.ErrorReporting.ThrottleDecision.ThrottleDecision(EDControls.ErrorReporting.ThrottleAction Action, int RepeatCount) -> void
-EDControls.ErrorReporting.WindowSnapshot
 EDControls.IEDFilterTarget
 EDControls.IEDFilterTarget.ApplyFilterAsync(System.Collections.Generic.IReadOnlyDictionary<string, string> filter) -> System.Threading.Tasks.Task
 EDControls.IMLRest
@@ -793,29 +659,12 @@ EDControls.RestCallRunner.RestCallRunner(System.Func<EDControls.IMLRest> rest) -
 EDControls.RestCallRunner.RunAsync<T>(System.Func<EDControls.IMLRest, T> call) -> System.Threading.Tasks.Task<T>
 EDControls.ScrollWheelBubbling
 EDControls.SearchNormalization
-EDControls.SessionState.InMemorySessionState
-EDControls.SessionState.InMemorySessionState.Get(string scope, string key) -> string
-EDControls.SessionState.InMemorySessionState.InMemorySessionState() -> void
-EDControls.SessionState.InMemorySessionState.Set(string scope, string key, string value) -> void
 EDControls.SessionState.ISessionState
 EDControls.SessionState.ISessionState.Get(string scope, string key) -> string
 EDControls.SessionState.ISessionState.Set(string scope, string key, string value) -> void
-EDControls.TaskbarIcon
-EDControls.UserFonts.FontCatalog
 EDControls.UserFonts.FontService
 EDControls.UserFonts.FontSettingsWindow
 EDControls.UserFonts.FontSettingsWindow.InitializeComponent() -> void
-EDControls.UserFonts.UserFontPreference
-EDControls.UserFonts.UserFontPreference.FontApplied.get -> bool
-EDControls.UserFonts.UserFontPreference.FontApplied.set -> void
-EDControls.UserFonts.UserFontPreference.FontFamily.get -> string
-EDControls.UserFonts.UserFontPreference.FontFamily.set -> void
-EDControls.UserFonts.UserFontPreference.FontSize.get -> double?
-EDControls.UserFonts.UserFontPreference.FontSize.set -> void
-EDControls.UserFonts.UserFontPreference.Save() -> void
-EDControls.UserFonts.UserFontPreference.UserFontPreference() -> void
-EDControls.UserFonts.UserFontPreference.Version.get -> int?
-EDControls.UserFonts.UserFontPreference.Version.set -> void
 EDControls.UserPrefs.CacheUserPrefsService
 EDControls.UserPrefs.CacheUserPrefsService.CacheUserPrefsService(EDControls.IMLRest mlRest) -> void
 EDControls.UserPrefs.CacheUserPrefsService.CacheUserPrefsService(EDControls.IRestCallRunner runner, System.Action<System.Exception> reportFailure = null) -> void
@@ -828,13 +677,7 @@ EDControls.UserPrefs.IUserPrefsService
 EDControls.UserPrefs.IUserPrefsService.DeleteAsync(string scope, string key) -> System.Threading.Tasks.Task
 EDControls.UserPrefs.IUserPrefsService.LoadAsync(string scope, string key) -> System.Threading.Tasks.Task<System.Text.Json.Nodes.JsonNode>
 EDControls.UserPrefs.IUserPrefsService.SaveAsync(string scope, string key, System.Text.Json.Nodes.JsonNode data) -> System.Threading.Tasks.Task
-EDControls.UserPrefs.NullUserPrefsService
-EDControls.UserPrefs.NullUserPrefsService.DeleteAsync(string scope, string key) -> System.Threading.Tasks.Task
-EDControls.UserPrefs.NullUserPrefsService.LoadAsync(string scope, string key) -> System.Threading.Tasks.Task<System.Text.Json.Nodes.JsonNode>
-EDControls.UserPrefs.NullUserPrefsService.NullUserPrefsService() -> void
-EDControls.UserPrefs.NullUserPrefsService.SaveAsync(string scope, string key, System.Text.Json.Nodes.JsonNode data) -> System.Threading.Tasks.Task
 EDControls.UserPrefs.UserPrefsSession
-EDControls.WindowDimmer
 EDControls.WindowGeometry
 EDControls.WindowGeometry.Deconstruct(out double? Left, out double? Top, out double? Width, out double? Height, out bool? Maximized) -> void
 EDControls.WindowGeometry.Equals(EDControls.WindowGeometry other) -> bool
@@ -869,15 +712,6 @@ override EDControls.EDSearchTextBox.EDSearchTextBox.OnPreviewKeyDown(System.Wind
 override EDControls.EDViewModel.RunningModuleInfo.Equals(object obj) -> bool
 override EDControls.EDViewModel.RunningModuleInfo.GetHashCode() -> int
 override EDControls.EDViewModel.RunningModuleInfo.ToString() -> string
-override EDControls.ErrorReporting.ErrorAttachment.Equals(object obj) -> bool
-override EDControls.ErrorReporting.ErrorAttachment.GetHashCode() -> int
-override EDControls.ErrorReporting.ErrorAttachment.ToString() -> string
-override EDControls.ErrorReporting.ErrorContext.Equals(object obj) -> bool
-override EDControls.ErrorReporting.ErrorContext.GetHashCode() -> int
-override EDControls.ErrorReporting.ErrorContext.ToString() -> string
-override EDControls.ErrorReporting.ThrottleDecision.Equals(object obj) -> bool
-override EDControls.ErrorReporting.ThrottleDecision.GetHashCode() -> int
-override EDControls.ErrorReporting.ThrottleDecision.ToString() -> string
 override EDControls.ListItem.Equals(object obj) -> bool
 override EDControls.ListItem.GetHashCode() -> int
 override EDControls.ListItem.ToString() -> string
@@ -895,28 +729,15 @@ override EDControls.WindowGeometry.GetHashCode() -> int
 override EDControls.WindowGeometry.ToString() -> string
 readonly EDControls.EDViewModel.EDViewModel._services -> EDControls.EDViewModel.EDServices
 static EDControls.EDAppearance.Initialize(System.Windows.Application app) -> void
-static EDControls.EDFilter.EDFilterPrefsSerializer.Deserialize(System.Text.Json.Nodes.JsonNode node) -> EDControls.EDFilter.EDFilterPrefs
-static EDControls.EDFilter.EDFilterPrefsSerializer.Serialize(EDControls.EDFilter.EDFilterPrefs prefs) -> System.Text.Json.Nodes.JsonNode
 static EDControls.EDInputForm.EDInputForm.PickColorImpl.get -> System.Func<System.Windows.Window, string, string>
 static EDControls.EDInputForm.EDInputForm.PickColorImpl.set -> void
 static EDControls.EDInputForm.EDInputForm.PickImageImpl.get -> System.Func<System.Windows.Window, string>
 static EDControls.EDInputForm.EDInputForm.PickImageImpl.set -> void
 static EDControls.EDInputForm.EDInputFormController.FormatValidationErrors(System.Collections.Generic.List<EDControls.EDInputForm.Item> items) -> string
-static EDControls.EDInputForm.EDNumericInput.GetMode(System.Windows.DependencyObject obj) -> string
-static EDControls.EDInputForm.EDNumericInput.SetMode(System.Windows.DependencyObject obj, string value) -> void
-static EDControls.EDInputForm.FieldTypeWire.FromWire(string wire) -> EDControls.EDInputForm.FieldType
-static EDControls.EDInputForm.FieldTypeWire.ToWire(this EDControls.EDInputForm.FieldType type) -> string
-static EDControls.EDInputForm.HelpTextModeWire.FromWire(string wire) -> EDControls.EDInputForm.HelpTextMode
-static EDControls.EDInputForm.HelpTextModeWire.ToWire(this EDControls.EDInputForm.HelpTextMode mode) -> string
-static EDControls.EDInputForm.ItemVisibilityWire.FromWire(string wire) -> EDControls.EDInputForm.ItemVisibility
-static EDControls.EDInputForm.ItemVisibilityWire.ToWire(this EDControls.EDInputForm.ItemVisibility v) -> string
 static EDControls.EdisonLaunchArgs.IsEdisonLaunch(string[] args) -> bool
 static EDControls.EdisonLaunchArgs.operator !=(EDControls.EdisonLaunchArgs left, EDControls.EdisonLaunchArgs right) -> bool
 static EDControls.EdisonLaunchArgs.operator ==(EDControls.EdisonLaunchArgs left, EDControls.EdisonLaunchArgs right) -> bool
 static EDControls.EdisonLaunchArgs.TryParse(string[] args) -> EDControls.EdisonLaunchArgs
-static EDControls.EDList.ColumnLayoutSerializer.Deserialize(System.Text.Json.Nodes.JsonNode node) -> EDControls.EDList.ColumnLayout
-static EDControls.EDList.ColumnLayoutSerializer.Serialize(EDControls.EDList.ColumnLayout layout) -> System.Text.Json.Nodes.JsonNode
-static EDControls.EDList.EDListFilter.Matches(EDControls.EDList.EDListRow row, string searchText, System.Collections.Generic.IEnumerable<string> columnKeys) -> bool
 static EDControls.EDSupportPanel.EDSupportPanel.GetSuppress(System.Windows.Window window) -> bool
 static EDControls.EDSupportPanel.EDSupportPanel.SetSuppress(System.Windows.Window window, bool value) -> void
 static EDControls.EDSupportPanel.SupportActions.BuildContext(string formName, string title, string ns, string version) -> string
@@ -929,7 +750,6 @@ static EDControls.EDTheme.ThemeService.Current.get -> EDControls.EDTheme.AppThem
 static EDControls.EDTheme.ThemeService.Initialize(System.Windows.Application app) -> void
 static EDControls.EDTheme.ThemeService.IsDark.get -> bool
 static EDControls.EDTheme.ThemeService.SetDarkMode(bool dark) -> void
-static EDControls.EDTheme.UserThemePreference.Current.get -> EDControls.EDTheme.UserThemePreference
 static EDControls.EDViewModel.EDServices.Current.get -> EDControls.EDViewModel.EDServices
 static EDControls.EDViewModel.EDServices.Initialize(EDControls.EDViewModel.EDServices services) -> void
 static EDControls.EDViewModel.EDUsageTelemetry.Enabled.get -> bool
@@ -940,16 +760,6 @@ static EDControls.EDViewModel.RunningModuleInfo.operator !=(EDControls.EDViewMod
 static EDControls.EDViewModel.RunningModuleInfo.operator ==(EDControls.EDViewModel.RunningModuleInfo left, EDControls.EDViewModel.RunningModuleInfo right) -> bool
 static EDControls.EDViewModel.WindowNavigator.ResolveExecutablePath(string relativePath) -> string
 static EDControls.EDViewModel.WindowNavigator.WpfOnly() -> EDControls.EDViewModel.IWindowNavigator
-static EDControls.ErrorReporting.ErrorAttachment.operator !=(EDControls.ErrorReporting.ErrorAttachment left, EDControls.ErrorReporting.ErrorAttachment right) -> bool
-static EDControls.ErrorReporting.ErrorAttachment.operator ==(EDControls.ErrorReporting.ErrorAttachment left, EDControls.ErrorReporting.ErrorAttachment right) -> bool
-static EDControls.ErrorReporting.ErrorContext.operator !=(EDControls.ErrorReporting.ErrorContext left, EDControls.ErrorReporting.ErrorContext right) -> bool
-static EDControls.ErrorReporting.ErrorContext.operator ==(EDControls.ErrorReporting.ErrorContext left, EDControls.ErrorReporting.ErrorContext right) -> bool
-static EDControls.ErrorReporting.ErrorReport.NewRefId() -> string
-static EDControls.ErrorReporting.ErrorReport.ResolveSource(string appId, bool isInternal) -> string
-static EDControls.ErrorReporting.ErrorReportBuilder.Build(System.Exception ex, EDControls.ErrorReporting.ErrorContext ctx, System.Collections.Generic.IReadOnlyList<EDControls.ErrorReporting.ErrorAttachment> attachments = null, int repeatCount = 1) -> EDControls.ErrorReporting.ErrorReport
-static EDControls.ErrorReporting.ErrorReportBuilder.BuildFollowUp(string refId, string userText, EDControls.ErrorReporting.ErrorContext ctx) -> EDControls.ErrorReporting.ErrorReport
-static EDControls.ErrorReporting.ErrorReporter.Send(EDControls.ErrorReporting.ErrorReport report) -> void
-static EDControls.ErrorReporting.ErrorReporter.Send(System.Collections.Generic.IReadOnlyList<EDControls.ErrorReporting.ErrorReport> reports) -> void
 static EDControls.ErrorReporting.ErrorReports.Enabled.get -> bool
 static EDControls.ErrorReporting.ErrorReports.Enabled.set -> void
 static EDControls.ErrorReporting.ErrorReports.Report(System.Exception ex, System.Windows.Window owner = null) -> string
@@ -958,11 +768,7 @@ static EDControls.ErrorReporting.ErrorReports.ReportFatal(System.Exception ex) -
 static EDControls.ErrorReporting.ErrorReports.ReportFollowUp(string refId, string userText, System.Windows.Window owner = null) -> void
 static EDControls.ErrorReporting.ErrorReports.ReportLegacyExit(string exeName, string formFqn, int exitCode) -> void
 static EDControls.ErrorReporting.ErrorReports.ReportLegacyExit(string exeName, string formFqn, int exitCode, string hostDetail) -> void
-static EDControls.ErrorReporting.ErrorThrottle.BuildKey(System.Exception ex, string formId, int frames = 5) -> string
 static EDControls.ErrorReporting.MlineEnvironment.IsInternal.get -> bool
-static EDControls.ErrorReporting.ThrottleDecision.operator !=(EDControls.ErrorReporting.ThrottleDecision left, EDControls.ErrorReporting.ThrottleDecision right) -> bool
-static EDControls.ErrorReporting.ThrottleDecision.operator ==(EDControls.ErrorReporting.ThrottleDecision left, EDControls.ErrorReporting.ThrottleDecision right) -> bool
-static EDControls.ErrorReporting.WindowSnapshot.Capture() -> System.Collections.Generic.IReadOnlyList<EDControls.ErrorReporting.ErrorAttachment>
 static EDControls.LegacyOutput.Named(object[] output, char delimiter, string key) -> string
 static EDControls.LegacyOutput.Rows(object[] output, char delimiter) -> System.Collections.Generic.IEnumerable<string[]>
 static EDControls.LegacyOutput.Values(object[] output) -> System.Collections.Generic.IEnumerable<string>
@@ -979,16 +785,12 @@ static EDControls.OwnerWindowCentering.CenterOnOwner(System.Windows.Window windo
 static EDControls.ScrollWheelBubbling.GetIsEnabled(System.Windows.DependencyObject d) -> bool
 static EDControls.ScrollWheelBubbling.SetIsEnabled(System.Windows.DependencyObject d, bool value) -> void
 static EDControls.SearchNormalization.NormalizeForSearch(string s) -> string
-static EDControls.TaskbarIcon.AttachToAllWindows() -> void
 static EDControls.UserFonts.FontService.Applied -> System.Action
-static EDControls.UserFonts.FontService.Apply(EDControls.UserFonts.UserFontPreference prefs) -> void
 static EDControls.UserFonts.FontService.BodySize.get -> double
 static EDControls.UserFonts.FontService.DefaultBodyPt.get -> double
 static EDControls.UserFonts.FontService.Initialize(System.Windows.Application app) -> void
 static EDControls.UserFonts.FontSettingsWindow.ShowDialogFor(System.Windows.Window owner) -> void
-static EDControls.UserFonts.UserFontPreference.Current.get -> EDControls.UserFonts.UserFontPreference
 static EDControls.UserPrefs.UserPrefsSession.Capture(this EDControls.UserPrefs.IUserPrefsService prefs) -> EDControls.UserPrefs.IUserPrefsService
-static EDControls.WindowDimmer.Dim(System.Windows.Window owner) -> System.IDisposable
 static EDControls.WindowGeometry.None.get -> EDControls.WindowGeometry
 static EDControls.WindowGeometry.operator !=(EDControls.WindowGeometry left, EDControls.WindowGeometry right) -> bool
 static EDControls.WindowGeometry.operator ==(EDControls.WindowGeometry left, EDControls.WindowGeometry right) -> bool
@@ -1027,7 +829,6 @@ static readonly EDControls.EDInputForm.EDInputForm.ItemsProperty -> System.Windo
 static readonly EDControls.EDInputForm.EDInputForm.SearchMemoryKeyProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDInputForm.EDInputForm.SearchTextProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDInputForm.EDInputForm.TitleProperty -> System.Windows.DependencyProperty
-static readonly EDControls.EDInputForm.EDNumericInput.ModeProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDList.EDList.CacheClassProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDList.EDList.CellStyleProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDList.EDList.HostIdProperty -> System.Windows.DependencyProperty
@@ -1042,16 +843,12 @@ static readonly EDControls.EDSupportPanel.SupportActions.WidgetBaseUrl -> string
 static readonly EDControls.EDSupportPanel.SupportActions.WidgetKey -> string
 static readonly EDControls.EDViewModel.BindingProxy.DataProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDViewModel.WindowNavigator.EdisonDeployRoot -> string
-static readonly EDControls.ErrorReporting.ErrorReporter.ApiKey -> string
-static readonly EDControls.ErrorReporting.ErrorReporter.IngestUrl -> string
 static readonly EDControls.MiniApps.EDMiniAppBar.ActionCommandProperty -> System.Windows.DependencyProperty
 static readonly EDControls.MiniApps.EDMiniAppBar.ActionTextProperty -> System.Windows.DependencyProperty
 static readonly EDControls.MiniApps.EDMiniAppBar.IsBusyProperty -> System.Windows.DependencyProperty
 static readonly EDControls.MiniApps.EDMiniAppBar.ShowActionProperty -> System.Windows.DependencyProperty
 static readonly EDControls.MiniApps.EDMiniAppBar.StatusTextProperty -> System.Windows.DependencyProperty
 static readonly EDControls.ScrollWheelBubbling.IsEnabledProperty -> System.Windows.DependencyProperty
-static readonly EDControls.UserFonts.FontCatalog.AllowedFamilies -> System.Collections.Generic.IReadOnlyList<string>
-static readonly EDControls.WindowDimmer.TintBrush -> System.Windows.Media.SolidColorBrush
 virtual EDControls.EDInputForm.Item.EffectiveVisibility.get -> System.Windows.Visibility
 virtual EDControls.EDInputForm.Item.OnVisibilityChanged() -> void
 virtual EDControls.EDViewModel.EDViewModel.OnAdd() -> void
@@ -1071,3 +868,57 @@ virtual EDControls.ListItem.PrintMembers(System.Text.StringBuilder builder) -> b
 virtual EDControls.MiniApps.EDMiniAppViewModel.Icon.get -> System.Windows.Media.ImageSource
 virtual EDControls.MiniApps.EDMiniAppViewModel.OnClosed() -> void
 virtual EDControls.MiniApps.EDMiniAppViewModel.OnOpened() -> void
+EDControls.EDInputForm.SearchSynonyms
+EDControls.EDInputForm.SearchSynonyms.SearchSynonyms(System.Collections.Generic.IReadOnlyDictionary<string, string[]> slovnik) -> void
+EDControls.EdisonLaunchArgs.ShellMonitor.get -> string
+EDControls.EdisonLaunchArgs.ShellMonitor.init -> void
+EDControls.EDLogo.EDLogo
+EDControls.EDLogo.EDLogo.AnimationCompleted -> System.EventHandler
+EDControls.EDLogo.EDLogo.AnimationMode.get -> EDControls.EDLogo.EDLogoAnimationMode
+EDControls.EDLogo.EDLogo.AnimationMode.set -> void
+EDControls.EDLogo.EDLogo.EDLogo() -> void
+EDControls.EDLogo.EDLogo.InitializeComponent() -> void
+EDControls.EDLogo.EDLogo.Play() -> void
+EDControls.EDLogo.EDLogoAnimationMode
+EDControls.EDLogo.EDLogoAnimationMode.Loop = 2 -> EDControls.EDLogo.EDLogoAnimationMode
+EDControls.EDLogo.EDLogoAnimationMode.None = 0 -> EDControls.EDLogo.EDLogoAnimationMode
+EDControls.EDLogo.EDLogoAnimationMode.Once = 1 -> EDControls.EDLogo.EDLogoAnimationMode
+EDControls.EDViewModel.EDServices.PreferredMonitor.get -> string
+EDControls.EDViewModel.EDServices.PreferredMonitor.set -> void
+EDControls.EDViewModel.EDServices.WindowStateStoreFactory.get -> System.Func<string, EDControls.IWindowStateStore>
+EDControls.EDViewModel.EDServices.WindowStateStoreFactory.set -> void
+EDControls.EDViewModel.IPopupDisplayer.ConfirmExit(string message, System.Windows.Window owner = null) -> bool
+EDControls.EDViewModel.IWindowNavigator.StartLegacyDetachedDialog(string exeName, string formFqn, string inputParam) -> EDControls.EDViewModel.LegacyDialogRun
+EDControls.EDViewModel.LegacyDialogRun
+EDControls.EDViewModel.LegacyDialogRun.<Clone>$() -> EDControls.EDViewModel.LegacyDialogRun
+EDControls.EDViewModel.LegacyDialogRun.Deconstruct(out System.Threading.Tasks.Task WindowShown, out System.Threading.Tasks.Task Exited) -> void
+EDControls.EDViewModel.LegacyDialogRun.Equals(EDControls.EDViewModel.LegacyDialogRun other) -> bool
+EDControls.EDViewModel.LegacyDialogRun.Exited.get -> System.Threading.Tasks.Task
+EDControls.EDViewModel.LegacyDialogRun.Exited.init -> void
+EDControls.EDViewModel.LegacyDialogRun.LegacyDialogRun(System.Threading.Tasks.Task WindowShown, System.Threading.Tasks.Task Exited) -> void
+EDControls.EDViewModel.LegacyDialogRun.WindowShown.get -> System.Threading.Tasks.Task
+EDControls.EDViewModel.LegacyDialogRun.WindowShown.init -> void
+EDControls.EDViewModel.PopupDisplayer.ConfirmExit(string message, System.Windows.Window owner = null) -> bool
+EDControls.EDViewModel.WindowNavigator.MissingLegacyHostMessage() -> string
+EDControls.EDViewModel.WindowNavigator.StartLegacyDetachedDialog(string exeName, string formFqn, string inputParam) -> EDControls.EDViewModel.LegacyDialogRun
+EDControls.ErrorReporting.ErrorReportType
+EDControls.ErrorReporting.ErrorReportType.Error = 2 -> EDControls.ErrorReporting.ErrorReportType
+EDControls.ErrorReporting.ErrorReportType.Info = 0 -> EDControls.ErrorReporting.ErrorReportType
+EDControls.ErrorReporting.ErrorReportType.Warning = 1 -> EDControls.ErrorReporting.ErrorReportType
+EDControls.MLRestFailure
+EDControls.MonitorPlacement
+override EDControls.EDViewModel.LegacyDialogRun.Equals(object obj) -> bool
+override EDControls.EDViewModel.LegacyDialogRun.GetHashCode() -> int
+override EDControls.EDViewModel.LegacyDialogRun.ToString() -> string
+static EDControls.EDAppearance.UseCommonFolder(string folder) -> void
+static EDControls.EDInputForm.EDInputForm.GetSearchSynonyms(System.Windows.DependencyObject element) -> EDControls.EDInputForm.SearchSynonyms
+static EDControls.EDInputForm.EDInputForm.SetSearchSynonyms(System.Windows.DependencyObject element, EDControls.EDInputForm.SearchSynonyms value) -> void
+static EDControls.EDViewModel.LegacyDialogRun.operator !=(EDControls.EDViewModel.LegacyDialogRun left, EDControls.EDViewModel.LegacyDialogRun right) -> bool
+static EDControls.EDViewModel.LegacyDialogRun.operator ==(EDControls.EDViewModel.LegacyDialogRun left, EDControls.EDViewModel.LegacyDialogRun right) -> bool
+static EDControls.EDViewModel.WindowNavigator.LaunchesThroughLegacyHost(string exeName) -> bool
+static EDControls.ErrorReporting.ErrorReports.ReportEvent(EDControls.ErrorReporting.ErrorReportType type, string module, string name, string message, System.Text.Json.Nodes.JsonObject details) -> void
+static EDControls.MLRestFailure.IsTransport(System.Exception ex) -> bool
+static EDControls.MonitorPlacement.DeviceNameOf(System.Windows.Window window) -> string
+static EDControls.MonitorPlacement.FallbackWorkArea(System.Windows.Window window) -> System.Windows.Rect
+static readonly EDControls.EDInputForm.EDInputForm.SearchSynonymsProperty -> System.Windows.DependencyProperty
+static readonly EDControls.EDLogo.EDLogo.AnimationModeProperty -> System.Windows.DependencyProperty
