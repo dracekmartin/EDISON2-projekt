@@ -52,6 +52,9 @@ Parameter ElementKind = "STOP";
 
 Parameter InstanceTvary = "linka,linky,linku,linky,linek";
 
+/// „Zastávkový JŘ (AD) - výchozí" (`zastavkovy-jr-ad.json`): jediná šablona M-line agendy (Jan 3. 11.).
+Parameter VychoziSablonaMline As %String = "5b1e0000-0000-4000-8000-000000000001";
+
 /// Vrátí DataSchema - shodné se zastávkovým JŘ MHD (stejný výstupní formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {

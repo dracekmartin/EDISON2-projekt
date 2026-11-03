@@ -75,6 +75,22 @@ Method TestVychoziFirmyMaPrednost()
 	do $$$AssertEquals(..Pravidlo("").zdroj, "mline", "zrušená výchozí firmy → zpět M-line")
 }
 
+/// Výchozí šablona je vždy právě jedna a jen se přesouvá (Jan 3. 11.): volba výchozí šablony M-line záznam firmy
+/// smaže, takže okno šablon ji ukáže jako výchozí M-line, ne jako výchozí firmy.
+Method TestVolbaVychoziMlineSmazeZaznamFirmy()
+{
+	set mlineId = ..VychoziMlineId()
+	do ..Uloz(..#Mline, mlineId, "A4 poznámky pod", ..#Agenda)
+	do ..Uloz(..#Firma, "FA-1", "Naše", ..#Agenda)
+	do ##class(ALVA.TemplateDesigner.API.SablonyProTisk).WriteVychoziFirmy(..#Firma, ..#Agenda, "FA-1", ..#Mline)
+
+	do ##class(ALVA.TemplateDesigner.API.SablonyProTisk).WriteVychoziFirmy(..#Firma, ..#Agenda, mlineId, ..#Mline)
+	do $$$AssertNotTrue($data(^ALVA.TemplateDesigner.Templates(..#Firma,"DEFAULT",..#Agenda)), "výchozí M-line se do firmy nezapíše")
+	set sablona = ..Pravidlo("")
+	do $$$AssertEquals(sablona.templateId, mlineId, "tisk vezme výchozí M-line")
+	do $$$AssertEquals(sablona.zdroj, "mline", "zdroj mline, ne firma")
+}
+
 /// Krok 1 přebije výchozí šablony.
 Method TestVolbaVolajicihoMaPrednost()
 {

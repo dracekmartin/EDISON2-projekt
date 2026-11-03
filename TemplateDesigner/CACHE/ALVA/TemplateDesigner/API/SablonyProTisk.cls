@@ -145,11 +145,12 @@ ClassMethod SeznamProTisk(IdFa As %String, agendaCode As %String, mlineIdFa As %
     q seznam
 }
 
-/// Zapíše (prázdné templateId = smaže) výchozí šablonu firmy pro agendu.
+/// Zapíše (prázdné templateId = smaže) výchozí šablonu firmy pro agendu. Výchozí šablona je vždy právě jedna a jen
+/// se přesouvá (Jan 3. 11.): volba výchozí šablony M-line záznam firmy smaže, protože ta platí i bez něj.
 ClassMethod WriteVychoziFirmy(IdFa As %String, agendaCode As %String, templateId As %String, mlineIdFa As %String = {..#MlineIdFa})
 {
-    d ..AgendaClass(agendaCode)
-    i templateId = "" {
+    s agendaClass = ..AgendaClass(agendaCode)
+    i (templateId = "") || (templateId = $parameter(agendaClass, "VychoziSablonaMline")) {
         k ^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",agendaCode)
         q
     }

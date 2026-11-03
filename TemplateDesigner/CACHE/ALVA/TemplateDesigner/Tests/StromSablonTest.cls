@@ -99,6 +99,9 @@ Method TestApiStrom()
 	set json = $get(^||ML("OUT","1"))
 	do $$$AssertTrue(json [ """JIZDNI_RADY""", "GetStrom: OUT[1] se stromem")
 	do $$$AssertEquals($data(^||ML("OUT","ERR")), 0, "GetStrom bez chyby")
+	// Přepínač tisku z okna JŘ: bez něj okno šablon výchozí šablonu neukazuje (Jan 3. 11.).
+	set tisk = ##class(%DynamicObject).%FromJSON(json).%GetTypeOf("tiskZModulu")
+	do $$$AssertEquals(tisk, "boolean", "GetStrom posílá tiskZModulu jako ano/ne")
 }
 
 /// Seznam v okně šablon podle uzlu stromu: kódy agend čárkou, starší jeden kód, bez filtru vše.

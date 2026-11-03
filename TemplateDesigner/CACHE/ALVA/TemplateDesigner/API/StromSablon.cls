@@ -13,18 +13,22 @@ Class ALVA.TemplateDesigner.API.StromSablon Extends %RegisteredObject
 Parameter MlineIdFa = "MLINE";
 
 /// OUT["1"] = JSON
-///   { "oblasti": [ { "code", "label", "agendy": [ { "code", "label",
+///   { "tiskZModulu", "oblasti": [ { "code", "label", "agendy": [ { "code", "label",
 ///       "varianty": [ { "code" (AgendaVariantCode), "label", "pocet", "tiskne", "vychozi": { "templateId", "name", "zdroj" } } ]
 ///   } ] } ] }
 /// Varianta s prázdným `label` = agenda bez variant (Obecná, agendy report generátoru); `tiskne` = agenda se tiskne
 /// z modulu a smí mít výchozí šablonu (Obecná ne); `vychozi.zdroj` = firma | mline, bez šablony pro tisk prázdný objekt.
+/// `tiskZModulu` = tisk z okna jízdních řádů je zapnutý (týž přepínač jako položka v okně JŘ, repo EDISON
+/// `ISYJR2/TEMPLATES/Tisk.cls`): bez něj okno šablon výchozí šablonu neukazuje, nastavení by nemělo účinek.
 ClassMethod GetStrom(ByRef sys As %String) As %Status
 {
     s err = ""
     try {
         $$$FillParams
 
-        s ^||ML("OUT","1") = ..Strom(IdFa).%ToJSON()
+        s strom = ..Strom(IdFa)
+        d strom.%Set("tiskZModulu", ''$g(^[dataDB]JRR("TiskNovymNavrharem")), "boolean")
+        s ^||ML("OUT","1") = strom.%ToJSON()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
 }
