@@ -4,11 +4,3 @@ EDControls.EDViewModel.PopupDisplayer.ConfirmSystem(string message, System.Windo
 EDControls.EDViewModel.PopupDisplayer.InfoSystem(string message, System.Windows.Window owner = null) -> void
 *REMOVED*EDControls.EDViewModel.IPopupDisplayer.ConfirmExit(string message, System.Windows.Window owner = null) -> bool
 *REMOVED*EDControls.EDViewModel.PopupDisplayer.ConfirmExit(string message, System.Windows.Window owner = null) -> bool
-EDControls.EDComponentToolbar.EDComponentToolbar.Actions.get -> System.Collections.Generic.IEnumerable<EDControls.EDViewModel.EDAction>
-EDControls.EDComponentToolbar.EDComponentToolbar.Actions.set -> void
-EDControls.EDList.EDList.Actions.get -> System.Collections.Generic.IEnumerable<EDControls.EDViewModel.EDAction>
-EDControls.EDList.EDList.Actions.set -> void
-EDControls.EDList.ListColumn.IconKey.get -> string
-EDControls.EDList.ListColumn.IconKey.set -> void
-static readonly EDControls.EDComponentToolbar.EDComponentToolbar.ActionsProperty -> System.Windows.DependencyProperty
-static readonly EDControls.EDList.EDList.ActionsProperty -> System.Windows.DependencyProperty

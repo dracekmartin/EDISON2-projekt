@@ -9,6 +9,8 @@ EDControls.EDActionInProgress.EDActionInProgress.IsActive.get -> bool
 EDControls.EDActionInProgress.EDActionInProgress.IsActive.set -> void
 EDControls.EDAppearance
 EDControls.EDComponentToolbar.EDComponentToolbar
+EDControls.EDComponentToolbar.EDComponentToolbar.Actions.get -> System.Collections.Generic.IEnumerable<EDControls.EDViewModel.EDAction>
+EDControls.EDComponentToolbar.EDComponentToolbar.Actions.set -> void
 EDControls.EDComponentToolbar.EDComponentToolbar.EDComponentToolbar() -> void
 EDControls.EDComponentToolbar.EDComponentToolbar.EffectiveSearchPlaceholder.get -> string
 EDControls.EDComponentToolbar.EDComponentToolbar.HelpCommand.get -> System.Windows.Input.ICommand
@@ -261,6 +263,8 @@ EDControls.EdisonLaunchArgs.UserDirectory.init -> void
 EDControls.EdisonLaunchArgs.UserEmail.get -> string
 EDControls.EdisonLaunchArgs.UserEmail.init -> void
 EDControls.EDList.EDList
+EDControls.EDList.EDList.Actions.get -> System.Collections.Generic.IEnumerable<EDControls.EDViewModel.EDAction>
+EDControls.EDList.EDList.Actions.set -> void
 EDControls.EDList.EDList.ApplyFilterAsync(System.Collections.Generic.IReadOnlyDictionary<string, string> filter) -> System.Threading.Tasks.Task
 EDControls.EDList.EDList.CacheClass.get -> string
 EDControls.EDList.EDList.CacheClass.set -> void
@@ -306,6 +310,8 @@ EDControls.EDList.ListColumn.Align.get -> EDControls.EDList.ListColumnAlign
 EDControls.EDList.ListColumn.Align.set -> void
 EDControls.EDList.ListColumn.Format.get -> string
 EDControls.EDList.ListColumn.Format.set -> void
+EDControls.EDList.ListColumn.IconKey.get -> string
+EDControls.EDList.ListColumn.IconKey.set -> void
 EDControls.EDList.ListColumn.Key.get -> string
 EDControls.EDList.ListColumn.Key.set -> void
 EDControls.EDList.ListColumn.Label.get -> string
@@ -798,6 +804,7 @@ static EDControls.WindowStatePersistence.Attach(System.Windows.Window window, ED
 static EDControls.WindowStatePersistence.Attach(System.Windows.Window window, string formId) -> void
 static EDControls.WindowStatePersistence.Save(System.Windows.Window window, EDControls.IWindowStateStore store) -> void
 static readonly EDControls.EDActionInProgress.EDActionInProgress.IsActiveProperty -> System.Windows.DependencyProperty
+static readonly EDControls.EDComponentToolbar.EDComponentToolbar.ActionsProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDComponentToolbar.EDComponentToolbar.EffectiveSearchPlaceholderProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDComponentToolbar.EDComponentToolbar.HelpCommandProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDComponentToolbar.EDComponentToolbar.SearchTextProperty -> System.Windows.DependencyProperty
@@ -829,6 +836,7 @@ static readonly EDControls.EDInputForm.EDInputForm.ItemsProperty -> System.Windo
 static readonly EDControls.EDInputForm.EDInputForm.SearchMemoryKeyProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDInputForm.EDInputForm.SearchTextProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDInputForm.EDInputForm.TitleProperty -> System.Windows.DependencyProperty
+static readonly EDControls.EDList.EDList.ActionsProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDList.EDList.CacheClassProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDList.EDList.CellStyleProperty -> System.Windows.DependencyProperty
 static readonly EDControls.EDList.EDList.HostIdProperty -> System.Windows.DependencyProperty
