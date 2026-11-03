@@ -269,6 +269,12 @@ public class EDViewModel : INotifyPropertyChanged
                 FindImage("EDIcons.Delete"),
                 Key.D, ModifierKeys.Control);
 
+        /// <summary>Akce okna mimo standardní trojici se sdílenou ikonou podle klíče (<c>EDIcons.Star</c>) - VM tak
+        /// nesahá na WPF zdroje sám.</summary>
+        public EDAction Custom(string label, ICommand command, string iconKey,
+            Key key = Key.None, ModifierKeys modifiers = ModifierKeys.None) =>
+            new(label, command, FindImage(iconKey), key, modifiers);
+
         private static string? FindString(string key) =>
             Application.Current?.TryFindResource(key) as string;
 
