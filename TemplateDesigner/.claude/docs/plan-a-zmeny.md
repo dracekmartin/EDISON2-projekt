@@ -1,7 +1,7 @@
 # Návrhář sestav - novinky a plán rozvoje
 
-⚠️ **Důležité - které jízdní řády už umíme:** **zastávkové** (AD i MHD) a nově **linkové**
-(zatím jen AD, MHD se připravuje). Ostatní sestavy zatím tiskne Report Generátor.
+⚠️ **Důležité - které jízdní řády už umíme:** **zastávkové** i **linkové**, obojí pro AD i MHD.
+Ostatní sestavy zatím tiskne Report Generátor.
 
 > Přehled toho, co je v Návrháři sestav nového a co chystáme.
 > Hledáte návod k použití? → [Návrhář sestav - uživatelská příručka](https://podpora.m-line.cz/support/wiki/90511fc5-10e5-476d-b7c1-3cd70672f26d)
@@ -38,11 +38,15 @@ Dílčí vylepšení a náměty.
 
 > U každého záznamu je uvedené, které agendy se týká.
 
-### Týden od 2. 11. 2026 · Šablony v databázi podle oblastí a agend
+### Týden od 2. 11. 2026 · Úvodní obrazovka a šablony podle agend
 
+- **Všechny agendy:** po spuštění bez vybrané linky nabídne návrhář **úvodní obrazovku** - šablony, se kterými jste
+  naposledy pracovali, a šablony zvolené agendy včetně hotové šablony od M-line. Kdo začíná, otevře hotovou šablonu
+  jedním kliknutím; znovu ji najdete v menu `Nástroje → Úvodní obrazovka`.
 - **Všechny agendy:** okno **Šablony v databázi** (Ctrl+O) třídí šablony do stromu podle oblasti práce, agendy a varianty.
   U každé agendy vidíte, kolik má šablon, a vpravo jen šablony vybrané větve.
   Strom se bude rozšiřovat s dalšími agendami převzatými z Report Generátoru.
+- **Linkový JŘ AD:** přibyla hotová šablona *Linkový JŘ (AD) - poznámky pod tabulkou A4* a návrhář ji nabízí jako výchozí.
 
 ### Týden od 26. 10. 2026 · Linkové JŘ - městská doprava (MHD)
 
@@ -65,6 +69,9 @@ Dílčí vylepšení a náměty.
 - **Nadpisy sloupců dnů** (pracovní dny, soboty…) bere zastávkový JŘ AD z nastavení jízdních řádů
   vaší firmy, i dvouřádkové a dvojjazyčné, jako starý tisk a linkový JŘ. Nadpisy upravené v šabloně
   platí dál.
+- **Tabulkové prvky** (Seznam zastávek, Minuty odjezdů, Tabulka spojů, Poznámky a tabulky): okna vlastností mají
+  stejné uspořádání - nahoře nastavení prvku, pod ním vždy Záhlaví, Datové buňky, Rámeček, Mřížka a Pozice a velikost.
+  Sloupce všech tabulek se nastavují ve stejné záložce **Sloupce**.
 - **Hledání ve vlastnostech prvku** rozumí běžným slovům: „písmo" najde Font a Velikost, „podbarvení" Barvu pozadí,
   „čára" Rámeček a Mřížku. Hledá se každé slovo zvlášť, takže „výška záhlaví" najde výšku ve skupině Záhlaví.
 - **Zastávkový JŘ MHD:** seznam zastávek umí sloupec **Varianty tras** jako vývěska AD.
