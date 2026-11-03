@@ -9,7 +9,7 @@ namespace TemplateDesigner;
 public sealed record StartPanelItem(Guid TemplateId, string Name, string Detail, bool IsMline = false);
 
 /// <summary>
-/// Úvodní obrazovka přes prázdné plátno po spuštění bez linky (zkušební verze, Jan 29.-30. 10.).
+/// Úvodní obrazovka přes celé okno po spuštění bez linky (Jan 29.-30. 10., do verze 3. 11.).
 /// Zkušený uživatel pokračuje poslední šablonou nebo otevře šablonu firmy, nový najde v seznamu
 /// výchozí šablonu M-line (Jan 30. 10.: každý má mít jednu jasnou cestu). Jen nabízí, nic sama neotevře.
 /// </summary>

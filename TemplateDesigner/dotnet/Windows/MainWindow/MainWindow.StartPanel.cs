@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Input;
 
 namespace TemplateDesigner;
 
@@ -16,12 +17,17 @@ public partial class MainWindow
 
     private void StartPanelShortcuts_Click(object sender, RoutedEventArgs e) => ShowHelp();
 
-    /// <summary>Přepne levý panel na Pomocníka (a rozbalí ho, je-li sbalený).</summary>
+    /// <summary>Přepne levý panel na Pomocníka (a rozbalí ho, je-li sbalený). Úvodní obrazovka leží přes celé
+    /// okno, panel by zůstal pod ní - proto se zavře.</summary>
     private void StartPanelGuide_Click(object sender, RoutedEventArgs e)
     {
+        _vm.StartPanel.Hide();
         if (BtnToggleLeftPanel.IsChecked != true) BtnToggleLeftPanel.IsChecked = true;
         LeftTabControl.SelectedItem = TabAiGuide;
     }
+
+    /// <summary>Klik vedle karty úvodní obrazovky ji zavře, jako Esc.</summary>
+    private void StartPanelScrim_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => _vm.StartPanel.Hide();
 
     private void OpenInBrowser(string url)
     {

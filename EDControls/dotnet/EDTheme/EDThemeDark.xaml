@@ -43,6 +43,8 @@
     <SolidColorBrush x:Key="EDTheme.Bg.Canvas" Color="{StaticResource EDTheme.Bg.Canvas.Color}"/>
     <Color x:Key="EDTheme.Bg.InfoBanner.Color">#FF2A3742</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.InfoBanner" Color="{StaticResource EDTheme.Bg.InfoBanner.Color}"/>
+    <Color x:Key="EDTheme.Bg.Scrim.Color">#99000000</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Scrim" Color="{StaticResource EDTheme.Bg.Scrim.Color}"/>
 
     <!-- Text -->
     <Color x:Key="EDTheme.Text.Primary.Color">#FFECECEC</Color>

@@ -114,10 +114,10 @@ Titulek okna má formát `[Agenda · Varianta] [DB nebo neuloženo] Název šabl
 
 ### Úvodní obrazovka
 
-Po spuštění bez vybrané linky ukáže návrhář přes prázdnou stránku úvodní obrazovku.
-V části „Pokračovat" jsou šablony, se kterými jste naposledy pracovali.
+Po spuštění bez vybrané linky ukáže návrhář nad celým oknem úvodní obrazovku.
+V části „Poslední otevřené šablony" jsou šablony, se kterými jste naposledy pracovali.
 Pod ní je vybraná agenda a její šablony: šablony vaší firmy a na konci výchozí šablona M-line (s logem M-line), která se otevře jako kopie a uložíte ji jako svou.
-Obrazovka zmizí s první úpravou, zavřete ji také klávesou Esc nebo křížkem; znovu ji otevřete v menu `Nástroje → Úvodní obrazovka`.
+Obrazovka zmizí, když šablonu vyberete; zavřete ji také klávesou Esc, křížkem nebo kliknutím vedle ní. Znovu ji otevřete v menu `Nástroje → Úvodní obrazovka`.
 
 ### Nová šablona
 `Soubor → Nová šablona` (Ctrl+N). Nová šablona obsahuje dvě výchozí sekce, **Záhlaví** a **Obsah** -
