@@ -183,7 +183,9 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
             _catalog = TemplateCatalog.Empty;
             PopupDisplayer.Error(ex);
         }
+        var stare = Nodes;
         Nodes = TemplateCatalogNodeVM.Build(_catalog);
+        TemplateCatalogNodeVM.KeepExpansion(stare, Nodes);
         OnPropertyChanged(nameof(Nodes));
         OnPropertyChanged(nameof(ShowsPrintDefault));
         BuildActions();

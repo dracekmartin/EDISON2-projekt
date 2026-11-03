@@ -118,6 +118,20 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
         return null;
     }
 
+    /// <summary>Znovu načtený strom (po nastavení výchozí šablony, odstranění, přejmenování) převezme rozbalení uzlů ze
+    /// starého podle klíče - jinak by se rozbalily všechny oblasti jako při otevření okna (nález Jan 3. 11.).
+    /// Uzel, který ve starém stromu nebyl, má výchozí rozbalení.</summary>
+    public static void KeepExpansion(IEnumerable<TemplateCatalogNodeVM> oldNodes, IEnumerable<TemplateCatalogNodeVM> newNodes)
+    {
+        var stare = All(oldNodes).ToDictionary(n => n.Key, n => n.IsExpanded);
+        foreach (var node in All(newNodes))
+            if (stare.TryGetValue(node.Key, out var rozbaleny))
+                node.IsExpanded = rozbaleny;
+    }
+
+    private static IEnumerable<TemplateCatalogNodeVM> All(IEnumerable<TemplateCatalogNodeVM> nodes) =>
+        nodes.SelectMany(n => All(n.Children).Prepend(n));
+
     /// <summary>Nejhlubší uzel, který ukazuje jen šablony dané agendy (varianta, nebo agenda s jedinou variantou);
     /// null, když agenda ve stromu není (nezveřejněná).</summary>
     public static TemplateCatalogNodeVM? FindAgenda(IEnumerable<TemplateCatalogNodeVM> nodes, string? agendaCode)

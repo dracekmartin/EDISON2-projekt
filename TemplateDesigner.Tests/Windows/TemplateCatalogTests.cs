@@ -109,6 +109,23 @@ public class TemplateCatalogTests
         Assert.Null(TemplateCatalogNodeVM.Find(uzly, "varianta:NENI"));
     }
 
+    /// <summary>Po nastavení výchozí šablony se strom načte znovu a převezme rozbalení ze starého - dřív se rozbalil
+    /// celý (nález Jan 3. 11.).</summary>
+    [Fact]
+    public void ZnovuNactenyStrom_DrziRozbaleni()
+    {
+        var stare = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
+        stare[2].IsExpanded = false;                  // sbalená oblast Obecné
+        stare[1].Children[0].IsExpanded = true;       // rozbalený Linkový JŘ
+
+        var nove = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
+        TemplateCatalogNodeVM.KeepExpansion(stare, nove);
+
+        Assert.False(nove[2].IsExpanded);
+        Assert.True(nove[1].IsExpanded);
+        Assert.True(nove[1].Children[0].IsExpanded);
+    }
+
     /// <summary>Výchozí je vždy právě jedna a jen se přesouvá (Jan 3. 11.): nastavit jde šablonu, která výchozí ještě
     /// není; výchozí firmy ani M-line „zrušit" nejde a agenda bez tisku z modulu (Obecná) výchozí nemá.</summary>
     [Theory]
