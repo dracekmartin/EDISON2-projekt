@@ -33,6 +33,9 @@ aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out
   mimo náš catch až do `DispatcherUnhandledException`.
 - `RelayCommand` bez explicitního displayeru fallbackuje na `EDServices.Current.PopupDisplayer` -
   test s mockem ho musí registrovat přes `EDServices` nebo předat 3. argumentem.
+- `ConfirmSystem` / `InfoSystem` (logo EDISON vlevo) jen pro dialogy o celé aplikaci nebo session: ukončení, přihlášení,
+  přepnutí uživatele či firmy, licence, aktualizace, konec session, verze. Dialog okna nebo nastavení zůstává `Confirm`/`Info`.
+  Mock NSubstitute výchozí implementaci (fallback na `Confirm`/`Info`) nevolá: test stubuje tu metodu, kterou kód volá.
 - `EDServices.MLRest` je mutable a sdílená (přepnutí firmy vidí všechny VM); `Current` hází před `Initialize`
   (testy: vlastní instance s mocky); `With(...)` = klon, sdílenou instanci nikdy nemutuj (proč: root CLAUDE.md;
   identity copy viz EDControls CLAUDE.md). Post-login kód čte `Rest` / `RequireMLRest` (`InvalidOperationException`,

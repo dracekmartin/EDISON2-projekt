@@ -35,7 +35,7 @@ public class ServerSessionEndTests
         _end.End(session, ServerSessionEnd.ActivityLostMessage);
         _end.End(session, ServerSessionEnd.ActivityLostMessage);
 
-        _popups.Received(1).Info(ServerSessionEnd.ActivityLostMessage);
+        _popups.Received(1).InfoSystem(ServerSessionEnd.ActivityLostMessage);
         Assert.Single(_host.Calls, c => c == "shutdown");
     }
 
@@ -45,7 +45,7 @@ public class ServerSessionEndTests
         var session = MLRestMocks.Create();
         session.CacheLocks = 1;
         int locksDuringMessage = -1;
-        _popups.When(p => p.Info(Arg.Any<string>())).Do(_ => locksDuringMessage = session.CacheLocks);
+        _popups.When(p => p.InfoSystem(Arg.Any<string>())).Do(_ => locksDuringMessage = session.CacheLocks);
 
         _end.End(session, ServerSessionEnd.ActivityLostMessage);
 
@@ -62,7 +62,7 @@ public class ServerSessionEndTests
 
         _end.End(session, ServerSessionEnd.ActivityLostMessage);
 
-        _popups.DidNotReceiveWithAnyArgs().Info(default!);
+        _popups.DidNotReceiveWithAnyArgs().InfoSystem(default!);
         Assert.Equal(0, session.CacheLocks);
         Assert.Single(_host.Calls, c => c == "shutdown");
     }
@@ -71,7 +71,7 @@ public class ServerSessionEndTests
     public void End_MessageFails_StillShutsDown()
     {
         // Druhá šance nepřijde (příznak, Locks=0): bez ukončení by shell běžel nad mrtvou session.
-        _popups.When(p => p.Info(Arg.Any<string>(), Arg.Any<System.Windows.Window?>()))
+        _popups.When(p => p.InfoSystem(Arg.Any<string>(), Arg.Any<System.Windows.Window?>()))
                .Do(_ => throw new InvalidOperationException("Dispatcher processing has been suspended"));
 
         Assert.ThrowsAny<InvalidOperationException>(() => _end.End(MLRestMocks.Create(), ServerSessionEnd.ActivityLostMessage));
@@ -89,7 +89,7 @@ public class ServerSessionEndTests
         _shutdown.Force();
         _grace.SetResult();
 
-        _popups.DidNotReceiveWithAnyArgs().Info(default!);
+        _popups.DidNotReceiveWithAnyArgs().InfoSystem(default!);
         Assert.Single(_host.Calls, c => c == "shutdown");
     }
 
@@ -100,10 +100,10 @@ public class ServerSessionEndTests
         _shutdown.SessionEndExpected = true;
 
         _end.End(MLRestMocks.Create(), ServerSessionEnd.ActivityLostMessage);
-        _popups.DidNotReceiveWithAnyArgs().Info(default!);
+        _popups.DidNotReceiveWithAnyArgs().InfoSystem(default!);
         _grace.SetResult();
 
-        _popups.Received(1).Info(ServerSessionEnd.ActivityLostMessage);
+        _popups.Received(1).InfoSystem(ServerSessionEnd.ActivityLostMessage);
         Assert.Single(_host.Calls, c => c == "shutdown");
     }
 
@@ -115,8 +115,8 @@ public class ServerSessionEndTests
         _end.End(session, ServerSessionEnd.VersionMismatchMessage);
         _end.End(session, ServerSessionEnd.ActivityLostMessage);
 
-        _popups.Received(1).Info(ServerSessionEnd.VersionMismatchMessage);
-        _popups.DidNotReceive().Info(ServerSessionEnd.ActivityLostMessage);
+        _popups.Received(1).InfoSystem(ServerSessionEnd.VersionMismatchMessage);
+        _popups.DidNotReceive().InfoSystem(ServerSessionEnd.ActivityLostMessage);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class ServerSessionEndTests
         raise.Invoke(inner, ["ACTIVITY: Lock exist failed!"]);
         raise.Invoke(inner, ["ACTIVITY: Lock exist failed!"]);
 
-        _popups.Received(1).Info(ServerSessionEnd.ActivityLostMessage);
+        _popups.Received(1).InfoSystem(ServerSessionEnd.ActivityLostMessage);
         Assert.Equal(0, inner.CacheLocks);
     }
 }

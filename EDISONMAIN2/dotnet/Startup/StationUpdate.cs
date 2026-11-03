@@ -12,7 +12,7 @@ internal static class StationUpdate
         switch (result.Outcome)
         {
             case UpdateOutcome.UpdateRequired:
-                popup.Info(
+                popup.InfoSystem(
                     $"K dispozici je nová verze programu [{result.Version}]. Aplikace se nyní zaktualizuje a bude ukončena.");
                 try
                 {
@@ -21,11 +21,11 @@ internal static class StationUpdate
                 }
                 catch (Exception ex)
                 {
-                    popup.Info($"Aktualizaci nelze spustit ({ex.Message}). Kontaktujte Vašeho správce IS.");
+                    popup.InfoSystem($"Aktualizaci nelze spustit ({ex.Message}). Kontaktujte Vašeho správce IS.");
                 }
                 return true;
             case UpdateOutcome.Broken:
-                popup.Info(result.Message);
+                popup.InfoSystem(result.Message);
                 return true;
             default:
                 return false;

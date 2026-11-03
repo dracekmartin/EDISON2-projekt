@@ -47,7 +47,7 @@ internal sealed class ServerSessionEnd(IStartupHost host, ShellShutdown shutdown
     {
         if (host.ShutdownRequested) return;
         // Druhá šance už nepřijde (příznak, Locks=0): bez ukončení by shell běžel nad mrtvou session.
-        try { popups().Info(message); }
+        try { popups().InfoSystem(message); }
         finally { shutdown.Force(); }
     });
 }

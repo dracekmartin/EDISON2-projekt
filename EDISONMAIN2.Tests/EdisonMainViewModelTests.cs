@@ -172,7 +172,7 @@ public class EdisonMainViewModelTests
         // Tady naopak: session už patří nové firmě, takže strom staré je cizí - šel by spustit
         // mimo licenci nové firmy a fire-and-forget save by jeho data zapsal do jejích blobů.
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var vm = CreateVM(popup: mockPopup, treeLoader: TreeFailingOnSecondLoad());
         Assert.Single(vm.MainMenuTree);   // předpoklad
 
@@ -189,7 +189,7 @@ public class EdisonMainViewModelTests
         // Mezi posunem Idfa a restore layoutu je await, ve kterém je UI thread volný - zavření
         // shellu (nebo force logout) tam proběhne s Idfa už NOVÉ firmy a prázdným dockem.
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var prefs = Substitute.For<ILocalPrefs>();
         var layouts = new Dictionary<string, string>();
         var heights = new Dictionary<string, double>();
@@ -218,7 +218,7 @@ public class EdisonMainViewModelTests
         // Po selhaném rebuildu zůstává dock prázdný a Idfa už nová - zavření ho nesmí uložit
         // přes platný layout cílové firmy.
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var layouts = new Dictionary<string, string> { [DockKey("JI_DP")] = "ulozeny-layout" };
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.MiniAppLayouts.Returns(layouts);
@@ -299,7 +299,7 @@ public class EdisonMainViewModelTests
     public async Task SwitchCompany_ConfirmDenied_DoesNotSwitch()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(false);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(false);
         var vm = CreateVM(popup: mockPopup, getActiveModules: OneOpenWindow());
         int original = vm.SelectedCompanyIndex;
 
@@ -312,7 +312,7 @@ public class EdisonMainViewModelTests
     public async Task SwitchCompany_ConfirmAccepted_SwitchesCompany()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var vm = CreateVM(popup: mockPopup, getActiveModules: OneOpenWindow());
 
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
@@ -321,7 +321,7 @@ public class EdisonMainViewModelTests
         Assert.Equal(target, vm.SelectedCompanyIndex);
         Assert.Equal(Companies[target].Database, vm.Namespace);
         Assert.Equal(Companies[target].Id, vm.Idfa);
-        mockPopup.Received(1).Confirm(Arg.Any<string>());
+        mockPopup.Received(1).ConfirmSystem(Arg.Any<string>());
     }
 
     [Fact]
@@ -334,7 +334,7 @@ public class EdisonMainViewModelTests
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
         await vm.SwitchCompanyAsync(target);
 
-        mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
+        mockPopup.DidNotReceive().ConfirmSystem(Arg.Any<string>());
         Assert.Equal(target, vm.SelectedCompanyIndex);
     }
 
@@ -344,7 +344,7 @@ public class EdisonMainViewModelTests
         // Synchronní fáze (CloseAll, VerifyLic) blokuje UI thread - overlay musí být aktivní
         // už před ní, jinak shell "zamrzne" bez indikace. Callback closeAll běží uvnitř Switch.
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         EdisonMainViewModel? vmRef = null;
         bool? duringSwitch = null;
         var vm = CreateVM(popup: mockPopup, closeAllWindows: () => duringSwitch = vmRef!.IsActionInProgress);
@@ -522,7 +522,7 @@ public class EdisonMainViewModelTests
     {
         // Chyba patří session starého uživatele (odhlášený GUID) - nad novou by byla matoucí.
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var svc = MockServices(popup: popup);
         EdisonMainViewModel? vmRef = null;
         var vm = CreateVM(services: svc,
@@ -545,7 +545,7 @@ public class EdisonMainViewModelTests
     {
         // Mezitím se přihlásil jiný uživatel - seznam starého by přepsal jeho povolené firmy.
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var svc = MockServices(popup: popup);
         EdisonMainViewModel? vmRef = null;
         var vm = CreateVM(services: svc,
@@ -573,7 +573,7 @@ public class EdisonMainViewModelTests
     public async Task LoginAsAnotherUser_ReplacesCompaniesWithNewUsersList()
     {
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var svc = MockServices(popup: popup);
         var vm = CreateVM(services: svc, switchUser: SwitchUserInto(svc, "JI_DP", new CompanyStruct { Id = "JI_DP", Database = "JI_DP" }));
 
@@ -589,7 +589,7 @@ public class EdisonMainViewModelTests
     {
         // Session nového uživatele běží v jiné firmě: dock staré se nesmí uložit pod novou.
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var svc = MockServices(popup: popup);
         var prefs = Substitute.For<ILocalPrefs>();
         var layouts = new Dictionary<string, string>();
@@ -609,7 +609,7 @@ public class EdisonMainViewModelTests
     {
         // Jinak by další start zkusil firmu, do které poslední uživatel nesmí.
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var svc = MockServices(popup: popup);
         var prefs = Substitute.For<ILocalPrefs>();
         var vm = CreateVM(services: svc, prefs: prefs, switchUser: () =>
@@ -631,7 +631,7 @@ public class EdisonMainViewModelTests
     public async Task LoginAsAnotherUser_SameCompany_DoesNotRewriteCompany()
     {
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var svc = MockServices(popup: popup);
         var prefs = Substitute.For<ILocalPrefs>();
         var vm = CreateVM(services: svc, prefs: prefs, switchUser: SwitchUserInto(svc, "CB_DP", Companies));
@@ -662,7 +662,7 @@ public class EdisonMainViewModelTests
         // Dock je před přestavbou zavřený a po selhání zůstane prázdný - zavření shellu ho nesmí
         // uložit přes layout, který se uložil při výměně.
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var svc = MockServices(popup: popup);
         var layouts = new Dictionary<string, string>();
         var prefs = Substitute.For<ILocalPrefs>();
@@ -687,7 +687,7 @@ public class EdisonMainViewModelTests
     {
         // Sdílený terminál: další uživatel v téže firmě má vlastní dock, předchozímu ho nepřepíše.
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var svc = MockServices(popup: popup);
         IMLRest Session(string login)
         {
@@ -757,7 +757,7 @@ public class EdisonMainViewModelTests
     private static EdisonMainViewModel VmSwitchingNovakToSvoboda(IModuleTreeLoader? treeLoader = null)
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var services = MockServices(popup: mockPopup);
         services.UserEmail = "novak@firma.cz";
         var oldRest = MockMLRest();
@@ -804,7 +804,7 @@ public class EdisonMainViewModelTests
     public async Task SwitchCompany_ReappliesTreeSearch()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var mockTree = Substitute.For<IModuleTreeLoader>();
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
         // Čerstvé instance při každém volání - simuluje přestavbu stromu při přepnutí firmy.
@@ -869,7 +869,7 @@ public class EdisonMainViewModelTests
     public async Task SwitchCompany_UpdatesMLRestProperties()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var mockMLRest = MockMLRest();
         var vm = CreateVM(popup: mockPopup, mlRest: mockMLRest);
 
@@ -884,7 +884,7 @@ public class EdisonMainViewModelTests
     public async Task SwitchCompany_ClosesShellWindowsAndLegacyModules()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var closeShell = Substitute.For<Action>();
         var closeLegacy = Substitute.For<Action>();
         var vm = CreateVM(popup: mockPopup, closeAllWindows: closeShell, closeLegacyModules: closeLegacy);
@@ -903,7 +903,7 @@ public class EdisonMainViewModelTests
 
         await vm.SwitchCompanyAsync(vm.SelectedCompanyIndex);
 
-        mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
+        mockPopup.DidNotReceive().ConfirmSystem(Arg.Any<string>());
     }
 
     [Fact]
@@ -912,7 +912,7 @@ public class EdisonMainViewModelTests
         // Non-admin over-limit → CompanySwitcher vrátí Refused → VM nesmí index posunout
         // a musí zobrazit hlášku (jinak UI ukazuje firmu, na kterou se reálně nepřepnulo).
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var mockMLRest = MockMLRest();
         mockMLRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>())
             .Returns(MLRestMocks.Output("-1"));
@@ -928,14 +928,14 @@ public class EdisonMainViewModelTests
 
         Assert.Equal(original, vm.SelectedCompanyIndex);
         Assert.Equal(Companies[original].Id, vm.Idfa);
-        mockPopup.Received(1).Info(Arg.Is<string>(s => s.Contains("překročen počet licencí")));
+        mockPopup.Received(1).InfoSystem(Arg.Is<string>(s => s.Contains("překročen počet licencí")));
     }
 
     [Fact]
     public void SelectedCompanyId_SetConfirmed_SwitchesCompany()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var vm = CreateVM(popup: mockPopup, getActiveModules: OneOpenWindow());
 
         vm.SelectedCompanyId = "JI_DP";
@@ -948,7 +948,7 @@ public class EdisonMainViewModelTests
     public void SelectedCompanyId_SetConfirmDenied_Reverts()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(false);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(false);
         var vm = CreateVM(popup: mockPopup, getActiveModules: OneOpenWindow());
 
         vm.SelectedCompanyId = "JI_DP";
@@ -962,7 +962,7 @@ public class EdisonMainViewModelTests
         // Combobox si drží vlastní editovanou hodnotu - bez notifikace by zůstal na firmě,
         // na kterou se nepřepnulo (getter sám nestačí, WPF se nezeptá).
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(false);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(false);
         var vm = CreateVM(popup: mockPopup, getActiveModules: OneOpenWindow());
         var notified = new List<string?>();
         vm.PropertyChanged += (_, e) => notified.Add(e.PropertyName);
@@ -981,7 +981,7 @@ public class EdisonMainViewModelTests
         vm.SelectedCompanyId = "NEEXISTUJE";
 
         Assert.Equal("CB_DP", vm.SelectedCompanyId);
-        mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
+        mockPopup.DidNotReceive().ConfirmSystem(Arg.Any<string>());
     }
 
     [Fact]
@@ -1070,18 +1070,18 @@ public class EdisonMainViewModelTests
     public void ConfirmShellClose_UserConfirms_ReturnsTrue()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.ConfirmExit(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var vm = CreateVM(popup: mockPopup);
 
         Assert.True(vm.ConfirmShellClose());
-        mockPopup.Received(1).ConfirmExit(Arg.Any<string>());
+        mockPopup.Received(1).ConfirmSystem(Arg.Any<string>());
     }
 
     [Fact]
     public void ConfirmShellClose_UserDeclines_ReturnsFalse_AndDoesNotPersistLayout()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.ConfirmExit(Arg.Any<string>()).Returns(false);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(false);
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.TreeWidths.Returns(new Dictionary<string, double>());
         var vm = CreateVM(popup: mockPopup, prefs: prefs);
@@ -1098,7 +1098,7 @@ public class EdisonMainViewModelTests
     {
         // Closing jen potvrzuje, ukládá až Closed - dřív se layout zapisoval v obou.
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.ConfirmExit(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var widths = new Dictionary<string, double>();
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.TreeWidths.Returns(widths);
@@ -1125,14 +1125,14 @@ public class EdisonMainViewModelTests
         vm.SuppressCloseConfirm();
 
         Assert.True(vm.ConfirmShellClose());
-        mockPopup.DidNotReceive().ConfirmExit(Arg.Any<string>());
+        mockPopup.DidNotReceive().ConfirmSystem(Arg.Any<string>());
     }
 
     [Fact]
     public void Exit_Confirmed_ForcesShutdown()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.ConfirmExit(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var shutdown = Substitute.For<Action>();
         var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown);
 
@@ -1145,7 +1145,7 @@ public class EdisonMainViewModelTests
     public void Exit_Declined_DoesNotShutdown()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.ConfirmExit(Arg.Any<string>()).Returns(false);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(false);
         var shutdown = Substitute.For<Action>();
         var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown);
 
@@ -1162,7 +1162,7 @@ public class EdisonMainViewModelTests
         // Po neúspěšné licenci je stará session už zničená (closeAllWindows proběhlo),
         // takže jediná bezpečná cesta je ukončit - a nesmí na ni jít potvrzovací dialog.
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var shutdown = Substitute.For<Action>();
         var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown,
                           switchUser: () => new(result, null));
@@ -1176,7 +1176,7 @@ public class EdisonMainViewModelTests
     public async Task LoginAsAnotherUser_Cancelled_DoesNotShutdown()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var shutdown = Substitute.For<Action>();
         var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown,
                           switchUser: () => new(SwitchUserResult.Cancelled));
@@ -1205,7 +1205,7 @@ public class EdisonMainViewModelTests
     {
         // Admin se mění s uživatelem - bez notifikace by položka zůstala skrytá nebo vidět podle předchozího.
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var services = MockServices(popup: popup);
         var vm = CreateVM(services: services, switchUser: () =>
         {

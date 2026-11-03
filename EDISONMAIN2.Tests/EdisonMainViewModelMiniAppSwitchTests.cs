@@ -34,7 +34,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
     private static IPopupDisplayer ConfirmingPopup()
     {
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         return popup;
     }
 

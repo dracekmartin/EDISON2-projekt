@@ -116,7 +116,7 @@ public class EdisonMainViewModelServerUpdateTests
     {
         // Práva i strom se mění s uživatelem - bez notifikace by položky zůstaly podle předchozího.
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var services = MockServices(popup: popup);
         var vm = CreateVM(services: services, treeLoader: TreeWithSettingsWindow(present: true), switchUser: () =>
         {

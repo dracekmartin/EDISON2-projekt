@@ -147,6 +147,6 @@ internal sealed class ApplicationStartupHost(Application application) : IStartup
     public void ReportUnreachableServer(Exception failure, string server, int port)
     {
         ErrorReports.ReportBackground(failure);
-        new PopupDisplayer(_loginWindow).Info(AppBootstrapper.UnreachableServerMessage(server, port));
+        new PopupDisplayer(_loginWindow).InfoSystem(AppBootstrapper.UnreachableServerMessage(server, port));
     }
 }

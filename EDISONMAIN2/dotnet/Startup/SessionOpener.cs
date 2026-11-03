@@ -71,7 +71,7 @@ public class SessionOpener(EDServices services, StartupOptions options, Action<I
         if (CompanySwitcher.PickForSession(query, preferredIdfa, conn => LoadAllowedCompanies(conn, login))
             is not { } picked)
         {
-            services.PopupDisplayer.Info("Uživatel nemá přístup k žádné firmě.");
+            services.PopupDisplayer.InfoSystem("Uživatel nemá přístup k žádné firmě.");
             return new(SessionOpenOutcome.Cancelled);
         }
         if (!steps.BeforeEstablish()) return new(SessionOpenOutcome.Cancelled);

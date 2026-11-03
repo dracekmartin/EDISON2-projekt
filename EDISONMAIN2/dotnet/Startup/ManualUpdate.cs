@@ -33,7 +33,7 @@ public class ManualUpdate(EDServices services, ShellShutdown shutdown)
                 var result = await Task.Run(() => updater.Check(settings));
                 overlay.Dispose();
                 if (StationUpdate.Apply(updater, settings, result, services.PopupDisplayer)) return true;
-                services.PopupDisplayer.Info(NoNewVersionMessage);
+                services.PopupDisplayer.InfoSystem(NoNewVersionMessage);
                 return false;
             }
 

@@ -145,7 +145,7 @@ public class AppBootstrapper
         if (opened.Outcome != SessionOpenOutcome.Opened)
         {
             if (opened.Outcome == SessionOpenOutcome.LicenceRefused)
-                services.PopupDisplayer.Info("Nelze se přihlásit, byl překročen počet licencí.");
+                services.PopupDisplayer.InfoSystem("Nelze se přihlásit, byl překročen počet licencí.");
             Shutdown();
             return null;
         }
@@ -296,20 +296,20 @@ public class AppBootstrapper
         if (!permission.Allowed)
         {
             if (permission.CanAlter
-                && services.PopupDisplayer.Confirm("Je zakázáno přihlašování uživatelů, přejete si jej povolit?"))
+                && services.PopupDisplayer.ConfirmSystem("Je zakázáno přihlašování uživatelů, přejete si jej povolit?"))
             {
                 LoginGate.Allow(rest, ip, user);
             }
             else
             {
-                services.PopupDisplayer.Info("Je zakázáno přihlašování uživatelů, aplikace bude ukončena.");
+                services.PopupDisplayer.InfoSystem("Je zakázáno přihlašování uživatelů, aplikace bude ukončena.");
                 return false;
             }
         }
 
         if (CreateUpdater().LoadSettings(rest).Pending)
         {
-            services.PopupDisplayer.Info("Probíhá aktualizace systému, aplikace bude ukončena.");
+            services.PopupDisplayer.InfoSystem("Probíhá aktualizace systému, aplikace bude ukončena.");
             return false;
         }
         return true;

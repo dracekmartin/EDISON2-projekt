@@ -93,11 +93,11 @@ public class EdisonMainViewModelCommandTests
         int shutdowns = 0;
         var vm = CreateVM(services: MockServices(popup: popup), forceShutdown: () => shutdowns++);
 
-        popup.ConfirmExit(Arg.Any<string>()).Returns(false);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(false);
         vm.ExitCommand.Execute(null);
         Assert.Equal(0, shutdowns);
 
-        popup.ConfirmExit(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         vm.ExitCommand.Execute(null);
         Assert.Equal(1, shutdowns);
     }

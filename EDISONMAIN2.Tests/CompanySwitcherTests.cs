@@ -309,7 +309,7 @@ public class CompanySwitcherTests
         var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
         Assert.Equal(LicenceAcquireOutcome.Refused, result);
-        popup.DidNotReceive().Confirm(Arg.Any<string>());
+        popup.DidNotReceive().ConfirmSystem(Arg.Any<string>());
     }
 
     [Fact]
@@ -350,7 +350,7 @@ public class CompanySwitcherTests
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(false);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(false);
         var nav = Substitute.For<IWindowNavigator>();
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: true, popup: popup, nav: nav);
 
@@ -367,7 +367,7 @@ public class CompanySwitcherTests
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(false);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(false);
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: true, popup: popup);
 
         switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
@@ -383,7 +383,7 @@ public class CompanySwitcherTests
         SetupVerifyLic(mlRest, -1, 1);
         var licence = new Lic { CountsLOGIN = 5 };
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var nav = Substitute.For<IWindowNavigator>();
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: true, popup: popup, nav: nav);
 
@@ -459,7 +459,7 @@ public class CompanySwitcherTests
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(false);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(false);
         var closeLegacy = Substitute.For<Action>();
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: true, popup: popup,
                                       closeLegacyModules: closeLegacy);

@@ -191,7 +191,7 @@ public class ManualUpdateTests
 
         Assert.False(await f.RunAsync());
 
-        f.Popup.Received(1).Info(ManualUpdate.NoNewVersionMessage);
+        f.Popup.Received(1).InfoSystem(ManualUpdate.NoNewVersionMessage);
         f.Navigator.DidNotReceiveWithAnyArgs().StartLegacyDetachedDialog(default!, default!, default!);
         Assert.Empty(f.Updater.Calls);
     }
@@ -205,7 +205,7 @@ public class ManualUpdateTests
         Assert.True(await f.RunAsync());
 
         Assert.Equal(["copy", "launch:260901.1"], f.Updater.Calls);
-        f.Popup.DidNotReceive().Info(ManualUpdate.NoNewVersionMessage);
+        f.Popup.DidNotReceive().InfoSystem(ManualUpdate.NoNewVersionMessage);
     }
 
     [Fact]
@@ -216,7 +216,7 @@ public class ManualUpdateTests
 
         Assert.True(await f.RunAsync());
 
-        f.Popup.Received(1).Info(Arg.Is<string>(m => m.Contains("VERZE.INF")));
+        f.Popup.Received(1).InfoSystem(Arg.Is<string>(m => m.Contains("VERZE.INF")));
         Assert.Empty(f.Updater.Calls);
     }
 }

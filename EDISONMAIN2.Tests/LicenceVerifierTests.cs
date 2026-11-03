@@ -129,7 +129,7 @@ public class LicenceVerifierTests
             popup, Substitute.For<IWindowNavigator>());
 
         Assert.Equal(LicenceAcquireOutcome.Refused, outcome);
-        popup.DidNotReceive().Confirm(Arg.Any<string>());
+        popup.DidNotReceive().ConfirmSystem(Arg.Any<string>());
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class LicenceVerifierTests
         var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1);
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(false);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(false);
         var nav = Substitute.For<IWindowNavigator>();
 
         var (outcome, _) = LicenceVerifier.TryAcquireSession(
@@ -170,7 +170,7 @@ public class LicenceVerifierTests
         var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1, 1);
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var nav = Substitute.For<IWindowNavigator>();
 
         var (outcome, _) = LicenceVerifier.TryAcquireSession(
@@ -188,7 +188,7 @@ public class LicenceVerifierTests
         var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1, 1);
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var services = new EDServices(mlRest, Substitute.For<IWindowNavigator>(), popup);
         var nav = new WindowNavigator(new LegacyModuleHost(() => services, fileExists: _ => false));
 
@@ -196,7 +196,7 @@ public class LicenceVerifierTests
             mlRest, () => new Lic { CountsLOGIN = 5 }, isAdmin: true, popup, nav);
 
         Assert.Equal(LicenceAcquireOutcome.Refused, outcome);
-        popup.DidNotReceiveWithAnyArgs().Confirm(default!);
+        popup.DidNotReceiveWithAnyArgs().ConfirmSystem(default!);
         // Bez důvodu by admin viděl jen „překročen počet licencí“ a nevěděl, proč okno aktivity nejde otevřít.
         popup.Received(1).Info(Arg.Is<string>(m => m.Contains("EDISONMAIN2API.exe")), Arg.Any<System.Windows.Window?>());
     }
@@ -207,7 +207,7 @@ public class LicenceVerifierTests
         var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1, -1, -1, 1);
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var nav = Substitute.For<IWindowNavigator>();
 
         var (outcome, _) = LicenceVerifier.TryAcquireSession(
@@ -225,7 +225,7 @@ public class LicenceVerifierTests
         var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1, -1, 1);
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var loader = Substitute.For<Func<Lic?>>();
         loader.Invoke().Returns(new Lic { CountsLOGIN = 5 });
 

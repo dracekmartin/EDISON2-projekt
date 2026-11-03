@@ -65,7 +65,7 @@ public class EdisonMainViewModelLicenceTests
         vm.RefreshLicenceCommand.Execute(null);
 
         Assert.Equal(["sync", "load"], calls);
-        popup.Received(1).Info("Licence byla aktualizována.");
+        popup.Received(1).InfoSystem("Licence byla aktualizována.");
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class EdisonMainViewModelLicenceTests
 
         Assert.Empty(calls);
         popup.Received(1).Error(Arg.Is<InvalidOperationException>(e => e.Message == "server nedostupný"));
-        popup.DidNotReceive().Info(Arg.Any<string>(), Arg.Any<System.Windows.Window?>());
+        popup.DidNotReceive().InfoSystem(Arg.Any<string>(), Arg.Any<System.Windows.Window?>());
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class EdisonMainViewModelLicenceTests
 
         Assert.Equal(["sync", "load"], calls);
         popup.Received(1).Error(Arg.Is<InvalidOperationException>(e => e.Message == "feedback selhal"));
-        popup.DidNotReceive().Info(Arg.Any<string>(), Arg.Any<System.Windows.Window?>());
+        popup.DidNotReceive().InfoSystem(Arg.Any<string>(), Arg.Any<System.Windows.Window?>());
     }
 
     [Fact]
@@ -146,7 +146,7 @@ public class EdisonMainViewModelLicenceTests
         var ml = MockMLRest();
         ml.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>()).Returns(MLRestMocks.Output("-1"));
         var runner = new GatedSyncRunner(ml);
-        popup.Confirm(Arg.Any<string>(), Arg.Any<System.Windows.Window?>()).Returns(_ => { runner.Release(); return false; });
+        popup.ConfirmSystem(Arg.Any<string>(), Arg.Any<System.Windows.Window?>()).Returns(_ => { runner.Release(); return false; });
         var svc = Services(calls, popup: popup);
         var vm = CreateVM(services: svc, mlRest: ml, restRunner: runner, initialLicence: new Lic(),
                           licenceSync: SyncSpy(calls, changed: true));
@@ -166,7 +166,7 @@ public class EdisonMainViewModelLicenceTests
     {
         var calls = new List<string>();
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>(), Arg.Any<System.Windows.Window?>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>(), Arg.Any<System.Windows.Window?>()).Returns(true);
         var ml = MockMLRest();
         var runner = new GatedSyncRunner(ml);
         var svc = Services(calls, popup: popup);
@@ -223,7 +223,7 @@ public class EdisonMainViewModelLicenceTests
     {
         var calls = new List<string>();
         var popup = Substitute.For<IPopupDisplayer>();
-        popup.Confirm(Arg.Any<string>()).Returns(true);
+        popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
         var svc = Services(calls, popup: popup);
         var vm = CreateVM(services: svc, licenceSync: SyncSpy(calls),
                           switchUser: () => { svc.IsAdmin = true; svc.ActiveLicence = new Lic(); return new(SwitchUserResult.Success); });

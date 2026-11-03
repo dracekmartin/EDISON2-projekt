@@ -156,7 +156,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         // Týž text jako tlačítko „Informace o verzi" v panelu Podpora - jeden zdroj pravdy.
         private void ShowAppInfo() =>
-            PopupDisplayer.Info(SupportActions.BuildVersionInfo(
+            PopupDisplayer.InfoSystem(SupportActions.BuildVersionInfo(
                 MLRest, _services.AppDisplayName, _services.AppVersion));
 
         // Stálý text bez timer refreshe - shell se typicky spouští denně, půlnoční rollover neřešíme.

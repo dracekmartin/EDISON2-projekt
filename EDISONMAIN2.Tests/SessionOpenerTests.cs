@@ -94,7 +94,7 @@ public class SessionOpenerTests
         var result = opener.Open(Login(), Query, "CB_DP", Steps(opener));
 
         Assert.Equal(SessionOpenOutcome.Cancelled, result.Outcome);
-        services.PopupDisplayer.Received(1).Info("Uživatel nemá přístup k žádné firmě.");
+        services.PopupDisplayer.Received(1).InfoSystem("Uživatel nemá přístup k žádné firmě.");
         Assert.Equal(["allowed"], opener.Calls);
     }
 

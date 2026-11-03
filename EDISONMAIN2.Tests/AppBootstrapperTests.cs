@@ -275,7 +275,7 @@ public class AppBootstrapperTests
         var result = b.Run();
 
         Assert.Null(result);
-        b.Popup.Received(1).Info("Probíhá aktualizace systému, aplikace bude ukončena.");
+        b.Popup.Received(1).InfoSystem("Probíhá aktualizace systému, aplikace bude ukončena.");
         Assert.True(b.ShutdownCalled);
         Assert.False(b.TryLoginCalled);
         Assert.False(b.BuildShellCalled);
@@ -290,8 +290,8 @@ public class AppBootstrapperTests
 
         b.Run();
 
-        b.Popup.DidNotReceiveWithAnyArgs().Confirm(default!);
-        b.Popup.Received(1).Info("Je zakázáno přihlašování uživatelů, aplikace bude ukončena.");
+        b.Popup.DidNotReceiveWithAnyArgs().ConfirmSystem(default!);
+        b.Popup.Received(1).InfoSystem("Je zakázáno přihlašování uživatelů, aplikace bude ukončena.");
         Assert.True(b.ShutdownCalled);
         Assert.False(b.TryLoginCalled);
     }
@@ -303,7 +303,7 @@ public class AppBootstrapperTests
         var b = new TestableBootstrapper();
         b.LoginRest.QueryOrThrow("ALVA.SYSTEM.Main", "LoginAllowed", Arg.Any<object[]>())
                    .Returns(MLRestMocks.Output("login~0~1"));
-        b.Popup.Confirm(Arg.Any<string>()).Returns(true);
+        b.Popup.ConfirmSystem(Arg.Any<string>()).Returns(true);
 
         b.Run();
 
@@ -419,7 +419,7 @@ public class AppBootstrapperTests
 
         Assert.Null(result);
         Assert.True(b.ShutdownCalled);
-        b.Popup.Received(1).Info("Nelze se přihlásit, byl překročen počet licencí.");
+        b.Popup.Received(1).InfoSystem("Nelze se přihlásit, byl překročen počet licencí.");
     }
 
     [Fact]
@@ -443,7 +443,7 @@ public class AppBootstrapperTests
         Assert.Null(result);
         Assert.True(b.ShutdownCalled);
         // Cancelled je admin volba - žádná zpráva (admin už ví že rušil sám).
-        b.Popup.DidNotReceive().Info(Arg.Any<string>());
+        b.Popup.DidNotReceive().InfoSystem(Arg.Any<string>());
     }
 
     [Fact]
@@ -1048,7 +1048,7 @@ public class AppBootstrapperTests
 
         Assert.Null(result);
         Assert.True(b.ShutdownCalled);
-        b.Popup.Received(1).Info("Uživatel nemá přístup k žádné firmě.");
+        b.Popup.Received(1).InfoSystem("Uživatel nemá přístup k žádné firmě.");
         Assert.Null(b.EstablishedConnection);
         Assert.False(b.AcquireSessionCalled);
     }

@@ -80,7 +80,7 @@ public static class LicenceVerifier
                     popup.Info(hostMissing);
                     return (LicenceAcquireOutcome.Refused, licence);
                 }
-                if (!popup.Confirm(
+                if (!popup.ConfirmSystem(
                     "Byl překročen počet licencí. Otevřu okno aktivity uživatelů - můžete někoho odhlásit. Po zavření okna zkusím znovu. Pokračovat?"))
                     return (LicenceAcquireOutcome.Cancelled, licence);
                 // shareShellSession=false: retry-loop běží před úspěšným VerifyLic, shell ještě

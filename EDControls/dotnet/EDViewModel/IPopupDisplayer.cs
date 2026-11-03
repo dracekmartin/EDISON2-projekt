@@ -14,10 +14,15 @@ public interface IPopupDisplayer
     bool ConfirmClose(Window? owner = null);
 
     /// <summary>
-    /// Potvrzení ukončení aplikace: Ano/Ne s logem EDISON vlevo. Vrátí true pokud uživatel zvolil Ano.
+    /// Systémové potvrzení (celá aplikace nebo session: ukončení, přepnutí uživatele či firmy, přihlášení,
+    /// licence): Ano/Ne s logem EDISON vlevo, ať je poznat, že se ptá EDISON, ne agenda. True = Ano.
     /// Výchozí implementace drží rozhraní kompatibilní s implementacemi v nepřebuildovaných konzumentech.
     /// </summary>
-    bool ConfirmExit(string message, Window? owner = null) => Confirm(message, owner);
+    bool ConfirmSystem(string message, Window? owner = null) => Confirm(message, owner);
+
+    /// <summary>Systémová informace (licence, aktualizace, konec session, verze): Ok s logem EDISON vlevo.
+    /// Výchozí implementace jako u <see cref="ConfirmSystem"/>.</summary>
+    void InfoSystem(string message, Window? owner = null) => Info(message, owner);
 
     /// <summary>
     /// Yes/No/Cancel potvrzení. Vrátí true (Ano) / false (Ne) / null (Storno nebo Esc).

@@ -45,7 +45,7 @@ public static class SessionFactory
         services.MLRest = mlRest;
         services.UserPrefs = new CacheUserPrefsService(mlRest);
 
-        services.LicenceLoader = LegacyApi.ActiveLicenceLoader(mlRest, message => services.PopupDisplayer.Info(message));
+        services.LicenceLoader = LegacyApi.ActiveLicenceLoader(mlRest, message => services.PopupDisplayer.InfoSystem(message));
         return new SessionContext(mlRest, login);
     }
 }

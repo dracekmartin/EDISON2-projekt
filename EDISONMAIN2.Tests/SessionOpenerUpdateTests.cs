@@ -79,7 +79,7 @@ public class SessionOpenerUpdateTests
 
         Assert.True(shouldExit);
         Assert.Null(notice);
-        popup.Received(1).Info(Arg.Is<string>(s => s.Contains("260901.1")));
+        popup.Received(1).InfoSystem(Arg.Is<string>(s => s.Contains("260901.1")));
         Assert.Equal(["copy", "launch:260901.1|forced=False|stamp="], updater.Calls);
     }
 
@@ -133,7 +133,7 @@ public class SessionOpenerUpdateTests
         var (shouldExit, _) = opener.Call();
 
         Assert.True(shouldExit);
-        popup.Received(1).Info(Arg.Is<string>(s => s.Contains("Aktualizaci nelze spustit")));
+        popup.Received(1).InfoSystem(Arg.Is<string>(s => s.Contains("Aktualizaci nelze spustit")));
         Assert.Equal(["copy"], updater.Calls); // launch po selhané kopii neběží
     }
 
@@ -163,7 +163,7 @@ public class SessionOpenerUpdateTests
 
         Assert.True(shouldExit);
         Assert.Null(notice);
-        popup.Received(1).Info(Arg.Is<string>(s => s.Contains("serverovou verzi")));
+        popup.Received(1).InfoSystem(Arg.Is<string>(s => s.Contains("serverovou verzi")));
         Assert.Empty(updater.Calls);
     }
 
@@ -179,7 +179,7 @@ public class SessionOpenerUpdateTests
         Assert.NotNull(notice);
         // DEBUG lokální verze je dev → notice bez sítě vrátí Unknown; podstatné je, že běží.
         Assert.Equal(ReleaseNoticeOutcome.Unknown, (await notice).Outcome);
-        popup.DidNotReceiveWithAnyArgs().Info(default!);
+        popup.DidNotReceiveWithAnyArgs().InfoSystem(default!);
         Assert.Empty(updater.Calls);
     }
 

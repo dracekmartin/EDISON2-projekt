@@ -705,7 +705,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Potvrzení jen když je co ztratit - bez otevřených oken je přepnutí nedestruktivní
             // (layout miniaplikací se persistuje per session a při návratu obnoví).
             if (_getActiveModules().Count > 0
-                && !PopupDisplayer.Confirm($"Přepnout na firmu {target.DisplayName}? Zavřou se všechna otevřená okna i miniaplikace."))
+                && !PopupDisplayer.ConfirmSystem($"Přepnout na firmu {target.DisplayName}? Zavřou se všechna otevřená okna i miniaplikace."))
                 return;
 
             _session.Invalidate();
@@ -742,7 +742,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 // s neuloženými daty vetovalo zavření - obojí aktivní volba uživatele,
                 // další popup by byl jen friction.
                 if (result == LicenceAcquireOutcome.Refused)
-                    PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
+                    PopupDisplayer.InfoSystem("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
                 return;
             }
 
@@ -945,7 +945,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         /// <summary>Closing shellu: false = zavření zrušit.</summary>
         public bool ConfirmShellClose() =>
-            _closeConfirmSuppressed || PopupDisplayer.ConfirmExit(ExitConfirmMessage);
+            _closeConfirmSuppressed || PopupDisplayer.ConfirmSystem(ExitConfirmMessage);
 
         /// <summary>
         /// Closed shellu (volá code-behind): jediné místo, které při zavření ukládá layout. Ne v Closing:
@@ -961,14 +961,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private void ExitApplication()
         {
-            if (PopupDisplayer.ConfirmExit(ExitConfirmMessage))
+            if (PopupDisplayer.ConfirmSystem(ExitConfirmMessage))
                 _forceShutdown();
         }
 
         /// <summary><c>internal</c> kvůli testům - <see cref="AsyncRelayCommand"/> nemá awaitovatelný Execute.</summary>
         internal async Task LoginAsAnotherUserAsync()
         {
-            if (!PopupDisplayer.Confirm("Přihlásit jiného uživatele zavře všechna otevřená okna. Pokračovat?"))
+            if (!PopupDisplayer.ConfirmSystem("Přihlásit jiného uživatele zavře všechna otevřená okna. Pokračovat?"))
                 return;
 
             _session.Invalidate();
@@ -992,7 +992,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     _miniApps.Restore(DockScope);
                     return;
                 case SwitchUserResult.LicenceRefused:
-                    PopupDisplayer.Info("Pro nového uživatele byl překročen počet licencí. Aplikace bude ukončena.");
+                    PopupDisplayer.InfoSystem("Pro nového uživatele byl překročen počet licencí. Aplikace bude ukončena.");
                     _forceShutdown();
                     return;
                 case SwitchUserResult.LicenceCancelled:
@@ -1039,7 +1039,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             var sync = await _licence.RefreshAsync(() => ActionInProgress());
             if (sync.Error.Length > 0)
                 throw new InvalidOperationException(sync.Error);
-            PopupDisplayer.Info("Licence byla aktualizována.");
+            PopupDisplayer.InfoSystem("Licence byla aktualizována.");
         }
     }
 }
