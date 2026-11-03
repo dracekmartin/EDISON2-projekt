@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-11-03 (15) - Převzetí víc zásilek naráz a výraznější pruh (`B189`, zatím jen na DEV)
+
+Jan při zkoušení přebíral zásilky po jedné a bylo to zdlouhavé (3. 11.).
+Uzel **Přijaté šablony** má teď zaškrtávání (hlavička zaškrtne vše) a Převzít i Odmítnout platí pro zaškrtnuté, bez zaškrtnutí pro vybranou zásilku.
+Převzetí jde po zásilkách a nakonec jedna zpráva řekne, kde šablony najít a které zásilky převzít nešly (agenda, formát, chyba serveru); ty nezastaví ostatní. Odmítnutí víc zásilek má jedno potvrzení.
+Pruh v hlavním okně je výraznější: modré pozadí s proužkem vlevo, tučný text a plné tlačítko Zobrazit.
+Vývojářské přepínání firem nabízí i CB_DP (příjemce zkušebních zásilek).
+Ověřeno: .NET 2771/2771, `PrevzetiSablonTests` 31 (nové: víc zásilek, nepřevzatelná a chyba serveru nezastaví ostatní, Storno zastaví zbylé, pořadí čtení a převzetí, jedno potvrzení odmítnutí, zaškrtnuté před vybranou); mutace chycené (stop u první nepřevzatelné, Storno nezastaví, chyba serveru shodí vše, vybraná před zaškrtnutými). Okno a pruh strojově neproklikané.
+
 ## 2026-11-03 (14) - Příjem šablon od jiné firmy (`B189`, zatím jen na DEV)
 
 Šablony poslané jinou firmou šly jen stáhnout v portálu ISYCloudu. Teď je firma vidí v okně šablon v uzlu **Přijaté šablony** (řádek = zásilka, sloupec Zdroj = odesílatel, pod seznamem kdo poslal, které šablony a zpráva) a vyřídí je akcemi **Převzít** a **Odmítnout**, vždy celou zásilku (rozhodnutí Jan 3. 11.).

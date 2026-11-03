@@ -35,7 +35,11 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
             _selectedNodeKey = value.Key;
             OnPropertyChanged();
             NotifySelectionTexts();
-            if (actionsChange) BuildActions();
+            if (actionsChange)
+            {
+                BuildActions();
+                OnPropertyChanged(nameof(ListSelectionMode));
+            }
             System.Windows.Input.CommandManager.InvalidateRequerySuggested();
             if (changed) RequestReload?.Invoke();
         }
@@ -47,20 +51,24 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     /// <summary>Řádek pod seznamem: co uživatel nad výběrem může udělat - jak založit novou šablonu, která jde jen ve
     /// vybrané agendě a variantě, a proč šablonu M-line nejde upravit ani odstranit.</summary>
     public string Hint => IsReceivedNode
-        ? ReceivedHint(Selected, _selectedNode?.Count)
+        ? ReceivedHint(Selected, _selectedNode?.Count, _checkedRows.Count)
         : HintFor(Nodes, _selectedNode, IsSelectedSystem) + PrintDefaultHint(_selectedNode, ShowsPrintDefault);
 
-    /// <summary>Nápověda v Přijatých šablonách: bez výběru co uzel ukazuje, u zásilky od koho je, co obsahuje a zpráva.</summary>
-    public static string ReceivedHint(EDListRow? row, int? count)
+    /// <summary>Nápověda v Přijatých šablonách: bez výběru co uzel ukazuje, u zásilky od koho je, co obsahuje a zpráva;
+    /// se zaškrtnutými zásilkami, že akce platí pro ně.</summary>
+    public static string ReceivedHint(EDListRow? row, int? count, int checkedCount = 0)
     {
         if (row is null || row["prijata"] != "1")
             return count == 0
                 ? "Žádná jiná firma vám teď šablony neposlala. Až nějaké pošle, najdete je tady."
-                : "Šablony, které vám poslaly jiné firmy. Zásilku převezmete akcí Převzít a šablony pak najdete mezi vlastními "
-                  + "šablonami ve své agendě. Zásilku, kterou nechcete, odmítněte.";
+                : "Šablony, které vám poslaly jiné firmy. Zaškrtnuté zásilky převezmete akcí Převzít a šablony pak najdete "
+                  + "mezi vlastními šablonami ve své agendě. Zásilky, které nechcete, odmítněte.";
         var odeslal = string.IsNullOrEmpty(row["odeslal"]) ? "" : $" (poslal {row["odeslal"]})";
         var zprava = string.IsNullOrWhiteSpace(row["zprava"]) ? "" : $" Zpráva: {row["zprava"]}";
-        return $"Od firmy {row["zdroj"]}{odeslal}: {row["sablony"]}.{zprava} Převezměte ji akcí Převzít, nebo ji odmítněte.";
+        var akce = checkedCount > 0
+            ? $" Zaškrtnuté zásilky ({checkedCount}) převezmete akcí Převzít, nebo je odmítnete."
+            : " Převezměte ji akcí Převzít, nebo ji odmítněte.";
+        return $"Od firmy {row["zdroj"]}{odeslal}: {row["sablony"]}.{zprava}{akce}";
     }
 
     /// <summary>Proč je šablona tučně a jak výchozí přesunout - jen u uzlu jedné agendy se zapnutým tiskem z okna JŘ.</summary>
@@ -104,8 +112,30 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
 
     private bool IsReceivedNode => _selectedNode?.Kind == TemplateCatalogNodeKind.Received;
 
+    /// <summary>Přijaté šablony mají zaškrtávání, aby šlo převzít nebo odmítnout víc zásilek naráz (Jan 3. 11.).</summary>
+    public ListSelectionMode ListSelectionMode => IsReceivedNode ? ListSelectionMode.Check : ListSelectionMode.Single;
+
     /// <summary>Vybraný řádek je zásilka od jiné firmy, ne šablona - otevřít, upravit ani odstranit nejde.</summary>
     private bool IsSelectedReceived => Selected?["prijata"] == "1";
+
+    private IReadOnlyList<EDListRow> _checkedRows = [];
+
+    /// <summary>Code-behind plní z <c>EDList.CheckedRowsChanged</c>; nové načtení seznamu zaškrtnutí smaže.</summary>
+    public void SetCheckedRows(IReadOnlyList<EDListRow> rows)
+    {
+        _checkedRows = rows;
+        OnPropertyChanged(nameof(Hint));
+        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+    }
+
+    /// <summary>Zásilky, kterých se týká Převzít a Odmítnout: zaškrtnuté, bez zaškrtnutí vybraná.</summary>
+    internal static IReadOnlyList<Shipment> ShipmentsOf(IReadOnlyList<EDListRow> checkedRows, EDListRow? selected) =>
+        (checkedRows.Count > 0 ? checkedRows : selected is null ? [] : [selected])
+            .Where(r => r["prijata"] == "1")
+            .Select(r => new Shipment(r.Id, r["name"] ?? "", r["zdroj"] ?? ""))
+            .ToList();
+
+    private IReadOnlyList<Shipment> ShipmentsToHandle => ShipmentsOf(_checkedRows, Selected);
 
     private EDListRow? _selected;
     /// <summary>Code-behind plní z <c>EDList.SelectionChanged</c>.</summary>
@@ -265,26 +295,15 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         if (IsReceivedNode) OnPropertyChanged(nameof(Hint));
     }
 
-    private async Task AcceptShipmentAsync()
+    /// <summary>Chyby serveru u jednotlivých zásilek hlásí <see cref="ReceivedShipments"/> souhrnně po vyřízení všech.</summary>
+    private async Task AcceptShipmentsAsync()
     {
-        if (Selected is not { } row || !IsSelectedReceived) return;
-        try
-        {
-            if (!await Shipments.AcceptAsync(row.Id, row["zdroj"] ?? "")) return;
-            await AfterShipmentHandledAsync();
-        }
-        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+        if (await Shipments.AcceptAsync(ShipmentsToHandle)) await AfterShipmentHandledAsync();
     }
 
-    private async Task RejectShipmentAsync()
+    private async Task RejectShipmentsAsync()
     {
-        if (Selected is not { } row || !IsSelectedReceived) return;
-        try
-        {
-            if (!await Shipments.RejectAsync(row.Id, row["name"] ?? "", row["zdroj"] ?? "")) return;
-            await AfterShipmentHandledAsync();
-        }
-        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+        if (await Shipments.RejectAsync(ShipmentsToHandle)) await AfterShipmentHandledAsync();
     }
 
     /// <summary>Vyřízená zásilka zmizí ze seznamu; převzaté šablony přibydou v počtech agend.</summary>
@@ -332,6 +351,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         NotifySelectionTexts();
         // Akce až po výběru uzlu: Přijaté šablony mají jiné (okno otevřené z pruhu v hlavním okně začíná rovnou tam).
         BuildActions();
+        OnPropertyChanged(nameof(ListSelectionMode));
         System.Windows.Input.CommandManager.InvalidateRequerySuggested();
     }
 
@@ -432,8 +452,8 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         SetDefaultCommand     = CommandAsync(SetDefaultAsync,
             () => Selected is not null && CanSetDefault(Selected["vychozi"], CanPrint(Selected["agendaCode"])));
         SendTemplatesCommand  = CommandAsync(SendTemplatesAsync);
-        AcceptShipmentCommand = CommandAsync(AcceptShipmentAsync, () => IsSelectedReceived);
-        RejectShipmentCommand = CommandAsync(RejectShipmentAsync, () => IsSelectedReceived);
+        AcceptShipmentCommand = CommandAsync(AcceptShipmentsAsync, () => ShipmentsToHandle.Count > 0);
+        RejectShipmentCommand = CommandAsync(RejectShipmentsAsync, () => ShipmentsToHandle.Count > 0);
 
         // Ikony v pruhu nad seznamem a zkratky Ctrl+N/E/D jako seznamy legacy EDISONu.
         BuildActions();

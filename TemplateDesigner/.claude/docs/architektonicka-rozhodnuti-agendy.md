@@ -386,9 +386,14 @@ Vlastní kanál návrhář nestaví. Sdílení firmě povoluje administrátor IS
 - **Hodnoty platné jen ve firmě** (vybrané typy provozu, skupiny linek…) se při odeslání vymažou a u příjemce
   platí výchozí, stejně jako u šablon M-line (`B191f`).
 - **Přijaté šablony jsou v okně šablon** (uzel Přijaté šablony, řádek = zásilka). Když firmě něco přijde, hlavní okno
-  ukáže pruh s tlačítkem Zobrazit (okno šablon v Přijatých) a křížkem; zavřený se vrátí s další zásilkou. Vzhled se doladí.
+  ukáže pruh s tlačítkem Zobrazit (okno šablon v Přijatých) a křížkem; zavřený se vrátí s další zásilkou.
+  Pruh je výrazný (modrý, tučný text, plné tlačítko), protože zavřít ho jde vždy jedním klikem (Jan 3. 11.).
 - **Zásilka se převezme nebo odmítne celá** (Jan 3. 11.; API odmítne jen celou): akce Převzít a Odmítnout u řádku
   zásilky. Šablona, kterou převzít nejde, zastaví převzetí celé zásilky dřív, než se cokoli uloží.
+- **Víc zásilek naráz přes zaškrtávání** (Jan 3. 11., po vyzkoušení po jedné): Převzít a Odmítnout platí pro
+  zaškrtnuté, bez zaškrtnutí pro vybranou. Zásilky se převezmou po sobě a nakonec jedna zpráva řekne, co se převzalo
+  a které nešly; nepřevzatelná nezastaví ostatní, Storno u otázky na přepsání zastaví zbylé. Po sobě proto, že obsah
+  další zásilky se čte až po převzetí předchozí, takže dvě verze téže šablony nezaloží dvě nové šablony.
 - **Převzatá šablona je vlastní šablonou firmy** (nové Id) a pamatuje si původ: firmu odesílatele a Id šablony u ní.
   Přijde-li šablona téhož původu znovu, okno nabídne aktualizaci; u převzaté, kterou firma mezitím upravila,
   se zeptá, zda přepsat, nebo uložit jako novou. Vazba nejde přes `externiId` - to platí pro celou zásilku.

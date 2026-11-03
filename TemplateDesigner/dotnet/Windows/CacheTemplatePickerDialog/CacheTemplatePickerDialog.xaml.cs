@@ -18,6 +18,7 @@ public partial class CacheTemplatePickerDialog : Window
 
         // Wire-up EDList eventů → VM
         TheList.SelectionChanged += (_, _) => _vm.Selected = TheList.SelectedRow;
+        TheList.CheckedRowsChanged += (_, _) => _vm.SetCheckedRows([.. TheList.Rows.Where(r => r.IsChecked)]);
         TheList.RowDoubleClicked += (_, _) => { if (_vm.OpenCommand.CanExecute(null)) _vm.OpenCommand.Execute(null); };
         Tree.SelectedItemChanged += (_, e) => _vm.SelectedNode = e.NewValue as TemplateCatalogNodeVM;
 

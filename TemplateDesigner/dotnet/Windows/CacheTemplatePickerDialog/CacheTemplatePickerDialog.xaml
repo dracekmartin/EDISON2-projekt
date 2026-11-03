@@ -178,7 +178,8 @@
                 <el:EDList x:Name="TheList"
                            CacheClass="ALVA.TemplateDesigner.EDList.Sablony"
                            HostId="TemplateDesigner.TemplatePicker"
-                           Title="{Binding ListTitle}" Actions="{Binding Actions}"/>
+                           Title="{Binding ListTitle}" Actions="{Binding Actions}"
+                           SelectionMode="{Binding ListSelectionMode}"/>
             </DockPanel>
             <!-- Tučnou výchozí šablonu pro tisk (TemplateCell) zapíná code-behind jen se zapnutým tiskem z okna JŘ. -->
         </Grid>

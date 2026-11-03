@@ -30,19 +30,25 @@ public class PrevzetiSablonTests
         ExistingTakenTemplate? existujici = null) =>
         new(soubor, "Linky A4", "LINKOVY_JR_AD", "Linkový JŘ · AD", verze, agendaZnama, existujici);
 
-    private void Zasilka(params ReceivedTemplate[] sablony) =>
-        _sdileni.GetShipmentTemplatesAsync("Z1").Returns(sablony);
+    private void Zasilka(params ReceivedTemplate[] sablony) => Zasilka("Z1", sablony);
+
+    private void Zasilka(string id, params ReceivedTemplate[] sablony) =>
+        _sdileni.GetShipmentTemplatesAsync(id).Returns(sablony);
+
+    private static Shipment Z(string id = "Z1", string nazev = "Linky") => new(id, nazev, "ČSAD");
+
+    private static ExistingTakenTemplate Prevzata(bool upravena = false) => new(Guid.NewGuid(), "Naše linky", upravena);
 
     [Fact]
     public async Task NovaSablona_PrevezmeSeBezDotazuARekneKdeJe()
     {
         Zasilka(Sablona());
 
-        Assert.True(await _zasilky.AcceptAsync("Z1", "ČSAD"));
+        Assert.True(await _zasilky.AcceptAsync([Z()]));
 
         await _sdileni.Received(1).AcceptShipmentAsync("Z1", Arg.Is<IReadOnlyCollection<string>>(p => p.Count == 0));
         _popup.DidNotReceiveWithAnyArgs().ConfirmYesNoCancel(default!);
-        _popup.Received(1).Info(Arg.Is<string>(t => t.Contains("„Linky A4“ je převzatá") && t.Contains("Linkový JŘ · AD")));
+        _popup.Received(1).Info("Šablona „Linky A4“ je převzatá. Najdete ji mezi vlastními šablonami v agendě Linkový JŘ · AD.");
     }
 
     [Fact]
@@ -50,10 +56,10 @@ public class PrevzetiSablonTests
     {
         Zasilka(Sablona("S1"), Sablona("S2", agendaZnama: false));
 
-        Assert.False(await _zasilky.AcceptAsync("Z1", "ČSAD"));
+        Assert.False(await _zasilky.AcceptAsync([Z()]));
 
         await _sdileni.DidNotReceiveWithAnyArgs().AcceptShipmentAsync(default!, default!);
-        _popup.Received(1).Info(Arg.Is<string>(t => t.Contains("nejde převzít") && t.Contains("LINKOVY_JR_AD")));
+        _popup.Received(1).Info(Arg.Is<string>(t => t.Contains("„Linky“ nejde převzít") && t.Contains("LINKOVY_JR_AD")));
     }
 
     [Fact]
@@ -61,7 +67,7 @@ public class PrevzetiSablonTests
     {
         Zasilka(Sablona(verze: "99.0.0"));
 
-        Assert.False(await _zasilky.AcceptAsync("Z1", "ČSAD"));
+        Assert.False(await _zasilky.AcceptAsync([Z()]));
 
         await _sdileni.DidNotReceiveWithAnyArgs().AcceptShipmentAsync(default!, default!);
         _popup.Received(1).Info(Arg.Is<string>(t => t.Contains("novější verze návrháře")));
@@ -76,10 +82,10 @@ public class PrevzetiSablonTests
     [InlineData(false, new string[0])]
     public async Task UzPrevzata_AnoPrepiseNeUloziJakoNovou(bool ano, string[] prepsat)
     {
-        Zasilka(Sablona(existujici: new ExistingTakenTemplate(Guid.NewGuid(), "Naše linky", Modified: false)));
+        Zasilka(Sablona(existujici: Prevzata()));
         _popup.ConfirmYesNoCancel(default!).ReturnsForAnyArgs(ano);
 
-        Assert.True(await _zasilky.AcceptAsync("Z1", "ČSAD"));
+        Assert.True(await _zasilky.AcceptAsync([Z()]));
 
         await _sdileni.Received(1).AcceptShipmentAsync("Z1", Arg.Is<IReadOnlyCollection<string>>(p => p.SequenceEqual(prepsat)));
     }
@@ -87,12 +93,115 @@ public class PrevzetiSablonTests
     [Fact]
     public async Task UzPrevzata_StornoNicNeprevezme()
     {
-        Zasilka(Sablona(existujici: new ExistingTakenTemplate(Guid.NewGuid(), "Naše linky", Modified: true)));
+        Zasilka(Sablona(existujici: Prevzata(upravena: true)));
         _popup.ConfirmYesNoCancel(default!).ReturnsForAnyArgs((bool?)null);
 
-        Assert.False(await _zasilky.AcceptAsync("Z1", "ČSAD"));
+        Assert.False(await _zasilky.AcceptAsync([Z()]));
 
         await _sdileni.DidNotReceiveWithAnyArgs().AcceptShipmentAsync(default!, default!);
+        _popup.DidNotReceiveWithAnyArgs().Info(default!);
+    }
+
+    // ── Víc zásilek naráz ──
+
+    [Fact]
+    public async Task VicZasilek_PrevezmeVsechnyAJednouZpravouRekneKde()
+    {
+        Zasilka("Z1", Sablona("S1"));
+        Zasilka("Z2", new ReceivedTemplate("S2", "Vývěska", "ZASTAVKOVY_JR_AD", "Zastávkový JŘ · AD", "1.3.0", true, null));
+
+        Assert.True(await _zasilky.AcceptAsync([Z("Z1"), Z("Z2")]));
+
+        await _sdileni.Received(1).AcceptShipmentAsync("Z1", Arg.Any<IReadOnlyCollection<string>>());
+        await _sdileni.Received(1).AcceptShipmentAsync("Z2", Arg.Any<IReadOnlyCollection<string>>());
+        _popup.Received(1).Info("Převzato šablon: 2. Najdete je mezi vlastními šablonami v agendách Linkový JŘ · AD, "
+                                + "Zastávkový JŘ · AD.");
+    }
+
+    [Fact]
+    public async Task VicZasilek_NeprevzatelnaNezastaviOstatni()
+    {
+        Zasilka("Z1", Sablona(agendaZnama: false));
+        Zasilka("Z2", Sablona());
+
+        Assert.True(await _zasilky.AcceptAsync([Z("Z1", "Cizí agenda"), Z("Z2")]));
+
+        await _sdileni.DidNotReceive().AcceptShipmentAsync("Z1", Arg.Any<IReadOnlyCollection<string>>());
+        await _sdileni.Received(1).AcceptShipmentAsync("Z2", Arg.Any<IReadOnlyCollection<string>>());
+        _popup.Received(1).Info(Arg.Is<string>(t => t.Contains("je převzatá") && t.Contains("Zásilku „Cizí agenda“ nejde převzít")));
+    }
+
+    [Fact]
+    public async Task VicZasilek_ChybaServeruUJedneNezastaviOstatni()
+    {
+        _sdileni.GetShipmentTemplatesAsync("Z1").Returns(
+            Task.FromException<IReadOnlyList<ReceivedTemplate>>(new CacheTemplateException("ISYCloud neodpovídá.")));
+        Zasilka("Z2", Sablona());
+
+        Assert.True(await _zasilky.AcceptAsync([Z("Z1", "První"), Z("Z2")]));
+
+        await _sdileni.Received(1).AcceptShipmentAsync("Z2", Arg.Any<IReadOnlyCollection<string>>());
+        _popup.Received(1).Info(Arg.Is<string>(t => t.Contains("Zásilku „První“ se nepodařilo převzít: ISYCloud neodpovídá.")));
+    }
+
+    [Fact]
+    public async Task VicZasilek_StornoZastaviZbyleAleRekneCoSePrevzalo()
+    {
+        Zasilka("Z1", Sablona());
+        Zasilka("Z2", Sablona(existujici: Prevzata()));
+        Zasilka("Z3", Sablona());
+        _popup.ConfirmYesNoCancel(default!).ReturnsForAnyArgs((bool?)null);
+
+        Assert.True(await _zasilky.AcceptAsync([Z("Z1"), Z("Z2"), Z("Z3")]));
+
+        await _sdileni.Received(1).AcceptShipmentAsync("Z1", Arg.Any<IReadOnlyCollection<string>>());
+        await _sdileni.DidNotReceive().AcceptShipmentAsync("Z2", Arg.Any<IReadOnlyCollection<string>>());
+        await _sdileni.DidNotReceive().GetShipmentTemplatesAsync("Z3");
+        _popup.Received(1).Info(Arg.Is<string>(t => t.Contains("je převzatá") && t.EndsWith("Ostatní zásilky zůstaly k převzetí.")));
+    }
+
+    [Fact]
+    public async Task VicZasilek_ObsahDalsiSeCteAzPoPrevzetiPredchozi()
+    {
+        // Dvě verze téže šablony ve dvou zásilkách: druhá se musí zeptat na přepsání té, kterou převzala první.
+        Zasilka("Z1", Sablona());
+        Zasilka("Z2", Sablona());
+
+        await _zasilky.AcceptAsync([Z("Z1"), Z("Z2")]);
+
+        Received.InOrder(() =>
+        {
+            _sdileni.GetShipmentTemplatesAsync("Z1");
+            _sdileni.AcceptShipmentAsync("Z1", Arg.Any<IReadOnlyCollection<string>>());
+            _sdileni.GetShipmentTemplatesAsync("Z2");
+            _sdileni.AcceptShipmentAsync("Z2", Arg.Any<IReadOnlyCollection<string>>());
+        });
+    }
+
+    [Fact]
+    public async Task VicZasilek_OdmitnutiJednimPotvrzenim()
+    {
+        _popup.Confirm(default!).ReturnsForAnyArgs(true);
+
+        Assert.True(await _zasilky.RejectAsync([Z("Z1", "A"), Z("Z2", "B")]));
+
+        _popup.Received(1).Confirm(Arg.Is<string>(t => t.StartsWith("Odmítnout 2 zásilky („A“, „B“)?")));
+        await _sdileni.Received(1).RejectShipmentAsync("Z1");
+        await _sdileni.Received(1).RejectShipmentAsync("Z2");
+    }
+
+    [Fact]
+    public void AkceNadZasilkami_ZaskrtnuteJinakVybrana()
+    {
+        var a = Radek("Z1");
+        var b = Radek("Z2");
+        var sablona = new EDListRow("T1", new() { ["name"] = "Vlastní" });
+
+        Assert.Equal(["Z1", "Z2"], CacheTemplatePickerDialogViewModel.ShipmentsOf([a, b], selected: b).Select(z => z.Id));
+        Assert.Equal(["Z2"], CacheTemplatePickerDialogViewModel.ShipmentsOf([], selected: b).Select(z => z.Id));
+        Assert.Empty(CacheTemplatePickerDialogViewModel.ShipmentsOf([], selected: null));
+        Assert.Empty(CacheTemplatePickerDialogViewModel.ShipmentsOf([], selected: sablona));
+        Assert.Equal(new Shipment("Z1", "Linky A4", "ČSAD Autobusy"), CacheTemplatePickerDialogViewModel.ShipmentsOf([a], null)[0]);
     }
 
     [Fact]
@@ -116,9 +225,10 @@ public class PrevzetiSablonTests
     {
         _popup.Confirm(default!).ReturnsForAnyArgs(potvrdi);
 
-        Assert.Equal(potvrdi, await _zasilky.RejectAsync("Z1", "Linky A4", "ČSAD"));
+        Assert.Equal(potvrdi, await _zasilky.RejectAsync([Z("Z1", "Linky A4")]));
 
         await _sdileni.Received(volani).RejectShipmentAsync("Z1");
+        _popup.Received(1).Confirm(Arg.Is<string>(t => t.StartsWith("Odmítnout zásilku „Linky A4“ od firmy ČSAD?")));
     }
 
     // ── Strom a okno ──
@@ -146,7 +256,7 @@ public class PrevzetiSablonTests
         Assert.Equal(3, uzel.Count);
     }
 
-    private static EDListRow Radek(string zprava = "", string odeslal = "novak") => new("Z1", new()
+    private static EDListRow Radek(string id = "Z1", string zprava = "", string odeslal = "novak") => new(id, new()
     {
         ["prijata"] = "1", ["name"] = "Linky A4", ["zdroj"] = "ČSAD Autobusy", ["odeslal"] = odeslal,
         ["zprava"] = zprava, ["sablony"] = "Linky A4, Linky A5",
@@ -159,8 +269,14 @@ public class PrevzetiSablonTests
 
         Assert.Contains("Od firmy ČSAD Autobusy (poslal novak): Linky A4, Linky A5.", text);
         Assert.Contains("Zpráva: Nové vzory", text);
+        Assert.EndsWith("Převezměte ji akcí Převzít, nebo ji odmítněte.", text);
         Assert.DoesNotContain("Zpráva", CacheTemplatePickerDialogViewModel.ReceivedHint(Radek(), 1));
     }
+
+    [Fact]
+    public void NapovedaZasilky_SeZaskrtnutymiRekneZeAkcePlatiProNe() =>
+        Assert.EndsWith("Zaškrtnuté zásilky (2) převezmete akcí Převzít, nebo je odmítnete.",
+            CacheTemplatePickerDialogViewModel.ReceivedHint(Radek(), 3, checkedCount: 2));
 
     [Fact]
     public void NapovedaBezZasilek_ReknePrazdno()

@@ -59,7 +59,7 @@ public sealed record ReceivedSummary(int Shipments, string Sender, string Name, 
         _ => $"Jiné firmy vám poslaly šablony: {Pocet(Shipments, "zásilka", "zásilky", "zásilek")} k převzetí.",
     };
 
-    private static string Pocet(int n, string jedna, string dve, string vic) =>
+    internal static string Pocet(int n, string jedna, string dve, string vic) =>
         $"{n} {(n == 1 ? jedna : n is >= 2 and <= 4 ? dve : vic)}";
 
     internal static int Number(System.Text.Json.Nodes.JsonNode node, string key) =>
