@@ -12,25 +12,27 @@ Ostatní sestavy zatím tiskne Report Generátor.
 
 Hlavní směry, kterými se Návrhář sestav bude dál rozvíjet:
 
-- **Řešení požadavků z helpdesku** - průběžně dopracováváme a uzavíráme konkrétní přání
-  a připomínky, které nám posíláte. Aktuálně jde hlavně o pozastavené požadavky
-  ze zastávkových jízdních řádů.
 - **Tisk přímo z agendy** - vytisknout sestavu jedním tlačítkem přímo u linky/dokladu
   v EDISONu, bez otevírání celého Návrháře.
-- **Relace** - podpora tisku relací.
-- **Další agendy z Report Generátoru** - postupná migrace dalších typů sestav ze stávajícího
-  generátoru do nového Návrháře.
+- **Relace AD** - tisk relací autobusové dopravy.
+- **Migrace Report Generátoru** - postupný převod sestav ze stávajícího Report Generátoru
+  do nového Návrháře.
 
 ---
 
 ## Náměty, o kterých uvažujeme
 
-Dílčí vylepšení a náměty.
+Náměty, o kterých přemýšlíme. Rozsah ani termín zatím nejsou dané.
 
 - **Napojení na externí zdroje dat** - možnost tisknout i z dat mimo EDISON (např. z tabulky
   nebo databáze). Zvažujeme jako budoucí směr; konkrétní zdroje a rozsah zatím nejsou dané.
-- **Mezisoučty ve skupinách řádků** - souhrnný řádek za skupinu dat.
-- **Brožurový tisk** - řazení stránek do brožury při skládání na list.
+- **Jízdní řády na webu automaticky** - cestující si na webu dopravce vybere linku a zastávku
+  a zobrazí nebo vytiskne vývěsku stejnou, jako visí na zastávce. Stránky by vznikaly
+  automaticky z dat EDISONu podle šablon z Návrháře (například jako HTML nebo PDF), takže by je
+  po změně jízdních řádů nebylo potřeba připravovat ručně.
+- **QR kód na jízdním řádu s vyhledáním spojení** - QR kód vytištěný na vývěsce otevře
+  v telefonu vyhledávač, který podle zastávky, kde cestující stojí, ukáže nejbližší spoje
+  do zvoleného cíle.
 
 ---
 
