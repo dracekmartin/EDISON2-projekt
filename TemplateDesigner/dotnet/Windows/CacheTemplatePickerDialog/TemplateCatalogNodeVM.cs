@@ -16,6 +16,9 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
 
     public string Label { get; }
 
+    /// <summary>Úroveň uzlu; strom podle ní volí vzhled (oblast jako nadpis, agenda tučně).</summary>
+    public TemplateCatalogNodeKind Kind { get; init; }
+
     /// <summary>Počet šablon pod uzlem; u Všech šablon <c>null</c> (patří k nim i šablony agend mimo strom).</summary>
     public int? Count { get; }
 
@@ -75,7 +78,7 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
         {
             var agendas = area.Agendas.Select(AgendaNode).ToList();
             nodes.Add(new TemplateCatalogNodeVM($"oblast:{area.Code}", area.Label, agendas.Sum(a => a.Count ?? 0), null,
-                [.. agendas.SelectMany(a => a.AgendaCodes)], agendas) { IsExpanded = true });
+                [.. agendas.SelectMany(a => a.AgendaCodes)], agendas) { Kind = TemplateCatalogNodeKind.Area, IsExpanded = true });
         }
         return nodes;
     }
@@ -85,13 +88,15 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
         if (agenda.Variants.Count == 1)
         {
             var only = agenda.Variants[0];
-            return new TemplateCatalogNodeVM($"agenda:{agenda.Code}", agenda.Label, only.Count, DetailFor(only), [only.Code]);
+            return new TemplateCatalogNodeVM($"agenda:{agenda.Code}", agenda.Label, only.Count, DetailFor(only), [only.Code])
+                { Kind = TemplateCatalogNodeKind.Agenda };
         }
         var variants = agenda.Variants
-            .Select(v => new TemplateCatalogNodeVM($"varianta:{v.Code}", v.Label, v.Count, DetailFor(v), [v.Code]))
+            .Select(v => new TemplateCatalogNodeVM($"varianta:{v.Code}", v.Label, v.Count, DetailFor(v), [v.Code])
+                { Kind = TemplateCatalogNodeKind.Variant })
             .ToList();
         return new TemplateCatalogNodeVM($"agenda:{agenda.Code}", agenda.Label, variants.Sum(v => v.Count ?? 0), null,
-            [.. variants.SelectMany(v => v.AgendaCodes)], variants);
+            [.. variants.SelectMany(v => v.AgendaCodes)], variants) { Kind = TemplateCatalogNodeKind.Agenda };
     }
 
     private static string? DetailFor(CatalogVariant variant) =>
@@ -134,3 +139,6 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
         return [];
     }
 }
+
+/// <summary>Úroveň uzlu ve stromu šablon.</summary>
+public enum TemplateCatalogNodeKind { All, Area, Agenda, Variant }

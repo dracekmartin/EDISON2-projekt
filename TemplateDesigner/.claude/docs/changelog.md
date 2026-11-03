@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-11-03 (6) - Strom agend v okně šablon výraznější
+
+Strom splýval: všechny úrovně stejným písmem, počet šablon šedým číslem hned za názvem, nad stromem nic, zatímco seznam vpravo měl modrý pruh.
+Nad stromem je pruh „Agendy" jako nad seznamem (výšku drží podle pruhu seznamu, který má navíc hledání), oblasti práce jsou nadpisy s modrou značkou jako na úvodní obrazovce, agendy tučně, varianty normálně, počet šablon ve štítku u pravého okraje.
+Všechny šablony stojí bez místa pro šipku u levého okraje; ikona složky a mezera mezi oblastmi se zkoušely a odebraly (Jan: odsazené, roztahané).
+Ověřeno: .NET testy návrháře (nový test úrovní uzlů), vzhled proklikal Jan v debug buildu.
+
 ## 2026-11-03 (5) - Okno šablon bez informací o tisku z okna JŘ, druhý řádek uzlu u levého okraje
 
 Strom ukazoval u variant „Pro tisk: …" nebo „Bez šablony pro tisk" a seznam sloupec Pro tisk a tučnou šablonu pro tisk. Patří to k tisku z okna jízdních řádů, který uživatel nemá a výchozí šablonu nastavit nemůže; „Bez šablony pro tisk" navíc svítil u agend, které šablonu M-line mají, jen ji nemají nastavenou jako výchozí (Jan: matoucí).

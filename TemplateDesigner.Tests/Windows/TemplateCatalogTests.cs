@@ -120,6 +120,19 @@ public class TemplateCatalogTests
         Assert.Equal(ocekavana, DecideDefaultAction(vychozi, canPrint));
 
     [Fact]
+    public void Build_UrovenUzluProVzhled()
+    {
+        var uzly = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
+        var linka = uzly[1].Children[0];
+
+        Assert.Equal(TemplateCatalogNodeKind.All, uzly[0].Kind);
+        Assert.Equal(TemplateCatalogNodeKind.Area, uzly[1].Kind);
+        Assert.Equal(TemplateCatalogNodeKind.Agenda, linka.Kind);
+        Assert.Equal(TemplateCatalogNodeKind.Variant, linka.Children[0].Kind);
+        Assert.Equal(TemplateCatalogNodeKind.Agenda, uzly[1].Children[1].Kind);   // agenda s jedinou variantou
+    }
+
+    [Fact]
     public void NovaSablona_JenUzelJedneAgendy()
     {
         var uzly = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));

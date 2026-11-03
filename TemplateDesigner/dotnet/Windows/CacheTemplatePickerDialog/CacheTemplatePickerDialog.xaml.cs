@@ -1,5 +1,7 @@
 using System;
 using System.Windows;
+using System.Windows.Media;
+using EDControls.EDComponentToolbar;
 
 namespace TemplateDesigner;
 
@@ -36,6 +38,14 @@ public partial class CacheTemplatePickerDialog : Window
         // Close
         _vm.RequestClose += result => { DialogResult = result; Close(); };
 
+        // Pruh nad stromem drží výšku pruhu seznamu - ten je vyšší o pole hledání a výška se mění s velikostí písma.
+        TheList.Loaded += (_, _) =>
+        {
+            if (FindDescendant<EDComponentToolbar>(TheList) is not { } listHeader) return;
+            TreeHeader.MinHeight = listHeader.ActualHeight;
+            listHeader.SizeChanged += (_, e) => TreeHeader.MinHeight = e.NewSize.Height;
+        };
+
         // Sloupce, strom s posledním uzlem, pak seznam toho uzlu.
         // Async (R1): na pomalé lince by synchronní varianta zmrazila celou aplikaci, ne jen dialog.
         Loaded += async (_, _) =>
@@ -52,5 +62,16 @@ public partial class CacheTemplatePickerDialog : Window
             // doplní, až přijde odpověď. Přehled se kvůli helpdesku nesmí zdržet ani spadnout.
             await _vm.CheckChannelAsync();
         };
+    }
+
+    private static T? FindDescendant<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T found) return found;
+            if (FindDescendant<T>(child) is { } deeper) return deeper;
+        }
+        return null;
     }
 }
