@@ -32,8 +32,10 @@
 
 - **`B189` Sdílení šablon mezi firmami** [L] (Jan 7. 10., návrh 3. 11.). Odeslání víc vlastních šablon jiné firmě
   a převzetí přijatých v okně šablon přes sdílení dat ISYCloudu; rozhodnutí a pravidla v
-  [`architektonicka-rozhodnuti-agendy.md` R9](architektonicka-rozhodnuti-agendy.md). Odeslání i příjem hotové (jen na DEV),
-  proti testovacímu ISYCloudu na Railway; **čeká** na proklikání příjmu v okně a rozhodnutí o vydání. Uvnitř firmy (práva, osobní šablony) zatím otevřené.
+  [`architektonicka-rozhodnuti-agendy.md` R9](architektonicka-rozhodnuti-agendy.md). Odeslání i příjem proklikané end to end na DEV
+  proti testovacímu ISYCloudu na Railway (Jan 3. 11.). **Do vydání:** typ `SABLONA` v ostrém ISYCloudu (David, větev `production-isycloud`),
+  `API.SdileniSablon` a `Sdileni.Klient` v projektu Caché, zapnutí mimo DEV (`JeZapnute`), adresa ISYCloudu na DEV, příručka a Novinky.
+  **Dodělat:** otázka na přepsání převzaté šablony s tlačítky Přepsat / Uložit jako novou / Storno (dnes Ano/Ne/Storno). Uvnitř firmy (práva, osobní šablony) zatím otevřené.
 
 - **Vyhledávač odjezdů pro cestující** [M] (zadání Jan 13. 10.). QR u sloupku (zastávka a stanoviště)
   otevře aplikaci v ISYCloud: cestující zadá cíl a dozví se nejbližší přímé spoje odsud, data z CIS.
