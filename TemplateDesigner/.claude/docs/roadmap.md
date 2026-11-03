@@ -108,7 +108,7 @@ Dopravní agendy narazí jen na `F3`, mzdy, pokladna a faktury hned na `F9` a `F
 | F9 | **Hromadný tisk a tisk bez uživatele** - seznam dokladů, každý s vlastním PDF, heslem, e-mailem, podpisem nebo tiskárnou; spuštění přímo z Caché (mzdy). Návrhář umí jedno PDF v prohlížeči (`Vystup=PDF`). Navazuje R4 a `B190` | ⬜ před první agendou z mezd, pokladny, faktur |
 | F10 | **Šablony zákazníků** - firmy mají vlastní šablony (nejméně stovky) a návrhář je neotevře: převodník, nebo nový návrh. Největší rozhodnutí převodu | ⬜ rozhodnutí Jan, před první agendou s šablonami zákazníků |
 | F11 | **Data pro náhled** - vstup je složený (zaměstnanec + období) nebo jeden doklad z tisíců; u každé agendy ukázková data, nebo výběr dokladu s filtrem | ⬜ u každé agendy |
-| F12 | **Skupiny v nabídce agend** podle oblasti práce (Jízdní řády, Plán a provoz, Mzdy…) a filtr podle licence; okno Otevřít má dnes plochý filtr agend | ⬜ od ~8-10 agend |
+| F12 | **Strom agend pro desítky agend RG** - skupiny podle oblasti práce už jsou (okno šablon, 3. 11.). Zbývá filtr podle licence (RG ukazuje všechny agendy bez ohledu na licenci), oblasti sbalené kromě té s vybranou agendou (dnes se rozbalí všechny) a případně hledání ve stromu; „Plán a provoz" bude mít kolem 25 agend | ⬜ od ~8-10 agend |
 | F4 | **Další výstupy** - Excel (data podle typů sloupců), znakový tisk Epson, JPG | ⬜ dle poptávky |
 | F5 | **Jazykové varianty šablon** - per-jazyk kopie provázaná na CS zdroj | ⬜ |
 | F6 | **Vědomě neportovat bez poptávky** - grafy (12×), AZTEC (2×), calculated (2× - výrazy TD nadmnožina), checkbox (8×); ověřit + škrtnout | ⬜ validace |
