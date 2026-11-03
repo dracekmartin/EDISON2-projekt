@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-11-03 (3) - Prázdná třída Faktury, aby šel projekt nahrát na REL
+
+Import projektu na REL 3. 11. spadl na staré ukázkové agendě Faktury: v repu je od 30. 10. smazaná (`B56` S11), na REL a u zákazníků ale zůstala z dřívějších vydání a volá metodu základu agend, která už neexistuje (`WriteTemplate2Col`).
+Projekt teď nese prázdnou třídu `Agendy/Faktury.cls` (nedědí z `BaseAgenda`, registr ji nenabídne), která starou při importu i instalaci přepíše. Smazat, až ji budou mít všichni zákazníci.
+Ověřeno: třída je v projektu `ALVA_TEMPLATE_DESIGNER` na DEV (100 položek), překlad projektu bez chyby, `ListAgendy` na DEV Faktury nevrací, .NET testy návrháře 2707/2707.
+
 ## 2026-11-03 (2) - Okno šablon do verze bez nastavování výchozí šablony a bez sloupců Kým a Autor
 
 Tisk z okna JŘ, kterému výchozí šablona slouží, do verze nejde (domluva s kolegou), a ovládání při zkoušení mátlo: šablona M-line nastavená jako výchozí firmy vzala výchozí šabloně M-line označení a seznam s víc agendami ukazoval víc „výchozích firmy".
