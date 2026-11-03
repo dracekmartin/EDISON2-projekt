@@ -26,9 +26,9 @@
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **do příští verze (Jan 2. 11.)**, obě strany děláme my.
   Okno JŘ → Tisky → „Tisk linkového JŘ (nový)": formulář se šablonou, parametry a složkou, PDF bez návrháře.
   Hotové kroky 1-3 (linkový JŘ AD); položka je zákazníkům skrytá, na DEV ji zapne `^JRR("TiskNovymNavrharem")=1`.
-  Krok 4: výchozí šablona se napojí na sjednocené okno šablon (3. 11., archiv) - do formuláře Upravit nebo do řádku pod
-  seznamem; do té doby je tam vše o tisku schované (mátlo). Zbývá i výchozí šablona M-line pro ostatní agendy JŘ (dnes jen
-  linkový AD) a zastávkový JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
+  Krok 4 (3. 11.): v okně šablon vždy právě jedna výchozí šablona na agendu a variantu, akce „Nastavit jako výchozí
+  pro tisk", tučně; výchozí M-line mají všechny agendy JŘ. Okno ji ukazuje jen se zapnutým přepínačem - při vydání ho
+  zapnout nebo zrušit. Zbývá zastávkový JŘ z okna JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
 
 - **Vyřazení a oprava šablon M-line u zákazníků** [M] (Jan 3. 11.). Návrhář šablony M-line při startu do databáze
   zapisuje, odebrat je neumí: vyřazená šablona zůstane u zákazníka napořád (první případ: linkový JŘ AD má 3 šablony M-line,
