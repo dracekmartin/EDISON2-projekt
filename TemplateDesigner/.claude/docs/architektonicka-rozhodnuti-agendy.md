@@ -374,6 +374,38 @@ tatáž oprava na víc místech a nikdo neví, na kterých.
 
 ---
 
+## R9. Sdílení šablon mezi firmami (`B189`) - NÁVRH 3. 11. 2026
+
+**Cesta.** Obecné sdílení dat mezi firmami EDISONu v ISYCloudu (edwcore `apps/isycloud/docs/sdileni/api-edison.md`):
+zásilka od firmy pro 1 až 100 firem se soubory, stav u každého příjemce, e-mail o přijetí, vlákno v portálu.
+Vlastní kanál návrhář nestaví. Sdílení firmě povoluje administrátor ISYCloudu; bez povolení firma nic neodešle ani nepřijme.
+
+**Rozhodnuto (Jan 3. 11.):**
+- Posílají se jen **vlastní šablony firmy** (šablony M-line mají všichni), víc najednou jako jedna zásilka:
+  výběr v okně šablon, každá šablona jeden soubor JSON ve tvaru exportu. API dovolí 20 souborů v zásilce.
+- **Hodnoty platné jen ve firmě** (vybrané typy provozu, skupiny linek…) se při odeslání vymažou a u příjemce
+  platí výchozí, stejně jako u šablon M-line (`B191f`).
+- **Přijaté šablony jsou v okně šablon** (uzel Přijaté šablony). Když firmě něco přijde, návrhář ukáže pruh
+  s informací, který jde zavřít; vzhled se doladí.
+- **Převzatá šablona je vlastní šablonou firmy** (nové Id) a pamatuje si původ: firmu odesílatele a Id šablony u ní.
+  Přijde-li šablona téhož původu znovu, okno nabídne aktualizaci; u převzaté, kterou firma mezitím upravila,
+  se zeptá, zda přepsat, nebo uložit jako novou. Vazba nejde přes `externiId` - to platí pro celou zásilku.
+- **Převzít jde jen šablonu agendy, kterou příjemce má, a formátu, který jeho návrhář umí**; jinak hláška.
+- **Firma bez povoleného sdílení:** akce zůstane vidět, po kliknutí řekne, že sdílení povoluje podpora M-line.
+- **Návrhář jen odesílá a přijímá.** Kdo komu co poslal a kdo převzal, ukazuje portál ISYCloudu.
+
+**Navrženo, k potvrzení:** z víceprvkové zásilky uživatel převezme vybrané šablony a zbytek odmítne; ISYCloudu
+se zásilka ohlásí jako načtená, až je vyřízená celá (odmítnout jde v API jen celou zásilku).
+
+**Potřeba od ISYCloudu:** typ dat pro šablony (např. `SABLONA`) bez povinných atributů, s textovým seznamem
+šablon pro portál; `verzeStruktury` 1, verze formátu je uvnitř JSON. Typ `SOUBOR` ne: typ zásilky je filtr
+příjmu, se `SOUBOR` by se šablony míchaly s PDF a návrhář by musel každou zásilku stáhnout. Dále klient API
+v Caché (registrace, klíč v globálu serveru, odeslání, příjem), sdílený s ISYJR - 3. 11. zatím nikde není.
+
+Mimo R9 zůstává sdílení uvnitř firmy (práva k šablonám, osobní šablony) - otevřené v `B189`.
+
+---
+
 ## Souhrn - tahák
 
 | # | Rozhodnutí jednou větou | Kdy nejpozději |
@@ -529,6 +561,9 @@ pod tím vlastní (editovatelné).
 3. **Nasazení (u zákazníka).** Release naleje naše šablony do zákazníkovy **MLINE zásuvky**.
    **Klíčové pravidlo: aktualizace sáhne JEN na větev `MLINE`, nikdy na zákaznickou** (izolace při
    update - přebráno z legacy, které se osvědčilo).
+4. **Oprava a vyřazení (3. 11. 2026).** Změněný soubor šablony seed u zákazníka přepíše. Vyřazená šablona je
+   v `SystemTemplateSeeder.Retired`: návrhář ji při startu smaže z MLINE a server ji už nezapíše
+   (`API.Sablony.RetireTemplate`); kopie firem zůstanou.
 
 ## Zákaznický flow „kopie → úprava"
 

@@ -17,7 +17,7 @@
 
 | Dokument | Role |
 |---|---|
-| [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md) | R1–R7 pro škálování agend - číst před novou fází. Obsahuje i detail R2 (partial-fit kontrakt element↔engine, implementace = C3) a R6 (governance/distribuce šablon - v1 hotová, koncept kanálu v2) |
+| [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md) | R1–R9 pro škálování agend - číst před novou fází. Obsahuje i detail R2 (partial-fit kontrakt element↔engine, implementace = C3), R6 (governance/distribuce šablon M-line včetně vyřazení) a R9 (sdílení šablon mezi firmami, návrh) |
 | [`feature-design-principles.md`](feature-design-principles.md) | Rozhodovací mřížka před každým requestem |
 | [`elementy-architektura.md`](elementy-architektura.md) | Architektura elementů: JŘ elementy (wire formát, hierarchie) + sdílené tabulkové jádro (co ne/sjednocovat) + katalog symbolů (font Timetable) |
 | [`template-schema-versions.md`](template-schema-versions.md) | Verzování Template JSON + migrace |

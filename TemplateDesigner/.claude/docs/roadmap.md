@@ -30,10 +30,10 @@
   pro tisk", tučně; výchozí M-line mají všechny agendy JŘ. Okno ji ukazuje jen se zapnutým přepínačem - při vydání ho
   zapnout nebo zrušit. Zbývá zastávkový JŘ z okna JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
 
-- **`B189` Sdílení šablon** [?] (podnět Jan 7. 10., rozšířeno 3. 11., **návrh s Janem**, nic se nedělá). Dnes šablony
-  patří firmě: upraví i odstraní je kdokoli z firmy (autor se ukládá, nepoužívá), mezi firmami jen export a import souboru,
-  M-line rozesílá své kanálem z helpdesku. Otevřené: sdílení mezi firmami, nebo uvnitř firmy (kolegovi, osobní šablony),
-  kdo smí měnit a odstraňovat, a upozornění, že vyšla novější předloha M-line, ze které je kopie.
+- **`B189` Sdílení šablon mezi firmami** [L] (Jan 7. 10., návrh 3. 11.). Odeslání víc vlastních šablon jiné firmě
+  a převzetí přijatých v okně šablon přes sdílení dat ISYCloudu; rozhodnutí a pravidla v
+  [`architektonicka-rozhodnuti-agendy.md` R9](architektonicka-rozhodnuti-agendy.md). **Čeká** na typ dat pro šablony
+  a klienta API v Caché (ISYCloud, Jan se domlouvá s kolegou). Uvnitř firmy (práva, osobní šablony) zatím otevřené.
 
 - **Vyhledávač odjezdů pro cestující** [M] (zadání Jan 13. 10.). QR u sloupku (zastávka a stanoviště)
   otevře aplikaci v ISYCloud: cestující zadá cíl a dozví se nejbližší přímé spoje odsud, data z CIS.
