@@ -136,22 +136,25 @@ a jaké **specializované prvky** máte k dispozici.
   Zastávkový JŘ · AD"), v titulku okna a v hlavičce panelu „Datová pole". Varianta je vždy
   krátce **AD** nebo **MHD**.
 - Změna: `Nástroje → Změnit agendu…`, klávesa **Ctrl+Shift+A**, nebo klik na zelený štítek -
-  dialog nabízí agendy seskupené s variantami pod sebou.
+  otevře okno „Šablony v databázi" s vybranou aktuální agendou. Ve stromu vyberte jinou agendu a variantu
+  a otevřete některou její šablonu, nebo ikonou **Nový** nad seznamem založte prázdnou.
 - **Spuštění z EDISONu** (strom JŘ nebo MHD) otevře agendu, se kterou jste v tomto modulu pracovali
   naposledy - kdo dělá linkové jízdní řády, nemusí se po spuštění přepínat. Napoprvé zastávkový JŘ.
-- **Přepnutí agendy vždy založí novou prázdnou šablonu** pro zvolenou agendu - nejde o konverzi
-  obsahu stávající šablony. Rozdělanou práci vás systém před přepnutím vyzve uložit nebo zahodit.
+- **Šablona jiné agendy je vždy jiná šablona** - otevřete hotovou, nebo založíte prázdnou; obsah stávající
+  šablony se do jiné agendy nepřevádí. Rozdělanou práci vás systém předtím vyzve uložit nebo zahodit.
 
 ### Otevření a uložení
 Šablony se ukládají **do databáze** (centrálně, podle firmy), ne do lokálních souborů na stanici:
 
-- `Soubor → Otevřít z databáze…` - dialog „Šablony v databázi".
-  Vlevo je strom podle oblasti práce (Jízdní řády…), agendy a varianty (AD, MHD), u každé agendy počet šablon a její výchozí šablona.
+- `Soubor → Otevřít z databáze…` (Ctrl+O) - okno „Šablony v databázi".
+  Vlevo je strom podle oblasti práce (Jízdní řády…), agendy a varianty (AD, MHD) s počtem šablon.
   Vpravo jsou šablony vybrané větve; **Všechny šablony** nahoře ukážou všechny a hledání v seznamu pak prohledá všechny agendy.
-  Sloupec **Zdroj**: „M-line" jsou dodané předlohy (jen ke čtení, upravenou verzi uložíte jako vlastní šablonu), „vlastní" jsou šablony vaší firmy.
-  Tlačítka Přejmenovat…, Smazat, Otevřít.
+  Šablony M-line mají u názvu **logo M-line**: jsou to dodané předlohy jen ke čtení, otevřou se jako kopie a upravenou
+  uložíte jako svou. Šablony vaší firmy mají ikonu dokumentu.
+  Nad seznamem jsou jako v ostatních seznamech EDISONu ikony **Nový** (Ctrl+N, prázdná šablona ve vybrané agendě),
+  **Upravit** (Ctrl+E, název šablony) a **Odstranit** (Ctrl+D); totéž je v nabídce **Akce** vlevo dole.
+  Šablonu otevře **OK** nebo dvojklik. Řádek pod seznamem vždy napíše, co nad výběrem jde udělat.
 - **Výchozí šablona agendy** - hotová šablona M-line, kterou agenda nabízí jako první; najdete ji i na úvodní obrazovce.
-  V dialogu „Šablony v databázi" je tučně a ve sloupci **Pro tisk** je „výchozí M-line".
 - `Soubor → Uložit do databáze` - u šablony již uložené v databázi provede tichý update.
 - `Soubor → Uložit do databáze jako…` - dialog s názvem šablony; nová/importovaná šablona se
   takto poprvé zařadí do databáze. Agendu dialog jen ukáže - změníte ji přes `Nástroje → Změnit agendu`.
@@ -713,7 +716,7 @@ zdroj a pár doplňkových nastavení.
 - **Zastávkový JŘ AD** - hlavní modul Jízdní řády
 
 Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje → Změnit agendu…`
-(Ctrl+Shift+A) nebo klik na zelený štítek. Přepnutí založí novou prázdnou šablonu (viz část I, kap. 3).
+(Ctrl+Shift+A) nebo klik na zelený štítek; otevřete šablonu druhé agendy, nebo založíte prázdnou (viz část I, kap. 3).
 
 #### Co je navíc jen u varianty AD
 
@@ -1086,9 +1089,9 @@ zmenšení pomůže, k varování nedojde.
 
 ### 7. Postup krok za krokem
 
-1. **Založte šablonu se správnou agendou** - nová šablona přes `Nástroje → Změnit agendu`
-   (Ctrl+Shift+A) a výběr Zastávkový JŘ, varianta AD nebo MHD. Alternativa: otevřete výchozí
-   šablonu se zdrojem **M-line** (Ctrl+O) a jen ji dolaďte.
+1. **Založte šablonu se správnou agendou** - `Nástroje → Změnit agendu` (Ctrl+Shift+A), ve stromu
+   Zastávkový JŘ, varianta AD nebo MHD, a ikona **Nový** nad seznamem. Alternativa: otevřete výchozí
+   šablonu M-line (s logem M-line) a jen ji dolaďte.
 2. **Přidejte prvky** - z palety nebo lišty nástrojů vložte Seznam zastávek (typicky vlevo), jednu
    nebo víc prvků Minuty odjezdů (typicky vedle sebe, rozdělené podle skupiny dnů) a volitelně
    Poznámky (pod odjezdy).
@@ -1331,8 +1334,8 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 
 ### 6. Postup krok za krokem (linkový JŘ)
 
-1. **Založte šablonu se správnou agendou** - `Nástroje → Změnit agendu` (Ctrl+Shift+A), Linkový JŘ.
-   Rychlejší start: otevřete jednu z výchozích šablon se zdrojem **M-line** (Ctrl+O) -
+1. **Založte šablonu se správnou agendou** - `Nástroje → Změnit agendu` (Ctrl+Shift+A), ve stromu Linkový JŘ
+   a varianta, ikona **Nový**. Rychlejší start: otevřete jednu z výchozích šablon M-line (Ctrl+O, s logem M-line) -
    *poznámky pod tabulkou A4* (A4 na šířku, poznámky přes celou šířku pod tabulkou; výchozí šablona agendy),
    *postskriptový vzhled A5* (A5 na šířku, poznámky pod tabulkou, jako starý postskriptový tisk)
    nebo *poznámky vedle tabulky A4* (A4 na šířku, poznámky vpravo vedle tabulky).

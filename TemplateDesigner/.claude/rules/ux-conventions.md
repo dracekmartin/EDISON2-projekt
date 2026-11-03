@@ -30,6 +30,10 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
   **jen šipkami ▲ ▼** (bez textu, bublina „Posunout nahoru / dolů"), smazání barvy **„×"** s bublinou
   „Vymazat barvu" (rozhodnutí Jan 26. 10., `B194` E13a). Žádné „+" na začátku popisku ani mimo dialogy
   („Přidat sekci", „Přidat stránku").
+- **Okno se seznamem uložených záznamů** (šablony v databázi) se drží seznamů legacy EDISONu (`BaseForm2`,
+  rozhodnutí Jan 3. 11.): akce **Nový / Upravit / Odstranit** (Ctrl+N/E/D) jako ikony v pruhu seznamu
+  (`EDList.Actions` + `StandardActions`) a v nabídce Akce; výběrové okno má `EDFooter` OK + Storno, dvojklik = OK.
+  Úprava záznamu = formulář EDInputForm, ne samostatné tlačítko („Přejmenovat…").
 
 ---
 

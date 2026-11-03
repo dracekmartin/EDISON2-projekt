@@ -157,7 +157,7 @@ public class TemplateCatalogTests
         Assert.Contains("až vlevo vyberete agendu", HintFor(uzly, linka));
         // Agenda: kde nová šablona vznikne a že M-line se otevře jako kopie.
         var mhd = HintFor(uzly, linka.Children[1]);
-        Assert.Contains("pro Linkový JŘ · MHD založíte tlačítkem Nová šablona", mhd);
+        Assert.Contains("pro Linkový JŘ · MHD založíte ikonou Nový (Ctrl+N) nad seznamem", mhd);
         Assert.Contains("jako kopie", mhd);
     }
 
@@ -167,9 +167,16 @@ public class TemplateCatalogTests
         var odpoved = Odpoved.Replace("\"pocet\":4", "\"pocet\":0");
         var uzly = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(odpoved));
 
-        Assert.Equal("Obecná (bez dat) zatím nemá žádnou šablonu. Prázdnou šablonu založíte tlačítkem Nová šablona.",
+        Assert.Equal("Obecná (bez dat) zatím nemá žádnou šablonu. Prázdnou šablonu založíte ikonou Nový (Ctrl+N) nad seznamem.",
             HintFor(uzly, uzly[2].Children[0]));
     }
+
+    [Theory]
+    [InlineData("Linkový JŘ", "AD", "Linkový JŘ · AD")]
+    [InlineData("Obecná (bez dat)", "", "Obecná (bez dat)")]
+    public void Upravit_AgendaJakoVSeznamu(string agenda, string varianta, string ocekavana) =>
+        Assert.Equal(ocekavana, AgendaLabelOf(new EDControls.EDList.EDListRow("1",
+            new Dictionary<string, string?> { ["agenda"] = agenda, ["varianta"] = varianta })));
 
     [Fact]
     public void NovaSablona_JenUzelJedneAgendy()

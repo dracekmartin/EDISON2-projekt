@@ -42,9 +42,9 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     /// <summary>Pruh nad seznamem: co je ve stromu vybrané, ať uživatel ví, ve které agendě je.</summary>
     public string ListTitle => TitleFor(Nodes, _selectedNode);
 
-    /// <summary>Řádek pod seznamem: co uživatel nad vybraným uzlem může udělat - hlavně jak založit novou šablonu,
-    /// která jde jen ve vybrané agendě a variantě.</summary>
-    public string Hint => HintFor(Nodes, _selectedNode);
+    /// <summary>Řádek pod seznamem: co uživatel nad výběrem může udělat - jak založit novou šablonu, která jde jen ve
+    /// vybrané agendě a variantě, a proč šablonu M-line nejde upravit ani odstranit.</summary>
+    public string Hint => HintFor(Nodes, _selectedNode, IsSelectedSystem);
 
     /// <summary>Varianta s agendou („Linkový JŘ · AD"), jinak název uzlu.</summary>
     public static string TitleFor(IReadOnlyList<TemplateCatalogNodeVM> nodes, TemplateCatalogNodeVM? node) =>
@@ -53,13 +53,18 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
             ? string.Join(" · ", TemplateCatalogNodeVM.PathTo(nodes, node).Skip(1).Select(n => n.Label))
             : node.Label;
 
-    public static string HintFor(IReadOnlyList<TemplateCatalogNodeVM> nodes, TemplateCatalogNodeVM? node) =>
-        node?.NewTemplateAgendaCode is null
-            ? "Šablonu otevřete dvojklikem. Novou šablonu založíte, až vlevo vyberete agendu, u jízdních řádů i AD nebo MHD."
+    public static string HintFor(IReadOnlyList<TemplateCatalogNodeVM> nodes, TemplateCatalogNodeVM? node,
+        bool selectedIsMline = false) =>
+        selectedIsMline
+            ? "Šablona M-line je jen ke čtení, upravit ani odstranit ji nejde. Otevřete ji jako kopii (OK nebo dvojklik) "
+              + "a uložte jako svou."
+        : node?.NewTemplateAgendaCode is null
+            ? "Šablonu otevřete tlačítkem OK nebo dvojklikem. Novou šablonu založíte, až vlevo vyberete agendu, "
+              + "u jízdních řádů i AD nebo MHD."
         : node.Count == 0
-            ? $"{TitleFor(nodes, node)} zatím nemá žádnou šablonu. Prázdnou šablonu založíte tlačítkem Nová šablona."
-        : "Šablonu otevřete dvojklikem, šablona M-line se otevře jako kopie a uložíte ji jako svou. "
-          + $"Prázdnou šablonu pro {TitleFor(nodes, node)} založíte tlačítkem Nová šablona.";
+            ? $"{TitleFor(nodes, node)} zatím nemá žádnou šablonu. Prázdnou šablonu založíte ikonou Nový (Ctrl+N) nad seznamem."
+        : "Šablonu otevřete tlačítkem OK nebo dvojklikem, šablona M-line se otevře jako kopie a uložíte ji jako svou. "
+          + $"Prázdnou šablonu pro {TitleFor(nodes, node)} založíte ikonou Nový (Ctrl+N) nad seznamem.";
 
     private void NotifySelectionTexts()
     {
@@ -83,12 +88,20 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
             if (Set(ref _selected, value))
             {
                 OnPropertyChanged(nameof(DefaultButtonText));
+                OnPropertyChanged(nameof(Hint));
                 System.Windows.Input.CommandManager.InvalidateRequerySuggested();
             }
         }
     }
 
-    /// <summary>Vybraná šablona po stisku Otevřít. Null = dialog zrušen.</summary>
+    /// <summary>OK spodní lišty otevře vybranou šablonu; bez výběru jen poradí (lišta OK nevypíná).</summary>
+    protected override void OnOk()
+    {
+        if (Selected is null) { PopupDisplayer.Info("Vyberte šablonu, kterou chcete otevřít."); return; }
+        Open();
+    }
+
+    /// <summary>Vybraná šablona po stisku OK nebo dvojkliku. Null = dialog zrušen.</summary>
     public Guid? SelectedTemplateId { get; private set; }
 
     /// <summary>Agenda nové prázdné šablony po stisku Nová šablona. Null = otevírá se šablona nebo dialog zrušen.</summary>
@@ -109,7 +122,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     public RelayCommand      OpenCommand   { get; }
     public RelayCommand      NewTemplateCommand { get; }
     public AsyncRelayCommand DeleteTemplateCommand { get; }
-    public AsyncRelayCommand RenameCommand { get; }
+    public AsyncRelayCommand EditTemplateCommand { get; }
     public AsyncRelayCommand ToggleDefaultCommand { get; }
 
     // ── Výchozí šablona pro tisk ──────────────────────────────────────────────
@@ -270,8 +283,9 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     /// <summary>Code-behind napojí - VM žádá o načtení seznamu s <see cref="CurrentFilter"/> (nový uzel, Delete, Rename).</summary>
     public Action? RequestReload { get; set; }
 
-    /// <summary>Code-behind napojí - VM žádá o nový název (rename dialog). Vrátí název nebo null (zrušeno). VM nezná WPF.</summary>
-    public Func<string, string?>? RequestRenameInput { get; set; }
+    /// <summary>Code-behind napojí - VM žádá o formulář šablony (název, agenda, kód agendy) a dostane nový název,
+    /// null = zrušeno. VM nezná WPF.</summary>
+    public Func<string, string, string, string?>? RequestEditInput { get; set; }
 
     private string? _preselectAgendaCode;
 
@@ -286,13 +300,17 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         _selectedNodeKey = lastNodeKey ?? TemplateCatalogNodeVM.AllKey;
         _preselectAgendaCode = preselectAgendaCode;
 
-        // Systémové (M-line) jsou read-only - otevřít lze, mazat/přejmenovat ne.
+        // Systémové (M-line) jsou read-only - otevřít lze, upravit a odstranit ne.
         OpenCommand           = Command(Open,             () => Selected is not null);
         NewTemplateCommand    = Command(NewTemplate,      () => SelectedNode?.NewTemplateAgendaCode is not null);
         DeleteTemplateCommand = CommandAsync(DeleteAsync, () => Selected is not null && !IsSelectedSystem);
-        RenameCommand         = CommandAsync(RenameAsync, () => Selected is not null && !IsSelectedSystem);
+        EditTemplateCommand   = CommandAsync(EditAsync,   () => Selected is not null && !IsSelectedSystem);
         ToggleDefaultCommand  = CommandAsync(ToggleDefaultAsync,
             () => SelectedDefaultAction is DefaultAction.Set or DefaultAction.Clear);
+
+        // Ikony v pruhu nad seznamem a zkratky Ctrl+N/E/D jako seznamy legacy EDISONu.
+        Actions = [StandardActions.Add(NewTemplateCommand), StandardActions.Edit(EditTemplateCommand),
+                   StandardActions.Delete(DeleteTemplateCommand)];
     }
 
     private void Open()
@@ -326,13 +344,14 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
 
-    private async Task RenameAsync()
+    /// <summary>Formulář šablony (dnes název, agenda jen ke čtení); uloží se jen změněný název.</summary>
+    private async Task EditAsync()
     {
         if (Selected is null) return;
         if (!Guid.TryParse(Selected.Id, out var id)) return;
         var oldName = Selected["name"] ?? "";
 
-        var newName = RequestRenameInput?.Invoke(oldName);
+        var newName = RequestEditInput?.Invoke(oldName, AgendaLabelOf(Selected), Selected["agendaCode"] ?? "");
         if (newName is null || newName == oldName) return;
         try
         {
@@ -343,4 +362,8 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
+
+    /// <summary>Agenda řádku, jak ji ukazuje seznam: „Linkový JŘ · AD", agenda bez variant jen názvem.</summary>
+    internal static string AgendaLabelOf(EDListRow row) =>
+        string.IsNullOrEmpty(row["varianta"]) ? row["agenda"] ?? "" : $"{row["agenda"]} · {row["varianta"]}";
 }

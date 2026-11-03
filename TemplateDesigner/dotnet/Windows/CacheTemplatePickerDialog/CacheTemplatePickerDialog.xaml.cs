@@ -13,6 +13,8 @@ public partial class CacheTemplatePickerDialog : Window
     {
         DataContext = _vm = vm;
         InitializeComponent();
+        // Zkratky akcí nad seznamem (Ctrl+N/E/D) a hlášky s tímto oknem jako vlastníkem.
+        _vm.AttachToWindow(this);
 
         // Wire-up EDList eventů → VM
         TheList.SelectionChanged += (_, _) => _vm.Selected = TheList.SelectedRow;
@@ -27,16 +29,16 @@ public partial class CacheTemplatePickerDialog : Window
             catch (Exception ex) { _vm.PopupDisplayer.Error(ex); }
         };
 
-        // VM žádá nový název pro rename - otevře dialog (WPF drží View)
-        _vm.RequestRenameInput = oldName =>
+        // Upravit = týž formulář šablony jako Uložit jako (název, agenda jen ke čtení), WPF drží View.
+        _vm.RequestEditInput = (oldName, agendaLabel, agendaCode) =>
         {
-            var dvm = new SaveSectionTemplateDialogViewModel(oldName);
-            var win = new SaveSectionTemplateDialog(dvm) { Owner = this };
+            var dvm = new SaveToCacheDialogViewModel(oldName, agendaCode, agendaLabel) { WindowTitle = "Upravit šablonu" };
+            var win = new SaveToCacheDialog(dvm) { Owner = this };
             return win.ShowDialog() == true ? dvm.Name : null;
         };
 
-        // Close
-        _vm.RequestClose += result => { DialogResult = result; Close(); };
+        // Zavření (OK, Storno, Esc, dvojklik) obsluhuje EDFooter - druhý odběratel RequestClose by po zavřeném
+        // okně nastavoval DialogResult a spadl.
 
         // Pruh nad stromem drží výšku pruhu seznamu - ten je vyšší o pole hledání a výška se mění s velikostí písma.
         TheList.Loaded += (_, _) =>

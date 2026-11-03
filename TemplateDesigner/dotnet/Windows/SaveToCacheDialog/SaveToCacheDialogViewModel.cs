@@ -27,6 +27,9 @@ public class SaveToCacheDialogViewModel : EDViewModel
     /// <summary>Zobrazovaný název agendy pro formulář (obecná agenda v serverovém seznamu není).</summary>
     public string AgendaLabel { get; }
 
+    /// <summary>Titulek okna; týž formulář slouží i pro Upravit v okně šablon.</summary>
+    public string WindowTitle { get; init; } = "Uložit do databáze";
+
     public SaveToCacheDialogViewModel(string initialName, string? agendaCode, string? agendaLabel = null)
     {
         InitialName = initialName;

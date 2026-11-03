@@ -21,7 +21,11 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
 
         // Agenda + Varianta jako dvojice hned za názvem - pár drží pohromadě ve výchozím layoutu.
         s list = ##class(ALVA.EDControls.EDList.List).%New()
-        d list.AddColumn("name",       "Název",        "TEXT",     190, "", 1)
+        // Ikona před názvem: šablona M-line má logo M-line (jen ke čtení, otevře se jako kopie), vlastní dokument -
+        // jako na úvodní obrazovce, ať je odlišná šablona vidět na první pohled. Samostatný sloupec ikony
+        // bez názvu vypadal divně (Jan 3. 11.), proto u názvu.
+        s col = list.AddColumn("name", "Název",        "TEXT",     190, "", 1)
+        s col.iconKey = "ikona"
         d list.AddColumn("agenda",     "Agenda",       "TEXT",     110, "", 1)
         d list.AddColumn("varianta",   "Varianta",     "TEXT",      60, "", 1)
         d list.AddColumn("zdroj",      "Zdroj",        "TEXT",      70, "", 1)
@@ -100,6 +104,7 @@ ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, vetev As %String
     s row.modifiedBy = $g(@base@("ModifiedBy"))
     s row.author     = $g(@base@("Author"))
     s row.zdroj      = $s(isSystem:"M-line", 1:"vlastní")
+    s row.ikona      = $s(isSystem:"EDIcons.MlineLogo", 1:"EDIcons.Document")
     s row.agendaCode = agendaCode
 
     s:'$d(vychozi(agendaCode)) vychozi(agendaCode) = ..SablonaProTisk(IdFa, agendaCode)

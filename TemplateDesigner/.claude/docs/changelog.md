@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-11-03 (9) - Okno šablon jako seznamy EDISONu: Nový / Upravit / Odstranit nad seznamem, OK a Storno, logo M-line
+
+Akce byly rozházené (Přejmenovat a Smazat vlevo dole, Nová šablona vpravo vedle Otevřít) a nedržely se ani starého EDISONu, ani EDISON2; Upravit a Odstranit u šablony M-line byly šedé bez vysvětlení (Jan).
+Podle seznamů legacy EDISONu (`BaseForm2`, vzor `EDVZOR`; 210 lišt s akcemi, 302 nabídek Akce, 6 tlačítek dole): ikony **Nový / Upravit / Odstranit** (Ctrl+N/E/D) v pruhu nad seznamem a v nabídce Akce, dole sdílená lišta **OK + Storno** jako výběrové okno, dvojklik = OK.
+**Upravit** otevře formulář šablony (týž jako Uložit jako: název, agenda jen ke čtení) a nahradilo tlačítko Přejmenovat.
+Šablony M-line mají u názvu logo M-line, vlastní ikonu dokumentu (jako úvodní obrazovka; samostatný sloupec ikony vypadal divně); řádek pod seznamem u vybrané šablony M-line vysvětlí, proč ji nejde upravit ani odstranit.
+Sdílené komponenty (EDControls): akce v pruhu seznamu, ikona u textového sloupce (`iconKey`), sloupec IMAGE kreslí ikonu, názvy standardních akcí Nový / Odstranit místo Přidat / Smazat, pruh nad seznamem tenčí.
+Ověřeno: .NET testy návrháře 2725/2725 (nové `AkceOknaSablonTests`), EDControls 1279/1279, shell 1458/1458; `InitializeList` a `LoadList` na DEV posílají ikonu u názvu; vzhled proklikal Jan v debug buildu.
+
 ## 2026-11-03 (8) - Přejmenování otevřené šablony v okně šablon se už neztratí
 
 Uložení posílá název z otevřené šablony: když uživatel v okně šablon přejmenoval šablonu, kterou měl otevřenou, titulek dál ukazoval starý název a Ctrl+S ho do databáze vrátil (nález 3. 11. v kódu, `API.Sablony.SaveTemplate` zapisuje `Metadata.Name` z IN).

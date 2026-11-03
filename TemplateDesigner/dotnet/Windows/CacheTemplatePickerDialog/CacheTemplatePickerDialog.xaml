@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:el="clr-namespace:EDControls.EDList;assembly=EDControls"
         xmlns:edct="clr-namespace:EDControls.EDComponentToolbar;assembly=EDControls"
+        xmlns:ef="clr-namespace:EDControls.EDFooter;assembly=EDControls"
         xmlns:td="clr-namespace:TemplateDesigner"
         Title="Šablony v databázi"
         Width="980" Height="560"
@@ -26,38 +27,13 @@
         </Style>
     </Window.Resources>
 
+    <DockPanel>
+    <!-- Výběrové okno jako legacy BaseForm2 ve výběru s úpravami: OK otevře vybranou šablonu (i dvojklik, Ctrl+Enter),
+         Storno a Esc zavřou, vlevo nabídka Akce se stejnými akcemi jako ikony nad seznamem. Výchozí šablona pro tisk
+         (ToggleDefaultCommand) se vrátí s tiskem z okna JŘ - do formuláře Upravit nebo do řádku pod seznamem. -->
+    <ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel"/>
+
     <DockPanel Margin="12">
-
-        <!-- Akce -->
-        <Grid DockPanel.Dock="Bottom" Margin="0,12,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <Button Grid.Column="0" Content="Přejmenovat…" Command="{Binding RenameCommand}"
-                    Padding="10,4" Margin="0,0,8,0"/>
-            <Button Grid.Column="1" Content="Smazat"         Command="{Binding DeleteTemplateCommand}"
-                    Padding="10,4" Margin="0,0,8,0"/>
-            <!-- Nastavení výchozí šablony do příští verze schované (Jan 3. 11.): tisk z okna JŘ, kterému slouží,
-                 do verze nejde a ovládání se ještě ladí. Uživatel vidí jen výchozí šablonu M-line. -->
-            <Button Grid.Column="2" Content="{Binding DefaultButtonText}" Command="{Binding ToggleDefaultCommand}"
-                    Visibility="Collapsed" Padding="10,4"
-                    ToolTip="Šablona, kterou vezme tisk z modulu (okno jízdních řádů), když uživatel nevybere jinou. Bez výchozí šablony firmy tiskne výchozí šablona M-line."/>
-
-            <Button Grid.Column="4" Content="Nová šablona" Command="{Binding NewTemplateCommand}"
-                    Padding="10,4" Margin="0,0,8,0" ToolTipService.ShowOnDisabled="True"
-                    ToolTip="Prázdná šablona ve vybrané agendě. Ve stromu vyberte agendu, u jízdních řádů i AD nebo MHD."/>
-            <Button Grid.Column="5" Content="Otevřít" IsDefault="True"
-                    Command="{Binding OpenCommand}"
-                    Padding="14,4" Width="90" Margin="0,0,8,0"/>
-            <Button Grid.Column="6" Content="{StaticResource EDStrings.Cancel}"  IsCancel="True" Width="80"/>
-        </Grid>
 
         <!-- Nabídka nových šablon z kanálu M-line. Není to modální otázka: zobrazí se, jen když
              je co stáhnout, a přehled je použitelný i bez ní (bez sítě se prostě neukáže). -->
@@ -194,10 +170,11 @@
                 <el:EDList x:Name="TheList"
                            CacheClass="ALVA.TemplateDesigner.EDList.Sablony"
                            HostId="TemplateDesigner.TemplatePicker"
-                           Title="{Binding ListTitle}"/>
+                           Title="{Binding ListTitle}" Actions="{Binding Actions}"/>
             </DockPanel>
             <!-- Tučná šablona pro tisk (CellStyle="{StaticResource TemplateCell}") se vrátí s tiskem z okna jízdních řádů. -->
         </Grid>
 
+    </DockPanel>
     </DockPanel>
 </Window>
