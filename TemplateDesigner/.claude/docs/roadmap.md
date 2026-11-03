@@ -26,9 +26,10 @@
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **do příští verze (Jan 2. 11.)**, obě strany děláme my.
   Okno JŘ → Tisky → „Tisk linkového JŘ (nový)": formulář se šablonou, parametry a složkou, PDF bez návrháře.
   Hotové kroky 1-3 (linkový JŘ AD); položka je zákazníkům skrytá, na DEV ji zapne `^JRR("TiskNovymNavrharem")=1`.
-  Krok 4 (2. 11.): výchozí šablonu nastavuje okno šablon (Ctrl+O); tlačítko je do příští verze schované (Jan 3. 11.),
-  ovládání mate: šablona M-line nastavená jako výchozí firmy „vyhodí" výchozí M-line a víc agend v seznamu ukazuje víc výchozích.
-  Zbývá: odladit nastavení výchozí šablony (např. u varianty ve stromu), zastávkový JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
+  Krok 4 (2. 11.): výchozí šablonu nastavuje okno šablon (Ctrl+O); do vydání je v okně schované vše o tisku (tlačítko,
+  řádek „Pro tisk" ve stromu, sloupec a tučná šablona v seznamu - Jan 3. 11., mátlo). Vrátit s popisem, k čemu slouží.
+  Zbývá: odladit nastavení výchozí šablony (např. u varianty ve stromu), výchozí šablona M-line i pro ostatní agendy JŘ
+  (dnes jen linkový AD), zastávkový JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
 
 - **Okno „Změnit agendu" a okno šablon (Ctrl+O) dělají podobnou věc a vypadají jinak** [M] (Jan 3. 11., **rozmyslet způsob**).
   Obě vybírají agendu stromem nebo seskupeným seznamem. Návrh: jedno okno šablon se stromem a tlačítkem „Nová šablona

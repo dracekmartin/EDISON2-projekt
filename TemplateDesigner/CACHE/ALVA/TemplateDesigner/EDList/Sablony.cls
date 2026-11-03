@@ -25,7 +25,9 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
         d list.AddColumn("agenda",     "Agenda",       "TEXT",     110, "", 1)
         d list.AddColumn("varianta",   "Varianta",     "TEXT",      60, "", 1)
         d list.AddColumn("zdroj",      "Zdroj",        "TEXT",      70, "", 1)
-        d list.AddColumn("proTisk",    "Pro tisk",     "TEXT",      95, "", 1)
+        // Do vydání tisku z okna jízdních řádů skryté: uživatel ho nemá a informace o něm mátla (Jan 3. 11.).
+        s col = list.AddColumn("proTisk", "Pro tisk",  "TEXT",      95, "", 1)
+        s col.visible = 0
         d list.AddColumn("modifiedAt", "Změněno",      "DATETIME", 130, "", 1, "dd.MM.yyyy HH:mm")
         // Kdo šablonu založil a změnil, se eviduje, ale uživateli v přehledu nic neříká (Jan 3. 11.).
         s col = list.AddColumn("modifiedBy", "Kým",    "TEXT",      70, "", 1)

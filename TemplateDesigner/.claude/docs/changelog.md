@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-11-03 (5) - Okno šablon bez informací o tisku z okna JŘ, druhý řádek uzlu u levého okraje
+
+Strom ukazoval u variant „Pro tisk: …" nebo „Bez šablony pro tisk" a seznam sloupec Pro tisk a tučnou šablonu pro tisk. Patří to k tisku z okna jízdních řádů, který uživatel nemá a výchozí šablonu nastavit nemůže; „Bez šablony pro tisk" navíc svítil u agend, které šablonu M-line mají, jen ji nemají nastavenou jako výchozí (Jan: matoucí).
+Do vydání tisku z okna JŘ je to skryté (`EDList.Sablony` sloupec `proTisk`, XAML okna); okno ukazuje strom agend, počty a šablony.
+Druhý řádek uzlu měl pevnou nejvyšší šířku a WPF ho v širším panelu centroval, takže při rozšiřování panelu ujížděl doprava; teď drží u levého okraje a zkracuje se na šířku panelu (strom bez vodorovného posuvníku).
+Ověřeno: `InitializeList` na DEV posílá `proTisk` skrytý, .NET testy návrháře 2715/2715; vzhled v debug buildu.
+
 ## 2026-11-03 (4) - Změna agendy otevírá okno šablon, v okně tlačítko Nová šablona (zkouška)
 
 Agendu vybírala dvě okna a každé jinak: Změnit agendu jako seznam seskupený podle agendy, okno šablon (Ctrl+O) stromem oblast práce → agenda → varianta.

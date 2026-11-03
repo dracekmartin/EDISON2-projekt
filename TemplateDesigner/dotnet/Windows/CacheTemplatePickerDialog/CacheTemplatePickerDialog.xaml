@@ -80,7 +80,9 @@
 
             <!-- Strom podle oblasti práce, agendy a varianty - skládá ho server z registru agend. -->
             <Border Grid.Column="0" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1">
+                <!-- Bez vodorovného posuvníku: druhý řádek uzlu se zkrátí na šířku panelu, místo aby ho rozšiřoval. -->
                 <TreeView x:Name="Tree" ItemsSource="{Binding Nodes}" BorderThickness="0" Background="Transparent"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           FontSize="{DynamicResource EDTheme.FontSize.Body}">
                     <TreeView.ItemContainerStyle>
                         <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
@@ -96,11 +98,13 @@
                                     <TextBlock Text="{Binding Count}" Margin="6,0,0,0"
                                                Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
                                 </StackPanel>
-                                <TextBlock Text="{Binding Detail}" TextTrimming="CharacterEllipsis" MaxWidth="220"
+                                <!-- Šablona pro tisk z okna jízdních řádů: do jeho vydání skrytá, uživatel ten tisk
+                                     nemá a informace mátla (Jan 3. 11.). Vrátit: Visibility na HasDetail. -->
+                                <TextBlock Text="{Binding Detail}" TextTrimming="CharacterEllipsis" HorizontalAlignment="Left"
                                            ToolTip="{Binding Detail}"
                                            FontSize="{DynamicResource EDTheme.FontSize.Caption}"
                                            Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                                           Visibility="{Binding HasDetail, Converter={StaticResource BoolToVis}}"/>
+                                           Visibility="Collapsed"/>
                             </StackPanel>
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
@@ -113,8 +117,8 @@
             <el:EDList x:Name="TheList" Grid.Column="2"
                        CacheClass="ALVA.TemplateDesigner.EDList.Sablony"
                        HostId="TemplateDesigner.TemplatePicker"
-                       Title="Šablony v databázi"
-                       CellStyle="{StaticResource TemplateCell}"/>
+                       Title="Šablony v databázi"/>
+            <!-- Tučná šablona pro tisk (CellStyle="{StaticResource TemplateCell}") se vrátí s tiskem z okna jízdních řádů. -->
         </Grid>
 
     </DockPanel>
