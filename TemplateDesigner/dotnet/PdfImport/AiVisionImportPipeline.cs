@@ -302,7 +302,7 @@ public class AiVisionImportPipeline
     /// nečte stránkování: kdy poznámky přejdou na další stránku, rozhodne tisk podle dat linky.
     /// Z předlohy se bere jen to, jestli jsou poznámky pod tabulkou, nebo vedle ní.
     /// <list type="bullet">
-    /// <item>Pod tabulkou (<c>linkovy-jr-ad-postskript-a5.json</c>): hlavička na každé stránce,
+    /// <item>Pod tabulkou (<c>linkovy-jr-ad-poznamky-pod-a4.json</c>): hlavička na každé stránce,
     /// tabulka přes stránky, poznámky jednou za ní jako jeden celek.</item>
     /// <item>Vedle tabulky (<c>linkovy-jr-ad-poznamky-vedle-a4.json</c>): hlavička na každé stránce,
     /// tabulka a poznámky v jedné sekci vedle sebe.</item>

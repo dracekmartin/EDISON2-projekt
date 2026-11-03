@@ -25,7 +25,7 @@ public class ZkouskaTiskuNaostro(ITestOutputHelper output)
 {
     private static readonly string[] VychoziSablony =
     [
-        "TemplateDesigner/dotnet/SystemTemplates/linkovy-jr-ad-postskript-a5.json",
+        "TemplateDesigner/templates/linkovy-jr-ad-postskript-a5.json",
         "TemplateDesigner/dotnet/SystemTemplates/linkovy-jr-ad-poznamky-vedle-a4.json",
     ];
 

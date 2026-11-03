@@ -27,7 +27,7 @@ public class ZkouskaKvalityImportu(ITestOutputHelper output)
     /// <summary>Naše šablony, jejichž výtisk se importuje - jméno případu × cesta v repu.</summary>
     private static readonly (string Nazev, string Soubor)[] NaseTisky =
     [
-        ("tisk-postskript-a5", "TemplateDesigner/dotnet/SystemTemplates/linkovy-jr-ad-postskript-a5.json"),
+        ("tisk-postskript-a5", "TemplateDesigner/templates/linkovy-jr-ad-postskript-a5.json"),
         ("tisk-poznamky-vedle-a4", "TemplateDesigner/dotnet/SystemTemplates/linkovy-jr-ad-poznamky-vedle-a4.json"),
         ("tisk-vzor-940", "TemplateDesigner/templates/vzor-940-idzk.json"),
     ];

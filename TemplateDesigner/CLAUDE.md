@@ -50,6 +50,10 @@ Věci, které se z kódu nepoznají a jejichž porušení něco rozbije uživate
   ACTIVITY historii shellu a zánik zámku/verze TD ukončí (`EdisonActivityFailed` v App).
   TD **nikdy nevolá Logout/LockClearExt** - zámky patří shellu. Prázdný guid (starý shell,
   standalone) → vlastní GUID bez kontrol.
+- **Šablona M-line se ruší zápisem do `SystemTemplateSeeder.Retired`, ne smazáním souboru** ze `SystemTemplates/`:
+  seed do databáze jen zapisuje, takže smazaný soubor by u zákazníků zůstal napořád. Vyřazenou šablonu návrhář
+  při startu smaže z větve MLINE a server ji už nezapíše (zpátky jen pod novým Id). Úprava šablony M-line
+  = změna jejího souboru, seed ji u zákazníka přepíše sám.
 - **Persistované hodnoty parametrů sestavy se aplikují jednou cestou** -
   `ApplyPersistedPrintParamsAsync()` nastaví hodnoty i UI pohromadě. Dvě cesty vedly k tomu,
   že se tisklo jiné nastavení, než UI ukazovalo, a nikdo si toho nevšiml.

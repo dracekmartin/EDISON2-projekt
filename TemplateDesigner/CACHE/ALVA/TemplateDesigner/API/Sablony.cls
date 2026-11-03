@@ -154,6 +154,14 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
             $$$ThrowStatus($$$ERROR($$$GeneralError, "MLINE je systémová (read-only) větev - zápis jen přes distribuci."))
         }
 
+        // Vyřazenou šablonu M-line (`RetireTemplate`) už nic nezapíše: starší návrhář na jiném počítači ji při startu
+        // nalévá dál a vrátil by ji zákazníkům. Bez chyby - jeho seed by jinak hlásil chybu při každém startu.
+        i $d(^ALVA.TemplateDesigner.Templates(targetIdFa,"RETIRED",templateId)) {
+            s ^||ML("OUT","templateId") = templateId
+            s ^||ML("OUT","retired") = "1"
+            ret $$$OK
+        }
+
         s nowIso = $zdt($h, 3)
         s existed = $d(^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId))
 
@@ -224,6 +232,59 @@ ClassMethod DeleteTemplate(ByRef sys As %String) As %Status
         }
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
+}
+
+/// Vyřadí šablonu M-line (seznam vyřazených nese návrhář, `SystemTemplateSeeder.Retired`): smaže ji z větve M-line,
+/// zapamatuje si, že je vyřazená (`SaveTemplate` ji pak už nezapíše), a zruší výchozí šablony pro tisk firem, které
+/// na ni ukazují. Jen distribuční cestou, stejně jako zápis do větve M-line.
+/// IN["templateId"]   = GUID
+/// IN["targetIdFa"]   = větev, default MLINE (testy předají vlastní)
+/// IN["distribution"] = "1"
+/// OUT["deleted"]     = "1" pokud šablona ve větvi byla, jinak "0"
+ClassMethod RetireTemplate(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+
+        s templateId = $g(^||ML("IN","templateId"))
+        if templateId = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "templateId is required"))
+        if $g(^||ML("IN","distribution")) '= "1" {
+            $$$ThrowStatus($$$ERROR($$$GeneralError, "Šablonu M-line vyřadí jen distribuce."))
+        }
+        s vetev = $g(^||ML("IN","targetIdFa"))
+        s:vetev="" vetev = "MLINE"
+
+        s ^||ML("OUT","deleted") = ..RetireFromBranch(vetev, templateId)
+    } catch (ex) { $$$CatchErrRest }
+    q $$$OK
+}
+
+/// Vyřazení šablony ve větvi; vrací 1, když tam šablona byla. Návrhář ho volá při každém startu, už vyřazená
+/// šablona proto skončí hned.
+ClassMethod RetireFromBranch(vetev As %String, templateId As %String) As %Boolean
+{
+    q:$d(^ALVA.TemplateDesigner.Templates(vetev,"RETIRED",templateId))&&'$d(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId)) 0
+    s ^ALVA.TemplateDesigner.Templates(vetev,"RETIRED",templateId) = $zdt($h, 3)
+
+    // Tisk by výchozí šablonu, která není, přeskočil, ale v datech firmy by zůstal odkaz do prázdna.
+    s firma = ""
+    f {
+        s firma = $o(^ALVA.TemplateDesigner.Templates(firma))
+        q:firma=""
+        s agenda = ""
+        f {
+            s agenda = $o(^ALVA.TemplateDesigner.Templates(firma,"DEFAULT",agenda))
+            q:agenda=""
+            k:^ALVA.TemplateDesigner.Templates(firma,"DEFAULT",agenda)=templateId ^ALVA.TemplateDesigner.Templates(firma,"DEFAULT",agenda)
+        }
+    }
+
+    q:'$d(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId)) 0
+    s agendaCode = $g(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata","AgendaCode"))
+    k:agendaCode'="" ^ALVA.TemplateDesigner.Templates(vetev,"IDX","ByAgenda",agendaCode,templateId)
+    k ^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId)
+    q 1
 }
 
 /// Přejmenuje šablonu (jen pole Name v metadatech).

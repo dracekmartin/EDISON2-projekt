@@ -30,12 +30,6 @@
   pro tisk", tučně; výchozí M-line mají všechny agendy JŘ. Okno ji ukazuje jen se zapnutým přepínačem - při vydání ho
   zapnout nebo zrušit. Zbývá zastávkový JŘ z okna JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
 
-- **Vyřazení a oprava šablon M-line u zákazníků** [M] (Jan 3. 11.). Návrhář šablony M-line při startu do databáze
-  zapisuje, odebrat je neumí: vyřazená šablona zůstane u zákazníka napořád (první případ: linkový JŘ AD má 3 šablony M-line,
-  Jan chce nejvýš 2, A5 postskriptová má jít pryč). Potřeba: odebrání z větve M-line na serveru (dnes jen šablony firmy),
-  seznam vyřazených šablon v návrháři, soubor A5 přesunout k testům (vzor pro import z PDF a zkoušku tisku).
-  Promyslet i opravu („patch") už doručené šablony a vztah ke kanálu z helpdesku.
-
 - **`B189` Sdílení šablon** [?] (podnět Jan 7. 10., rozšířeno 3. 11., **návrh s Janem**, nic se nedělá). Dnes šablony
   patří firmě: upraví i odstraní je kdokoli z firmy (autor se ukládá, nepoužívá), mezi firmami jen export a import souboru,
   M-line rozesílá své kanálem z helpdesku. Otevřené: sdílení mezi firmami, nebo uvnitř firmy (kolegovi, osobní šablony),

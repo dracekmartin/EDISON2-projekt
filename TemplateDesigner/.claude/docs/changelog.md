@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-11-03 (12) - Šablony M-line jde vyřadit, A5 postskriptová u linkového JŘ AD končí
+
+Návrhář šablony M-line do databáze jen zapisoval: šablona, kterou M-line už nechce, by u zákazníků zůstala napořád (linkový JŘ AD měl tři, Jan chce dvě A4).
+Vyřazená šablona je v seznamu `SystemTemplateSeeder.Retired`; návrhář ji při startu smaže z větve M-line přes nové `API.Sablony.RetireTemplate` (jen distribuční cestou). Server si vyřazení pamatuje (`RETIRED` ve větvi) a `SaveTemplate` ji už nezapíše, takže ji nevrátí ani starší návrhář na jiném počítači. Výchozí šablony pro tisk firem, které na ni ukazovaly, se zruší a tisk vezme výchozí M-line. Kopie uložené firmou zůstávají.
+Oprava šablony M-line fungovala už dřív: změněný soubor seed u zákazníka přepíše. Kanál z helpdesku vědomě mimo (Jan 3. 11.).
+První vyřazená: „Linkový JŘ (AD) - postskriptový vzhled A5"; soubor zůstal vzorem pro testy importu a zkoušku tisku v `templates/`. Test kostry importu „poznámky pod tabulkou" teď hlídá systémovou šablonu A4 poznámky pod.
+Ověřeno: Caché testy TemplateDesigneru 308/308 (nový `SablonyProTiskTest.TestVyrazeniSablonyMline`); .NET testy návrháře 2724/2724 (nový `VyrazenaSablonaNeniVProgramu`).
+
 ## 2026-11-03 (11) - Výchozí šablona pro tisk má v seznamu hvězdičku za názvem (příprava `B190`)
 
 Výchozí šablona byla jen tučně, akce, která ji nastaví, má ikonu hvězdičky; Jan chtěl značku shodnou s akcí, ale ne před názvem, kde by ten jeden název posunula proti ostatním.

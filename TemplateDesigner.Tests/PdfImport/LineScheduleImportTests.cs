@@ -189,7 +189,7 @@ public class LineScheduleImportTests
     /// <summary>Soubor systémové šablony × kde na předloze leží poznámky (pod tabulkou / vedle ní).</summary>
     public static TheoryData<string, float, float> SystemoveKostry => new()
     {
-        { "linkovy-jr-ad-postskript-a5.json", 0f, 125f },
+        { "linkovy-jr-ad-poznamky-pod-a4.json", 0f, 125f },
         { "linkovy-jr-ad-poznamky-vedle-a4.json", 205f, 20f },
     };
 

@@ -20,8 +20,27 @@ namespace TemplateDesigner.Services;
 /// </summary>
 public static class SystemTemplateSeeder
 {
+    /// <summary>
+    /// Šablony M-line, které už zákazníci mít nemají. Samotné odebrání souboru ze <c>SystemTemplates/</c> nestačí:
+    /// seed jen zapisuje, takže šablona by u zákazníka zůstala napořád. Vyřazená šablona se při startu smaže
+    /// z MLINE a server si ji pamatuje, aby ji starší návrhář nevrátil; zpátky jen pod novým Id.
+    /// Kopie, které si firma uložila jako své, zůstanou. Úprava šablony M-line vyřazení nepotřebuje -
+    /// změněný soubor seed přepíše sám (<see cref="SeLisiObsah"/>).
+    /// </summary>
+    public static readonly IReadOnlyList<(Guid Id, string Name)> Retired =
+    [
+        // Jan 3. 11.: u linkového JŘ AD stačí dvě šablony A4; soubor zůstal vzorem pro testy (templates/).
+        (Guid.Parse("7ed7faf5-947e-4fb3-b676-1e3908fcb218"), "Linkový JŘ (AD) - postskriptový vzhled A5"),
+    ];
+
     public static async Task SeedAsync(CacheTemplateService storage)
     {
+        foreach (var (id, name) in Retired)
+        {
+            try { await storage.RetireSystemAsync(id); }
+            catch (Exception ex) { Debug.WriteLine($"[SystemTemplateSeeder] Vyřazení '{name}' selhalo: {ex.Message}"); }
+        }
+
         // Co už doručil kanál, se z .exe NEPŘEPISUJE - jinak by se novější šablona z helpdesku
         // při každém startu tiše vrátila na verzi zabalenou v programu, a celý kanál by byl k ničemu.
         HashSet<Guid> zKanalu;

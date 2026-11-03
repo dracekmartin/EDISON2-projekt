@@ -55,7 +55,6 @@ public class SystemTemplateSeedTests
         // (picker ji nenabídne, dokud Released = 0), aby se kanál nedodělával až s vydáním.
         Assert.Contains("zastavkovy-jr-ad.json", names);
         Assert.Contains("zastavkovy-jr-mhd.json", names);
-        Assert.Contains("linkovy-jr-ad-postskript-a5.json", names);
         Assert.Contains("linkovy-jr-ad-poznamky-vedle-a4.json", names);
         Assert.Contains("linkovy-jr-ad-poznamky-pod-a4.json", names);
         Assert.Contains("linkovy-jr-mhd-postskript-a5.json", names);
@@ -98,7 +97,7 @@ public class SystemTemplateSeedTests
         // uživatel dostal jen sloupce textu - bez inverzního boxu negativních značek a bez
         // řazení podle typu (`B117`). Test drží, že se to nevrátí.
         var t = TemplateSerializer.Deserialize(
-            File.ReadAllText(Path.Combine(SystemTemplatesDir(), "linkovy-jr-ad-postskript-a5.json")));
+            File.ReadAllText(Path.Combine(SystemTemplatesDir(), "linkovy-jr-ad-poznamky-pod-a4.json")));
 
         var prvky = t.Sections.SelectMany(s => s.Elements).ToList();
 
@@ -112,7 +111,6 @@ public class SystemTemplateSeedTests
     /// rozbitá - do 23. 10. ho neměla žádná linková šablona.
     /// </summary>
     [Theory]
-    [InlineData("linkovy-jr-ad-postskript-a5.json")]
     [InlineData("linkovy-jr-ad-poznamky-vedle-a4.json")]
     [InlineData("linkovy-jr-ad-poznamky-pod-a4.json")]
     [InlineData("linkovy-jr-mhd-postskript-a5.json")]
@@ -200,6 +198,23 @@ public class SystemTemplateSeedTests
         Assert.True(nalezy.Count == 0, $"{fileName}: dlouhá pomlčka v {string.Join(", ", nalezy)}");
     }
 
+    /// <summary>
+    /// Vyřazená šablona M-line (Jan 3. 11.) se při startu maže z databáze. Kdyby ji program zároveň nesl, seed by ji
+    /// zapisoval a vyřazení mazalo - server zápis vyřazené odmítne, takže by tiše nebyla vidět. Výchozí šablona agendy
+    /// vyřazená být nemůže: musí být zabalená (<see cref="VychoziSablonaMlineAgendyJeZabalenaSeStejnouAgendou"/>).
+    /// </summary>
+    [Fact]
+    public void VyrazenaSablonaNeniVProgramu()
+    {
+        var zabalene = TemplateFiles().Select(f => TemplateSerializer.Deserialize(File.ReadAllText(f)).Id).ToHashSet();
+        var vyrazene = SystemTemplateSeeder.Retired.Select(r => r.Id).ToList();
+
+        Assert.NotEmpty(vyrazene);
+        Assert.Equal(vyrazene.Count, vyrazene.Distinct().Count());
+        foreach (var (id, name) in SystemTemplateSeeder.Retired)
+            Assert.False(zabalene.Contains(id), $"Vyřazená šablona „{name}“ ({id}) je pořád v SystemTemplates/.");
+    }
+
     [Fact]
     public void KazdaSablonaMaVlastniId()
     {
@@ -245,13 +260,14 @@ public class SystemTemplateSeedTests
     public void ForAgenda_VychoziSablonaMaPrednostPredPrvniVPoradi()
     {
         const string agenda = "LINKOVY_JR_AD";
-        var a4Pod = TemplateSerializer.Deserialize(
-            File.ReadAllText(Path.Combine(SystemTemplatesDir(), "linkovy-jr-ad-poznamky-pod-a4.json"))).Id;
+        // Výchozí podle registru je tu záměrně ta, která v pořadí jmen první není.
+        var a4Vedle = TemplateSerializer.Deserialize(
+            File.ReadAllText(Path.Combine(SystemTemplatesDir(), "linkovy-jr-ad-poznamky-vedle-a4.json"))).Id;
 
-        Assert.Equal(a4Pod, EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda, a4Pod.ToString())!.Id);
+        Assert.Equal(a4Vedle, EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda, a4Vedle.ToString())!.Id);
         // Starší server výchozí šablonu neposílá → první v pořadí jmen, jako dřív.
         var prvni = EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda)!.Id;
-        Assert.NotEqual(a4Pod, prvni);
+        Assert.NotEqual(a4Vedle, prvni);
         Assert.Equal(prvni, EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda, Guid.NewGuid().ToString())!.Id);
         Assert.Equal(prvni, EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda, "")!.Id);
     }

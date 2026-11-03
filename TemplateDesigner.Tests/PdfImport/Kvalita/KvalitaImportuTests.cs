@@ -15,7 +15,7 @@ public class KvalitaImportuTests
 {
     public static TheoryData<string> Sablony => new()
     {
-        "TemplateDesigner/dotnet/SystemTemplates/linkovy-jr-ad-postskript-a5.json",
+        "TemplateDesigner/templates/linkovy-jr-ad-postskript-a5.json",
         "TemplateDesigner/dotnet/SystemTemplates/linkovy-jr-ad-poznamky-vedle-a4.json",
         "TemplateDesigner/templates/vzor-940-idzk.json",
     };
@@ -57,7 +57,7 @@ public class KvalitaImportuTests
     [Fact]
     public void StredTextuSeBereZVytisku()
     {
-        var sablona = Nacti("TemplateDesigner/dotnet/SystemTemplates/linkovy-jr-ad-postskript-a5.json");
+        var sablona = Nacti("TemplateDesigner/templates/linkovy-jr-ad-postskript-a5.json");
         var data = KvalitaImportuData.Linka();
         var o = KvalitaImportu.ZeSablony(sablona, data, Vytiskni(sablona, data), "a5");
 
@@ -69,7 +69,7 @@ public class KvalitaImportuTests
     [Fact]
     public void PosunutyTextAZameneneSloupceSeOdhali()
     {
-        const string soubor = "TemplateDesigner/dotnet/SystemTemplates/linkovy-jr-ad-postskript-a5.json";
+        const string soubor = "TemplateDesigner/templates/linkovy-jr-ad-postskript-a5.json";
         var zdroj = Nacti(soubor);
         var data = KvalitaImportuData.Linka();
         var o = KvalitaImportu.ZeSablony(zdroj, data, Vytiskni(zdroj, data), "a5");

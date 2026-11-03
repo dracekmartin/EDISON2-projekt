@@ -158,6 +158,18 @@ public class CacheTemplateService
         return result["deleted"]?.Value?.ToString() == "1";
     }
 
+    /// <summary>Vyřadí šablonu M-line (<see cref="SystemTemplateSeeder.Retired"/>): server ji smaže z větve MLINE,
+    /// zruší výchozí šablony firem, které na ni ukazují, a už ji nezapíše. Vrátí false, když v MLINE nebyla.</summary>
+    public Task<bool> RetireSystemAsync(Guid templateId)
+        => Task.Run(() =>
+        {
+            var inVar = new CVar();
+            inVar["templateId"]   = new CVar(templateId.ToString());
+            inVar["targetIdFa"]   = new CVar(MlineIdFa);
+            inVar["distribution"] = new CVar("1");
+            return Query("RetireTemplate", inVar)["deleted"]?.Value?.ToString() == "1";
+        });
+
     // ─── RenameTemplate ───────────────────────────────────────────────────────
 
     /// <summary>Přejmenuje šablonu (jen pole Name v metadatech).</summary>

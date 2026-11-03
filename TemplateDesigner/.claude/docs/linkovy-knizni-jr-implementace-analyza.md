@@ -487,7 +487,7 @@ distribuce šablon = blok B2/R6 (zatím ruční Import JSON).
 | Caché agenda `LinkovyJrAd` (1 343 ř.) | data celé linky, 1 stránka per (linka × směr), řazení spojů, zdvojené řádky příjezd/odjezd, řádek platnosti, NZ, návaznosti, poznámky druhů 1/2/3/7/8/9/10 |
 | Caché agenda `LinkovyJrMhd` (692 ř.) | týž wire formát nad MHD daty; bez Km/Tč/MHD sloupců a bez návazností (zdroj je nemá) |
 | `LineTableElement` (596 ř.) | matice zastávka × spoj, plán řádků, kaskáda stylů, škálování na šířku i výšku, podmíněná viditelnost a zvýraznění řádku |
-| Výchozí šablona | `dotnet/SystemTemplates/linkovy-jr-ad-postskript-a5.json` (AD, tvar postskriptového tisku). Obecná A4 se 22. 9. zrušila - do verze jde jedna dotažená, ne dvě rozpracované. **MHD nemá.** |
+| Výchozí šablona | AD: `dotnet/SystemTemplates/linkovy-jr-ad-poznamky-pod-a4.json` (výchozí M-line), vedle ní `…-poznamky-vedle-a4.json`; A5 postskriptová vyřazená 3. 11. (vzor pro testy v `templates/`). MHD: `linkovy-jr-mhd-postskript-a5.json`. |
 | Testy | Síť z `L1` v repu: porovnání se starým modulem (`LinkovyJrAdLegacyTest` nad oraclem `LinkovyJrLegacyOracle`), zlatý odtisk, typová sada linek, smoke. Běží v `run-cache-tests.ps1`. **Nekryje nastavení** - viz §13.3. |
 
 Sloupcový repertoár prvku: Zóna, Km, Tč, Zastávka, MHD, Spoj. Legacy jich má devět

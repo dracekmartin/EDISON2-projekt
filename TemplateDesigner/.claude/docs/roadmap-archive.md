@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Vyřazení a oprava šablon M-line u zákazníků (hotovo 3. 11. 2026)
+
+Návrhář šablony M-line do databáze jen zapisoval, vyřazená by u zákazníka zůstala napořád. Vyřazení: seznam
+`SystemTemplateSeeder.Retired`, server smaže šablonu z větve M-line a už ji nezapíše (`API.Sablony.RetireTemplate`).
+Oprava fungovala už dřív (změněný soubor seed přepíše). První vyřazená: linkový JŘ AD A5 postskriptová. Kanál
+z helpdesku vědomě mimo (Jan 3. 11.: nepoužívá se a bude asi jiný).
+
 ## Okno „Změnit agendu" sloučené s oknem šablon (hotovo 3. 11. 2026)
 
 - **Změna agendy otevírá okno šablon** s vybranou aktuální agendou (changelog 3. 11. (4)-(9)), prázdnou šablonu

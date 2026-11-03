@@ -147,6 +147,42 @@ Method TestSmazanaVychoziFirmy()
 	do $$$AssertEquals(..Pravidlo("").zdroj, "mline", "neplatný ukazatel výchozí firmy se přeskočí")
 }
 
+/// Vyřazení šablony M-line (Jan 3. 11.): zmizí z větve M-line i z výchozí šablony firmy, tisk přejde na výchozí M-line
+/// a další zápis téže šablony (starší návrhář při startu) se neprovede. Bez distribuce vyřadit nejde.
+Method TestVyrazeniSablonyMline()
+{
+	do ..Uloz(..#Mline, ..VychoziMlineId(), "A4 poznámky pod", ..#Agenda)
+	do ..Uloz(..#Mline, "ML-A5", "A5 postskript", ..#Agenda)
+	do ##class(ALVA.TemplateDesigner.API.SablonyProTisk).WriteVychoziFirmy(..#Firma, ..#Agenda, "ML-A5", ..#Mline)
+
+	do $$$AssertEquals(..Vyrad("ML-A5", 0), "", "bez distribuce: chyba")
+	do $$$AssertTrue($data(^ALVA.TemplateDesigner.Templates(..#Mline,"DTA","ML-A5")), "bez distribuce šablona zůstala")
+
+	do $$$AssertEquals(..Vyrad("ML-A5"), "1", "vyřazení: šablona ve větvi byla")
+	do $$$AssertEquals($data(^ALVA.TemplateDesigner.Templates(..#Mline,"DTA","ML-A5")), 0, "šablona je pryč")
+	do $$$AssertEquals($data(^ALVA.TemplateDesigner.Templates(..#Mline,"IDX","ByAgenda",..#Agenda,"ML-A5")), 0, "index agendy je pryč")
+	do $$$AssertEquals($data(^ALVA.TemplateDesigner.Templates(..#Firma,"DEFAULT",..#Agenda)), 0, "výchozí firmy na ni neukazuje")
+	do $$$AssertEquals(..Pravidlo("").zdroj, "mline", "tisk vezme výchozí M-line")
+
+	do ..Uloz(..#Mline, "ML-A5", "A5 postskript", ..#Agenda)
+	do $$$AssertEquals($data(^ALVA.TemplateDesigner.Templates(..#Mline,"DTA","ML-A5")), 0, "starší návrhář ji už nevrátí")
+	do $$$AssertEquals(..Vyrad("ML-A5"), "0", "opakované vyřazení: nic k smazání, bez chyby")
+}
+
+/// Vyřadí šablonu přes API v testovací větvi M-line; vrací OUT deleted, při chybě "".
+Method Vyrad(templateId As %String, distribuce As %Boolean = 1) As %String
+{
+	kill ^||ML
+	do ..SetupSys(.sys, ..#Firma)
+	set ^||ML("IN","templateId")   = templateId
+	set ^||ML("IN","targetIdFa")   = ..#Mline
+	set:distribuce ^||ML("IN","distribution") = "1"
+	do ##class(ALVA.TemplateDesigner.API.Sablony).RetireTemplate(.sys)
+	set vysledek = $select($data(^||ML("OUT","ERR")):"", 1:$get(^||ML("OUT","deleted")))
+	kill ^||ML
+	quit vysledek
+}
+
 /// Výchozí šablona firmy smí být jen existující šablona téže agendy.
 Method TestVychoziFirmyJenPlatnaSablona()
 {
