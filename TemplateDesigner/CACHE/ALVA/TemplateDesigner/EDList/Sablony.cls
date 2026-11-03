@@ -28,7 +28,10 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
         // iconKey přišel s projektem ALVA_EDControls 3. 11. a ten jezdí s balíčkem shellu, ne TD: na serveru se starší
         // verzí by zápis spadl na <PROPERTY DOES NOT EXIST> a s ním celý seznam šablon. Bez něj je seznam jen bez ikon.
         try { s col.iconKey = "ikona" } catch { }
-        d list.AddColumn("agenda",     "Agenda",       "TEXT",     110, "", 1)
+        // Hvězdička za názvem výchozí šablony pro tisk (jako ikona akce, která ji nastaví); před názvem by ten jeden
+        // název posunula (Jan 3. 11.). Ze stejného důvodu jako iconKey v try.
+        try { s col.trailingIconKey = "ikonaVychozi" } catch { }
+        d list.AddColumn("agenda",    "Agenda",       "TEXT",     110, "", 1)
         d list.AddColumn("varianta",   "Varianta",     "TEXT",      60, "", 1)
         d list.AddColumn("zdroj",      "Zdroj",        "TEXT",      70, "", 1)
         // Do vydání tisku z okna jízdních řádů skryté: uživatel ho nemá a informace o něm mátla (Jan 3. 11.).
@@ -62,8 +65,9 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
         s kody = $g(^||ML("IN","filter","agendaCodes"))
         s:kody="" kody = $g(^||ML("IN","filter","agendaCode"))
         s list = ##class(ALVA.EDControls.EDList.List).%New()
+        s tiskZModulu = ##class(ALVA.TemplateDesigner.API.SablonyProTisk).JeTiskZModulu(dataDB)
 
-        s vetve = ##class(ALVA.TemplateDesigner.API.Sablony).VetveFirmy(IdFa)
+        s vetve =##class(ALVA.TemplateDesigner.API.Sablony).VetveFirmy(IdFa)
         for iVetev = 1:1:$ll(vetve) {
             s vetev = $lg(vetve, iVetev)
             k ids
@@ -80,7 +84,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
             for {
                 s templateId = $o(ids(templateId))
                 q:templateId=""
-                d ..AddTemplateRow(list, vetev, templateId, vetev'=IdFa, IdFa, .vychozi)
+                d ..AddTemplateRow(list, vetev, templateId, vetev'=IdFa, IdFa, tiskZModulu, .vychozi)
             }
         }
 
@@ -91,7 +95,8 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
 
 /// Sestaví jeden řádek z metadat šablony. isSystem=1 → systémová (MLINE) větev.
 /// `vychozi(agendaCode)` = $lb(templateId, zdroj) šablony, kterou tisk agendy vezme; plní se jednou za agendu.
-ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, vetev As %String, templateId As %String, isSystem As %Boolean, IdFa As %String, ByRef vychozi)
+/// Hvězdičku u ní dostane řádek jen se zapnutým tiskem z okna JŘ (`tiskZModulu`), jinak výchozí nemá účinek.
+ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, vetev As %String, templateId As %String, isSystem As %Boolean, IdFa As %String, tiskZModulu As %Boolean, ByRef vychozi)
 {
     if '$d(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId)) q
     s base = $name(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Metadata"))
@@ -112,6 +117,7 @@ ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, vetev As %String
     s:'$d(vychozi(agendaCode)) vychozi(agendaCode) = ..SablonaProTisk(IdFa, agendaCode)
     s zdroj = $s($lg(vychozi(agendaCode),1)=templateId:$lg(vychozi(agendaCode),2), 1:"")
     s row.vychozi = zdroj
+    s row.ikonaVychozi = $s(tiskZModulu && (zdroj'=""):"EDIcons.Star", 1:"")
     s row.proTisk = $case(zdroj, "firma":"výchozí firmy", "mline":"výchozí M-line", :"")
 }
 

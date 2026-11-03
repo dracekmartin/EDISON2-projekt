@@ -27,7 +27,7 @@ ClassMethod GetStrom(ByRef sys As %String) As %Status
         $$$FillParams
 
         s strom = ..Strom(IdFa)
-        d strom.%Set("tiskZModulu", ''$g(^[dataDB]JRR("TiskNovymNavrharem")), "boolean")
+        d strom.%Set("tiskZModulu", ##class(ALVA.TemplateDesigner.API.SablonyProTisk).JeTiskZModulu(dataDB), "boolean")
         s ^||ML("OUT","1") = strom.%ToJSON()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK

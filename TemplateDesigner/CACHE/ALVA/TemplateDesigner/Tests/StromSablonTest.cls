@@ -127,6 +127,32 @@ Method TestSeznamPodleUzlu()
 	do $$$AssertEquals(..Vlastni(.radky), "FA-LAD,FA-LMHD,FA-ZAD", "bez filtru všechny šablony firmy")
 }
 
+/// Hvězdička za názvem výchozí šablony pro tisk (Jan 3. 11.): jen u výchozí a jen se zapnutým tiskem z okna JŘ,
+/// bez něj výchozí nemá účinek. Přepínač je v datech firmy, proto test volá sestavení řádku s ním přímo.
+Method TestHvezdickaVychozi()
+{
+	do ..Uloz(..#Firma, "FA-LAD", "Linkový AD", "LINKOVY_JR_AD")
+	do ..Uloz(..#Firma, "FA-DRUHA", "Druhá", "LINKOVY_JR_AD")
+	do ##class(ALVA.TemplateDesigner.API.SablonyProTisk).WriteVychoziFirmy(..#Firma, "LINKOVY_JR_AD", "FA-LAD")
+
+	for tisk = 1, 0 {
+		set list = ##class(ALVA.EDControls.EDList.List).%New()
+		kill vychozi
+		do ##class(ALVA.TemplateDesigner.EDList.Sablony).AddTemplateRow(list, ..#Firma, "FA-LAD", 0, ..#Firma, tisk, .vychozi)
+		do ##class(ALVA.TemplateDesigner.EDList.Sablony).AddTemplateRow(list, ..#Firma, "FA-DRUHA", 0, ..#Firma, tisk, .vychozi)
+		do $$$AssertEquals(list.rows.%Get(0).ikonaVychozi, $select(tisk:"EDIcons.Star", 1:""), "výchozí šablona, tisk z okna JŘ "_tisk)
+		do $$$AssertEquals(list.rows.%Get(1).ikonaVychozi, "", "jiná šablona hvězdičku nemá, tisk z okna JŘ "_tisk)
+	}
+
+	kill ^||ML
+	do ..SetupSys(.sys, ..#Firma)
+	do ##class(ALVA.TemplateDesigner.EDList.Sablony).InitializeList(.sys)
+	set sloupce = ##class(%DynamicArray).%FromJSON($get(^||ML("OUT","1")))
+	do $$$AssertEquals(sloupce.%Get(0).key, "name", "první sloupec je název")
+	do $$$AssertEquals(sloupce.%Get(0).trailingIconKey, "ikonaVychozi", "název ukazuje hvězdičku za textem")
+	kill ^||ML
+}
+
 Method Strom() As %DynamicObject
 {
 	quit ##class(ALVA.TemplateDesigner.API.StromSablon).Strom(..#Firma, ..#Mline)

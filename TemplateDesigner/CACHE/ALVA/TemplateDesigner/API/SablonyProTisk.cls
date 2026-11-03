@@ -21,6 +21,13 @@ Class ALVA.TemplateDesigner.API.SablonyProTisk Extends %RegisteredObject
 /// Větev systémových šablon (`API.Sablony`); testy pravidla si předají vlastní.
 Parameter MlineIdFa = "MLINE";
 
+/// Tisk z okna jízdních řádů je ve firmě zapnutý (týž přepínač jako položka v okně JŘ, repo EDISON
+/// `ISYJR2/TEMPLATES/Tisk.cls`). Bez něj okno šablon výchozí šablonu pro tisk neukazuje, nastavení by nemělo účinek.
+ClassMethod JeTiskZModulu(dataDB As %String) As %Boolean
+{
+    q ''$g(^[dataDB]JRR("TiskNovymNavrharem"))
+}
+
 /// Šablona pro tisk podle pravidla.
 /// IN["agendaCode"] = kód agendy (povinný)
 /// IN["templateId"] = šablona vybraná volajícím (volitelná, krok 1)

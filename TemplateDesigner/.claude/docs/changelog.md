@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-11-03 (11) - Výchozí šablona pro tisk má v seznamu hvězdičku za názvem (příprava `B190`)
+
+Výchozí šablona byla jen tučně, akce, která ji nastaví, má ikonu hvězdičky; Jan chtěl značku shodnou s akcí, ale ne před názvem, kde by ten jeden název posunula proti ostatním.
+Hvězdička stojí hned za názvem výchozí šablony, tučné zůstává. Server ji posílá jen se zapnutým tiskem z okna JŘ (`SablonyProTisk.JeTiskZModulu`, týž přepínač čte i strom).
+Sdílený seznam (EDControls) umí ikonu za textem textového sloupce (`trailingIconKey`); jezdí s balíčkem shellu, proto ji `EDList.Sablony` nastavuje v `try` jako `iconKey`.
+Ověřeno: Caché testy TemplateDesigneru 307/307 (nový `StromSablonTest.TestHvezdickaVychozi`), EDControls 63/63; .NET EDControls 1286/1286; `LoadList` na DEV posílá hvězdičku u výchozí šablony jen v datech se zapnutým přepínačem.
+
 ## 2026-11-03 (10) - Výchozí šablona pro tisk v okně šablon: vždy právě jedna, jen se přesouvá (příprava `B190`)
 
 Výchozí šablona pro tisk šla dřív nastavit i zrušit a seznam s víc agendami ukazoval víc „výchozích"; šablona M-line nastavená firmou vypadala jako výchozí firmy (Jan 3. 11., mátlo).
