@@ -37,6 +37,8 @@ public partial class CacheTemplatePickerDialog : Window
             return win.ShowDialog() == true ? dvm.Name : null;
         };
 
+        _vm.RequestSendDialog = svm => new SendTemplatesDialog(svm) { Owner = this }.ShowDialog();
+
         // Výchozí šablona pro tisk tučně, jen se zapnutým tiskem z okna JŘ (přepínač přijde se stromem ze serveru).
         _vm.PropertyChanged += (_, e) =>
         {

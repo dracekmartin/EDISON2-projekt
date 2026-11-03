@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-11-03 (13) - Odeslání šablon jiné firmě přes sdílení dat ISYCloudu (`B189`, zatím jen na DEV)
+
+Šablony šly mezi firmami jen exportem a importem souboru. Rozhodnutí Jan 3. 11. (R9): posílají se přes obecné sdílení dat ISYCloudu, vlastní šablony firmy, víc najednou.
+Okno šablon má za oddělovačem akci **Odeslat jiné firmě…**: firma bez povoleného sdílení dostane důvod, jinak se otevře okno se zaškrtáváním vlastních šablon (vybraná je předem zaškrtnutá), firmami s hledáním a zprávou pro příjemce. Šablony M-line se neposílají, mají je všichni.
+Server šablony pošle jako zásilky typu `SABLONA` po 20, bez hodnot platných jen ve firmě (`BaseAgenda.ParametryJenVeFirme`, dnes typy provozu linkového JŘ MHD - číslo typu u příjemce znamená jiný typ). Typ dat přidala migrace v edwcore (`TypSablona`, pushnuto).
+Klient ISYCloudu běží v Caché (`Sdileni.Klient`), klíč firmy je v `^["MLINE"]ALVA.SdileniDat`, protože ho ISYCloud vydá jeden pro všechny agendy. Akce se do vydání ukazuje jen na vývojovém serveru (`SdileniSablon.JeZapnute`).
+Neověřeno celým tokem: DEV server nenaváže spojení na lokální ISYCloud vývojáře, čeká se na testovací ISYCloud na Railway. Tok API s typem `SABLONA` ověřen proti lokálnímu ISYCloudu z počítače (18 kontrol).
+Ověřeno: Caché testy TemplateDesigneru 314/314 (nové `SdileniSablonTest`: odstranění hodnot firmy, odmítnutí šablony M-line, název zásilky, kontrola vstupu); .NET testy návrháře 2740/2740 (nové `OdeslaniSablonTests` včetně sestavení okna).
+
 ## 2026-11-03 (12) - Šablony M-line jde vyřadit, A5 postskriptová u linkového JŘ AD končí
 
 Návrhář šablony M-line do databáze jen zapisoval: šablona, kterou M-line už nechce, by u zákazníků zůstala napořád (linkový JŘ AD měl tři, Jan chce dvě A4).

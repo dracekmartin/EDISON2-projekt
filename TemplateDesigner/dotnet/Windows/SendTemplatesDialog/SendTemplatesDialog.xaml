@@ -1,0 +1,98 @@
+<Window x:Class="TemplateDesigner.SendTemplatesDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:edct="clr-namespace:EDControls.EDComponentToolbar;assembly=EDControls"
+        Title="Odeslat šablony jiné firmě"
+        Width="900" Height="580"
+        MinWidth="640" MinHeight="420"
+        ResizeMode="CanResizeWithGrip"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- Řádek seznamu: zaškrtávátko, název a pod ním šedě agenda šablony nebo zákazník firmy. -->
+        <DataTemplate x:Key="SelectableRow">
+            <CheckBox IsChecked="{Binding IsChecked}" Margin="6,4" VerticalContentAlignment="Top">
+                <StackPanel Margin="4,0,0,0">
+                    <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding Detail}" TextTrimming="CharacterEllipsis"
+                               FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                               Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+                </StackPanel>
+            </CheckBox>
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel Margin="12">
+
+        <!-- Dole: co odejde, Odeslat a Storno. -->
+        <Grid DockPanel.Dock="Bottom" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding Summary}" VerticalAlignment="Center"
+                       Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+            <Button Grid.Column="1" Content="Odeslat" IsDefault="True" Command="{Binding SendCommand}"
+                    MinWidth="80" Margin="0,0,10,0"/>
+            <Button Grid.Column="2" Content="{StaticResource EDStrings.Cancel}" IsCancel="True" MinWidth="80"/>
+        </Grid>
+
+        <!-- Zpráva pro příjemce. -->
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+            <TextBlock Text="Zpráva pro příjemce" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" Height="64"
+                     AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+        </StackPanel>
+
+        <!-- Co se s šablonou při odeslání stane. -->
+        <Border DockPanel.Dock="Top" Margin="0,0,0,10" Padding="10,7" CornerRadius="3"
+                Background="{DynamicResource EDTheme.Bg.Panel}"
+                BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1">
+            <DockPanel>
+                <Image Source="{StaticResource EDIcons.Info}" Width="16" Height="16" Margin="0,1,10,0"
+                       VerticalAlignment="Top" RenderOptions.BitmapScalingMode="HighQuality"/>
+                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                           Text="Šablony odejdou přes sdílení dat ISYCloudu. Příjemce je najde v okně šablon a rozhodne, jestli je převezme. Hodnoty platné jen ve vaší firmě (vybrané typy provozu) se nepošlou, u příjemce platí výchozí."/>
+            </DockPanel>
+        </Border>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Vlastní šablony firmy; šablony M-line mají všechny firmy. -->
+            <DockPanel>
+                <edct:EDComponentToolbar DockPanel.Dock="Top" Title="Šablony"/>
+                <Border BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,0,1,1">
+                    <ListBox ItemsSource="{Binding Templates}" ItemTemplate="{StaticResource SelectableRow}"
+                             BorderThickness="0" HorizontalContentAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                </Border>
+            </DockPanel>
+
+            <!-- Firmy s povoleným sdílením dat. -->
+            <DockPanel Grid.Column="2">
+                <edct:EDComponentToolbar DockPanel.Dock="Top" Title="Firmy" ShowSearch="True"
+                                         SearchText="{Binding RecipientFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <Border BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,0,1,1">
+                    <Grid>
+                        <ListBox ItemsSource="{Binding VisibleRecipients}" ItemTemplate="{StaticResource SelectableRow}"
+                                 BorderThickness="0" HorizontalContentAlignment="Stretch"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                        <TextBlock Text="Načítám firmy…" Margin="10" Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                   Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock Text="{Binding RecipientsError}" Margin="10" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                   Visibility="{Binding HasRecipientsError, Converter={StaticResource BoolToVis}}"/>
+                    </Grid>
+                </Border>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</Window>

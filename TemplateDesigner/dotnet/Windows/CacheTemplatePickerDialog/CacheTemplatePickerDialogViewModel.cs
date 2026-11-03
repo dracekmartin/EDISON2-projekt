@@ -158,7 +158,8 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
 
-    /// <summary>Nový, Upravit, Odstranit a se zapnutým tiskem z okna JŘ za oddělovačem výchozí šablona pro tisk.</summary>
+    /// <summary>Nový, Upravit, Odstranit, se zapnutým tiskem z okna JŘ za oddělovačem výchozí šablona pro tisk
+    /// a se zapnutým sdílením za dalším odeslání šablon jiné firmě.</summary>
     private void BuildActions()
     {
         List<EDAction> akce = [StandardActions.Add(NewTemplateCommand), StandardActions.Edit(EditTemplateCommand),
@@ -166,8 +167,46 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         if (ShowsPrintDefault)
             akce.AddRange([EDAction.Separator,
                            StandardActions.Custom("Nastavit jako výchozí pro tisk", SetDefaultCommand, "EDIcons.Star")]);
+        if (ShowsSharing)
+            akce.AddRange([EDAction.Separator,
+                           StandardActions.Custom("Odeslat jiné firmě…", SendTemplatesCommand, "EDIcons.Company")]);
         Actions = akce;
         OnPropertyChanged(nameof(Actions));
+    }
+
+    // ── Sdílení šablon mezi firmami (`B189`) ──────────────────────────────────
+
+    /// <summary>Okno nabízí posílání šablon jiným firmám; do vydání jen na vývojovém serveru.</summary>
+    public bool ShowsSharing => _catalog.Sharing;
+
+    public AsyncRelayCommand SendTemplatesCommand { get; }
+
+    /// <summary>Code-behind napojí - otevře okno pro odeslání. VM nezná WPF.</summary>
+    public Action<SendTemplatesDialogViewModel>? RequestSendDialog { get; set; }
+
+    /// <summary>Firma bez povoleného sdílení dostane důvod a okno se neotevře; jinak okno s vlastními šablonami firmy,
+    /// šablona vybraná v seznamu je předem zaškrtnutá.</summary>
+    private async Task SendTemplatesAsync()
+    {
+        try
+        {
+            var stav = await _service.GetSharingStateAsync();
+            if (!stav.Active)
+            {
+                PopupDisplayer.Info(stav.Reason);
+                return;
+            }
+            var vlastni = await _service.ListAsync();
+            if (vlastni.Count == 0)
+            {
+                PopupDisplayer.Info("Firma nemá žádnou vlastní šablonu. Šablony M-line mají všechny firmy, posílat je není potřeba.");
+                return;
+            }
+            Guid? vybrana = Selected is not null && !IsSelectedSystem && Guid.TryParse(Selected.Id, out var id) ? id : null;
+            RequestSendDialog?.Invoke(new SendTemplatesDialogViewModel(_service,
+                vlastni.Select(t => (t.TemplateId, t.Name, _catalog.AgendaTitle(t.AgendaCode))), vybrana));
+        }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
 
     /// <summary>
@@ -305,6 +344,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         EditTemplateCommand   = CommandAsync(EditAsync,   () => Selected is not null && !IsSelectedSystem);
         SetDefaultCommand     = CommandAsync(SetDefaultAsync,
             () => Selected is not null && CanSetDefault(Selected["vychozi"], CanPrint(Selected["agendaCode"])));
+        SendTemplatesCommand  = CommandAsync(SendTemplatesAsync);
 
         // Ikony v pruhu nad seznamem a zkratky Ctrl+N/E/D jako seznamy legacy EDISONu.
         BuildActions();

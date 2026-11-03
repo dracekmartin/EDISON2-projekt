@@ -9,7 +9,8 @@ namespace TemplateDesigner.Services;
 /// </summary>
 /// <param name="PrintFromModule">Tisk z okna jízdních řádů je ve firmě zapnutý (týž přepínač jako položka v okně JŘ);
 /// bez něj okno šablon výchozí šablonu pro tisk neukazuje - nastavení by nemělo účinek a mátlo (Jan 3. 11.).</param>
-public sealed record TemplateCatalog(IReadOnlyList<CatalogArea> Areas, bool PrintFromModule = false)
+/// <param name="Sharing">Okno nabízí posílání šablon jiným firmám (`B189`); starší server ho neposílá.</param>
+public sealed record TemplateCatalog(IReadOnlyList<CatalogArea> Areas, bool PrintFromModule = false, bool Sharing = false)
 {
     public const string CacheClass = "ALVA.TemplateDesigner.API.StromSablon";
 
@@ -38,7 +39,17 @@ public sealed record TemplateCatalog(IReadOnlyList<CatalogArea> Areas, bool Prin
             }
             areas.Add(new CatalogArea(Text(area, "code"), Text(area, "label"), agendas));
         }
-        return new TemplateCatalog(areas, root?["tiskZModulu"]?.ToString() == "true");
+        return new TemplateCatalog(areas, root?["tiskZModulu"]?.ToString() == "true", root?["sdileni"]?.ToString() == "true");
+    }
+
+    /// <summary>Agenda a varianta šablony ve tvaru stromu („Linkový JŘ · AD"); agenda mimo strom = její kód.</summary>
+    public string AgendaTitle(string? agendaCode)
+    {
+        foreach (var agenda in Areas.SelectMany(a => a.Agendas))
+            foreach (var variant in agenda.Variants)
+                if (string.Equals(variant.Code, agendaCode, StringComparison.OrdinalIgnoreCase))
+                    return variant.Label == "" ? agenda.Label : $"{agenda.Label} · {variant.Label}";
+        return agendaCode ?? "";
     }
 
     private static DefaultPrintTemplate? ParseDefault(JsonNode? node) =>

@@ -12,7 +12,7 @@ namespace TemplateDesigner.Services;
 /// Async wrapper nad MLRest sync voláními - MLRest.Query je sync (HTTP),
 /// Task.Run uvolní UI thread.
 /// </summary>
-public class CacheTemplateService
+public class CacheTemplateService : ITemplateSharing
 {
     public const string CacheClass = "ALVA.TemplateDesigner.API.Sablony";
 
@@ -228,6 +228,40 @@ public class CacheTemplateService
     /// <summary>Strom šablon firmy podle oblasti práce, agendy a varianty s výchozí šablonou pro tisk (`B190`).</summary>
     public Task<TemplateCatalog> GetCatalogAsync()
         => Task.Run(() => TemplateCatalog.Parse(Query("GetStrom", new CVar(), TemplateCatalog.CacheClass)["1"]?.Value?.ToString()));
+
+    // ─── Sdílení šablon mezi firmami (API.SdileniSablon, B189) ────────────────
+
+    public const string SharingCacheClass = "ALVA.TemplateDesigner.API.SdileniSablon";
+
+    public Task<SharingState> GetSharingStateAsync()
+        => Task.Run(() => SharingState.Parse(QuerySharing("GetStav", new CVar())["1"]?.Value?.ToString()));
+
+    public Task<IReadOnlyList<SharingRecipient>> GetRecipientsAsync()
+        => Task.Run(() => SharingRecipient.ParseList(QuerySharing("GetPrijemci", new CVar())["1"]?.Value?.ToString()));
+
+    public Task<SharingSendResult> SendTemplatesAsync(IReadOnlyCollection<Guid> templateIds,
+        IReadOnlyCollection<string> recipientIdFas, string message)
+        => Task.Run(() =>
+        {
+            var inVar = new CVar();
+            inVar["templateIds"] = new CVar(string.Join(",", templateIds));
+            inVar["prijemci"]    = new CVar(string.Join(",", recipientIdFas));
+            inVar["zprava"]      = new CVar(message);
+            var result = QuerySharing("SendSablony", inVar);
+            return new SharingSendResult(int.TryParse(result["sablon"]?.Value?.ToString(), out var sablon) ? sablon : 0,
+                int.TryParse(result["zasilek"]?.Value?.ToString(), out var zasilek) ? zasilek : 0);
+        });
+
+    /// <summary>Chyby sdílení píše server pro uživatele (firma nemá povolené sdílení, ISYCloud je nedostupný),
+    /// ukážou se bez technické předpony.</summary>
+    private CVar QuerySharing(string operation, CVar inVar)
+    {
+        try { return Query(operation, inVar, SharingCacheClass); }
+        catch (CacheTemplateException ex) when (CacheAgendaProvider.ChybaDat(ex.Message) is { } text)
+        {
+            throw new CacheTemplateException(text, ex);
+        }
+    }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
