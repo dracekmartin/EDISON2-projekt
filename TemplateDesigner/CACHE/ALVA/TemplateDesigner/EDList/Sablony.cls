@@ -27,8 +27,11 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
         d list.AddColumn("zdroj",      "Zdroj",        "TEXT",      70, "", 1)
         d list.AddColumn("proTisk",    "Pro tisk",     "TEXT",      95, "", 1)
         d list.AddColumn("modifiedAt", "Změněno",      "DATETIME", 130, "", 1, "dd.MM.yyyy HH:mm")
-        d list.AddColumn("modifiedBy", "Kým",          "TEXT",      70, "", 1)
-        d list.AddColumn("author",     "Autor",        "TEXT",      70, "", 1)
+        // Kdo šablonu založil a změnil, se eviduje, ale uživateli v přehledu nic neříká (Jan 3. 11.).
+        s col = list.AddColumn("modifiedBy", "Kým",    "TEXT",      70, "", 1)
+        s col.visible = 0
+        s col = list.AddColumn("author",     "Autor",  "TEXT",      70, "", 1)
+        s col.visible = 0
         // Skryté: návrhář podle nich zvýrazní šablonu, kterou tisk vezme, a nastaví výchozí šablonu agendy.
         s col = list.AddColumn("agendaCode", "Kód agendy", "TEXT")
         s col.visible = 0
