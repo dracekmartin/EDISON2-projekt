@@ -24,8 +24,6 @@ Hlavní směry, kterými se Návrhář sestav bude dál rozvíjet:
 
 Náměty, o kterých přemýšlíme. Rozsah ani termín zatím nejsou dané.
 
-- **Napojení na externí zdroje dat** - možnost tisknout i z dat mimo EDISON (např. z tabulky
-  nebo databáze). Zvažujeme jako budoucí směr; konkrétní zdroje a rozsah zatím nejsou dané.
 - **Jízdní řády na webu automaticky** - cestující si na webu dopravce vybere linku a zastávku
   a zobrazí nebo vytiskne vývěsku stejnou, jako visí na zastávce. Stránky by vznikaly
   automaticky z dat EDISONu podle šablon z Návrháře (například jako HTML nebo PDF), takže by je
@@ -33,6 +31,8 @@ Náměty, o kterých přemýšlíme. Rozsah ani termín zatím nejsou dané.
 - **QR kód na jízdním řádu s vyhledáním spojení** - QR kód vytištěný na vývěsce otevře
   v telefonu vyhledávač, který podle zastávky, kde cestující stojí, ukáže nejbližší spoje
   do zvoleného cíle.
+- **Napojení na externí zdroje dat** - možnost tisknout i z dat mimo EDISON (např. z tabulky
+  nebo databáze). Zvažujeme jako budoucí směr; konkrétní zdroje a rozsah zatím nejsou dané.
 
 ---
 
