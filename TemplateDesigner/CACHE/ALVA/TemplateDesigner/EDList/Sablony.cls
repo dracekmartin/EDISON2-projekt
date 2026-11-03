@@ -25,7 +25,9 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
         // jako na úvodní obrazovce, ať je odlišná šablona vidět na první pohled. Samostatný sloupec ikony
         // bez názvu vypadal divně (Jan 3. 11.), proto u názvu.
         s col = list.AddColumn("name", "Název",        "TEXT",     190, "", 1)
-        s col.iconKey = "ikona"
+        // iconKey přišel s projektem ALVA_EDControls 3. 11. a ten jezdí s balíčkem shellu, ne TD: na serveru se starší
+        // verzí by zápis spadl na <PROPERTY DOES NOT EXIST> a s ním celý seznam šablon. Bez něj je seznam jen bez ikon.
+        try { s col.iconKey = "ikona" } catch { }
         d list.AddColumn("agenda",     "Agenda",       "TEXT",     110, "", 1)
         d list.AddColumn("varianta",   "Varianta",     "TEXT",      60, "", 1)
         d list.AddColumn("zdroj",      "Zdroj",        "TEXT",      70, "", 1)

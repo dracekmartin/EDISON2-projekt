@@ -25,9 +25,11 @@
                      Zobrazí se samo, když má VM neprázdné Actions (code-behind). -->
                 <Button x:Name="ActionsBtn" MinWidth="80" Padding="10,4" Margin="0,0,6,0"
                         Click="ActionsBtn_Click" Visibility="Collapsed">
+                    <!-- Šipka jako u rozbalovacího seznamu (EDControlStyles ComboBox); znak ▾ vycházel nepoměrně malý. -->
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Akce"/>
-                        <TextBlock Text="▾" Margin="6,0,0,0"/>
+                        <TextBlock Text="Akce" VerticalAlignment="Center"/>
+                        <Path Data="M 0 0 L 4 4 L 8 0 Z" Margin="8,1,0,0" VerticalAlignment="Center"
+                              Fill="{DynamicResource EDTheme.Text.Secondary}"/>
                     </StackPanel>
                 </Button>
                 <ContentPresenter x:Name="LeftContentPresenter"/>
