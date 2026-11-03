@@ -25,6 +25,7 @@
                   SelectionMode="Single"
                   IsReadOnly="True"
                   MouseDoubleClick="DataGrid_MouseDoubleClick"
+                  PreviewMouseRightButtonDown="DataGrid_PreviewMouseRightButtonDown"
                   SelectionChanged="DataGrid_SelectionChanged"/>
     </DockPanel>
 </UserControl>

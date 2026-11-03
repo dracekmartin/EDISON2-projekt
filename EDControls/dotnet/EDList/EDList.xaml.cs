@@ -80,11 +80,20 @@ namespace EDControls.EDList
             set => SetValue(TitleProperty, value);
         }
 
-        /// <summary>Akce nad řádky (Nový, Upravit, Odstranit…) jako ikony v brandovém pruhu, typicky
-        /// <c>EDViewModel.Actions</c> okna - zkratky jim registruje <c>EDViewModel.AttachToWindow</c>.</summary>
+        /// <summary>Akce nad řádky (Nový, Upravit, Odstranit…) jako ikony v brandovém pruhu a místní nabídka řádku,
+        /// typicky <c>EDViewModel.Actions</c> okna - zkratky jim registruje <c>EDViewModel.AttachToWindow</c>.</summary>
         public static readonly DependencyProperty ActionsProperty =
             DependencyProperty.Register(nameof(Actions), typeof(IEnumerable<EDViewModel.EDAction>), typeof(EDList),
-                new PropertyMetadata(null));
+                new PropertyMetadata(null, OnActionsChanged));
+
+        // Místní nabídka jako legacy seznamy (pravé tlačítko = tytéž akce jako lišta); bez akcí žádná.
+        private static void OnActionsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is EDList list)
+                list.DataGrid.ContextMenu = e.NewValue is IEnumerable<EDViewModel.EDAction> actions && actions.Any()
+                    ? EDViewModel.EDAction.BuildContextMenu(actions)
+                    : null;
+        }
 
         public IEnumerable<EDViewModel.EDAction>? Actions
         {
@@ -312,10 +321,33 @@ namespace EDControls.EDList
 
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            // Jen levým tlačítkem na řádku: pravé patří místní nabídce, dvojklik na záhlaví nebo do prázdna
+            // nesmí otevřít řádek, který byl vybraný předtím.
+            if (e.ChangedButton != MouseButton.Left || RowAt(e.OriginalSource) is null) return;
             if (SelectionMode == ListSelectionMode.Check && SelectedRow is EDListRow row)
                 _controller.ToggleChecked(row);
             if (SelectedRowId is string id)
                 RowDoubleClicked?.Invoke(this, id);
+        }
+
+        // Pravé tlačítko vybere řádek pod myší, ať se místní nabídka týká jeho, ne předchozího výběru.
+        private void DataGrid_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (RowAt(e.OriginalSource) is { IsSelected: false } row)
+            {
+                DataGrid.SelectedItem = row.Item;
+                row.Focus();
+            }
+        }
+
+        private static DataGridRow? RowAt(object? source)
+        {
+            var element = source as DependencyObject;
+            while (element is not null and not DataGridRow)
+                element = element is System.Windows.Media.Visual
+                    ? System.Windows.Media.VisualTreeHelper.GetParent(element)
+                    : LogicalTreeHelper.GetParent(element);
+            return element as DataGridRow;
         }
 
         private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)

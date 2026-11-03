@@ -21,21 +21,15 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <!-- Menu „Akce" - zobrazí se automaticky, když má VM neprázdné Actions -->
-                <Menu VerticalAlignment="Center" Margin="0,0,4,0"
-                      Visibility="{Binding HasItems, ElementName=ActionsMenuItem, Converter={StaticResource BoolToVisibility}}">
-                    <MenuItem x:Name="ActionsMenuItem" Header="Akce" ItemsSource="{Binding Actions}">
-                        <MenuItem.ItemContainerStyle>
-                            <!-- BasedOn povinné - bez něj explicitní styl přebije implicitní themed styl → dark mode bílé submenu. -->
-                            <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
-                                <Setter Property="Header"           Value="{Binding Label}"/>
-                                <Setter Property="Command"          Value="{Binding Command}"/>
-                                <Setter Property="InputGestureText" Value="{Binding ShortcutText}"/>
-                                <Setter Property="Icon"             Value="{Binding IconElement}"/>
-                            </Style>
-                        </MenuItem.ItemContainerStyle>
-                    </MenuItem>
-                </Menu>
+                <!-- Tlačítko „Akce" - jako v legacy BaseForm2 vypadá jako OK a Storno a klik otevře nabídku akcí VM.
+                     Zobrazí se samo, když má VM neprázdné Actions (code-behind). -->
+                <Button x:Name="ActionsBtn" MinWidth="80" Padding="10,4" Margin="0,0,6,0"
+                        Click="ActionsBtn_Click" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Akce"/>
+                        <TextBlock Text="▾" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </Button>
                 <ContentPresenter x:Name="LeftContentPresenter"/>
             </StackPanel>
 

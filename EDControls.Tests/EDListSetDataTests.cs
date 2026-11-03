@@ -286,6 +286,49 @@ public class EDListSetDataTests
         });
     }
 
+    /// <summary>Pravé tlačítko na řádku = místní nabídka s akcemi seznamu jako v legacy seznamech (Jan 3. 11.);
+    /// seznam bez akcí žádnou nemá.</summary>
+    [Fact]
+    public void Actions_AreRowContextMenu()
+    {
+        RunSta(() =>
+        {
+            var list = NoRestList();
+            Assert.Null(list.DataGrid.ContextMenu);
+
+            var prikaz = Substitute.For<System.Windows.Input.ICommand>();
+            list.Actions = [new EDAction("Nový", prikaz), new EDAction("Odstranit", prikaz)];
+
+            var nabidka = Assert.IsType<ContextMenu>(list.DataGrid.ContextMenu);
+            Assert.Equal(["Nový", "Odstranit"], nabidka.Items.OfType<MenuItem>().Select(m => m.Header as string));
+
+            list.Actions = null;
+            Assert.Null(list.DataGrid.ContextMenu);
+        });
+    }
+
+    /// <summary>Dvojklik otevírá řádek jen levým tlačítkem na řádku - pravý dvojklik vybranou šablonu otevíral
+    /// (Jan 3. 11.), dvojklik do záhlaví nebo prázdna by otevřel řádek vybraný předtím.</summary>
+    [Fact]
+    public void DoubleClick_OnlyLeftButtonOnRow()
+    {
+        RunSta(() =>
+        {
+            var list = NoRestList();
+            list.SetData(Columns, [Row("1", "A", "1")]);
+            list.DataGrid.SelectedIndex = 0;
+            int otevreno = 0;
+            list.RowDoubleClicked += (_, _) => otevreno++;
+
+            foreach (var tlacitko in new[] { System.Windows.Input.MouseButton.Right, System.Windows.Input.MouseButton.Left })
+                list.DataGrid.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(
+                    System.Windows.Input.Mouse.PrimaryDevice, 0, tlacitko)
+                    { RoutedEvent = Control.MouseDoubleClickEvent, Source = list.DataGrid });
+
+            Assert.Equal(0, otevreno);   // pravým nic, levým mimo řádek (na mřížce) taky nic
+        });
+    }
+
     private static JsonNode SortLayout(string key) => ColumnLayoutSerializer.Serialize(new ColumnLayout
     {
         Sort = [new SortPref { Key = key, Direction = "desc" }],

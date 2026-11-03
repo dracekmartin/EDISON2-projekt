@@ -241,6 +241,38 @@ public class EDFooterTests
             : base(new EDServices(null, Substitute.For<IWindowNavigator>(), popups)) => ConfirmOnCancel = true;
     }
 
+    /// <summary>„Akce" je tlačítko jako OK a Storno (dřív položka menu, která vypadala jinak - Jan 3. 11.)
+    /// a ukáže se jen oknu, jehož VM akce má.</summary>
+    [Fact]
+    public void ActionsButton_OnlyWithActions_LooksLikeOk()
+    {
+        RunSta(() =>
+        {
+            var bezAkci = new Footer();
+            var sAkcemi = new Footer { FooterMode = FooterMode.OkCancel };
+            var okna = new[] { WindowWith(bezAkci, NewVm()), WindowWith(sAkcemi, new ActionsVm()) };
+            try
+            {
+                RaiseLoaded(bezAkci);
+                RaiseLoaded(sAkcemi);
+
+                Assert.Equal(Visibility.Collapsed, bezAkci.ActionsBtn.Visibility);
+                Assert.Equal(Visibility.Visible, sAkcemi.ActionsBtn.Visibility);
+                Assert.Same(sAkcemi.OkBtn.Style, sAkcemi.ActionsBtn.Style);
+            }
+            finally
+            {
+                foreach (var okno in okna) okno.Close();
+            }
+        });
+    }
+
+    private sealed class ActionsVm : Vm
+    {
+        public ActionsVm() : base(new EDServices(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()))
+            => Actions = [StandardActions.Add(), StandardActions.Delete()];
+    }
+
     private static Vm NewVm() =>
         new(new EDServices(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
 

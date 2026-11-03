@@ -87,6 +87,16 @@ public partial class EDFooter : UserControl
         if (_vm != null) _vm.RequestClose -= OnRequestClose;
         _vm = vm;
         if (_vm != null) _vm.RequestClose += OnRequestClose;
+        ActionsBtn.Visibility = _vm?.Actions is { Count: > 0 } ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ActionsBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm?.Actions is not { Count: > 0 } actions) return;
+        var menu = EDControls.EDViewModel.EDAction.BuildContextMenu(actions);
+        menu.PlacementTarget = ActionsBtn;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Top;
+        menu.IsOpen = true;
     }
 
     private void OnRequestClose(bool? dialogResult) => CloseWindow(dialogResult);
