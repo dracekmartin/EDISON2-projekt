@@ -51,8 +51,8 @@
   `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je
   **headless tisk** („pošli šablonu a JSON, vrať PDF"); samostatně by prvním krokem byl generický
   JSON zdroj ze souboru nebo URL. Dořešit přihlašovací údaje a odvození schématu z dat
-  (analýza 12. 7., detail v historii roadmapy). ⚠️ **Před vydáním:** úvodní obrazovka nabízí „Připojit databázi SQL"
-  a „Načíst soubor CSV" jen jako průzkum zájmu - když nebudou hotové, tlačítka odstranit (Jan 30. 10.).
+  (analýza 12. 7., detail v historii roadmapy). Nabídku SQL a CSV z úvodní obrazovky Jan 3. 11. před vydáním
+  odstranil - není v plánu; vrátí se, až se do něj dostane.
 
 - **Nová pole v jízdních řádech, dohodnutá s kolegy 10. 8.** [S] - **čeká na kolegu**; v lokálním zdroji
   nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5, ověřit, že po

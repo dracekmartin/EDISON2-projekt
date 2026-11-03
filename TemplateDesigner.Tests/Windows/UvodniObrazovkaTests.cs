@@ -219,18 +219,6 @@ public class UvodniObrazovkaTests
         Assert.True(obrazovka.StartBlankCommand.CanExecute(null));
     }
 
-    /// <summary>Data z SQL a CSV návrhář zatím neumí - nabídka uživateli řekne, ať se ozve.</summary>
-    [Fact]
-    public void DataOdjinud_RekneZeZatimNejdou()
-    {
-        var obrazovka = Obrazovka();
-
-        obrazovka.ConnectSqlCommand.Execute(null);
-        obrazovka.LoadCsvCommand.Execute(null);
-
-        _popup.Received(1).Info(Arg.Is<string>(t => t.StartsWith("Připojení k databázi SQL") && t.Contains("zatím neumí")), Arg.Any<Window?>());
-        _popup.Received(1).Info(Arg.Is<string>(t => t.StartsWith("Načtení dat ze souboru CSV")), Arg.Any<Window?>());
-    }
 
     [Fact]
     public async Task PosledniSablony_NejnovejsiPrvni_BezDuplicit_NejvysDeset()

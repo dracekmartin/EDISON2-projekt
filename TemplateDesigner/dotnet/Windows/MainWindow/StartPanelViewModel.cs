@@ -106,15 +106,6 @@ public class StartPanelViewModel : EDViewModel
     private RelayCommand? _closeCommand;
     public RelayCommand CloseCommand => _closeCommand ??= Command(Hide);
 
-    // Data z SQL databáze ani z CSV návrhář zatím neumí; nabídka zjišťuje, jestli o ně někdo stojí
-    // (backlog „Externí datové zdroje").
-    private RelayCommand? _sqlCommand, _csvCommand;
-    public RelayCommand ConnectSqlCommand => _sqlCommand ??= Command(() => ZatimNeumi("Připojení k databázi SQL"));
-    public RelayCommand LoadCsvCommand => _csvCommand ??= Command(() => ZatimNeumi("Načtení dat ze souboru CSV"));
-
-    private void ZatimNeumi(string co) => PopupDisplayer.Info(
-        $"{co} návrhář zatím neumí. Pokud byste ho využili, napište nám přes podporu M-line - podle zájmu ho zařadíme.");
-
     /// <param name="systemTemplateName">Výchozí šablona M-line pro agendu; null = agenda žádnou nemá (Obecná).</param>
     internal void Show(string agendaName, bool canOpenFromDatabase, string? systemTemplateName,
         IReadOnlyList<StartPanelItem> recent, IReadOnlyList<StartPanelItem> firmTemplates)

@@ -935,29 +935,6 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Externí datové zdroje: zatím jen nabídka, zjišťuje zájem (stejnojmenná položka backlogu). -->
-                        <TextBlock Margin="0,18,0,6" FontWeight="SemiBold"
-                                   FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Header}">
-                            <Run Text="Externí datové zdroje"/><Run Text=" - připravujeme" FontWeight="Normal"
-                                                                     FontSize="{DynamicResource EDTheme.FontSize.Small}"
-                                                                     Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                        </TextBlock>
-                        <UniformGrid Columns="2">
-                            <Button Command="{Binding ConnectSqlCommand}" HorizontalContentAlignment="Left" Padding="10,6" Margin="0,0,4,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="{StaticResource EDIcons.Server}" Width="18" Height="18" Margin="0,0,8,0"
-                                           VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                    <TextBlock Text="Připojit databázi SQL" VerticalAlignment="Center" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding LoadCsvCommand}" HorizontalContentAlignment="Left" Padding="10,6" Margin="4,0,0,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="{StaticResource EDIcons.Folder}" Width="18" Height="18" Margin="0,0,8,0"
-                                           VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                    <TextBlock Text="Načíst soubor CSV" VerticalAlignment="Center" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-                                </StackPanel>
-                            </Button>
-                        </UniformGrid>
 
                         <Border Margin="0,18,0,0" Padding="0,10,0,0" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0">
                             <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource EDTheme.FontSize.Small}">
