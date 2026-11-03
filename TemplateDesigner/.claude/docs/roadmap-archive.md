@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Okno „Změnit agendu" sloučené s oknem šablon (hotovo 3. 11. 2026)
+
+- **Změna agendy otevírá okno šablon** s vybranou aktuální agendou (changelog 3. 11. (4)-(9)), prázdnou šablonu
+  založí ikona Nový. Okno šablon pak dostalo výraznější strom, řádek s nápovědou, akce Nový / Upravit / Odstranit
+  jako seznamy legacy EDISONu a logo M-line u názvu. Staré okno Změnit agendu zůstalo pro běh bez databáze šablon.
+  Rozhodnutí Jan 3. 11. po zkoušení: „dobrý směr"; popisky „Změnit agendu" v menu zůstaly.
+
 ## `P2` Stejné popisky rozdělení sloupců ve vývěsce i linkovém JŘ (hotovo 1. 11. 2026)
 
 - **Popisky voleb „Rozdělení sloupců podle platnosti"** (z `B194c`, changelog (56)): tatáž volba má ve vývěsce AD

@@ -31,9 +31,14 @@
   Zbývá: odladit nastavení výchozí šablony (např. u varianty ve stromu), výchozí šablona M-line i pro ostatní agendy JŘ
   (dnes jen linkový AD), zastávkový JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
 
-- **Okno „Změnit agendu" a okno šablon (Ctrl+O) dělají podobnou věc a vypadají jinak** [M] (Jan 3. 11., **rozmyslet způsob**).
-  Obě vybírají agendu stromem nebo seskupeným seznamem. Návrh: jedno okno šablon se stromem a tlačítkem „Nová šablona
-  v této agendě", čip agendy a Ctrl+Shift+A by ho otevřely s vybranou aktuální agendou.
+- **Vyřazení a oprava šablon M-line u zákazníků** [M] (Jan 3. 11.). Návrhář šablony M-line při startu do databáze
+  zapisuje, odebrat je neumí: vyřazená šablona zůstane u zákazníka napořád (první případ: linkový JŘ AD má 3 šablony M-line,
+  Jan chce nejvýš 2, A5 postskriptová má jít pryč). Potřeba: odebrání z větve M-line na serveru (dnes jen šablony firmy),
+  seznam vyřazených šablon v návrháři, soubor A5 přesunout k testům (vzor pro import z PDF a zkoušku tisku).
+  Promyslet i opravu („patch") už doručené šablony a vztah ke kanálu z helpdesku.
+
+- **Kdo smí měnit a odstraňovat šablony firmy, osobní šablony, nová verze předlohy M-line** [?] (Jan 3. 11., k rozmyšlení
+  spolu s `B189`). Dnes šablonu firmy upraví i odstraní kdokoli z firmy; autor se ukládá, ale nepoužívá.
 
 - **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
   dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),

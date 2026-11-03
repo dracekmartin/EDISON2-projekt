@@ -48,6 +48,8 @@ Náměty, o kterých přemýšlíme. Rozsah ani termín zatím nejsou dané.
 - **Všechny agendy:** okno **Šablony v databázi** (Ctrl+O) třídí šablony do stromu podle oblasti práce, agendy a varianty.
   U každé agendy vidíte, kolik má šablon, a vpravo jen šablony vybrané větve.
   Strom se bude rozšiřovat s dalšími agendami převzatými z Report Generátoru.
+  Okno se ovládá jako ostatní seznamy EDISONu: nad seznamem jsou akce **Nový**, **Upravit** a **Odstranit**
+  a šablony od M-line mají u názvu logo M-line. Otevře se i při změně agendy, takže hned vidíte šablony, které v ní máte.
 - **Linkový JŘ AD:** přibyla hotová šablona *Linkový JŘ (AD) - poznámky pod tabulkou A4* a návrhář ji nabízí jako výchozí.
 
 ### Týden od 26. 10. 2026 · Linkové JŘ - městská doprava (MHD)
