@@ -50,28 +50,56 @@ internal static class EDListColumnFactory
         return column;
     }
 
-    /// <summary>Text s ikonou z pole <see cref="ListColumn.IconKey"/> před ním; hledání a řazení dál jdou podle textu
-    /// (klíč sloupce v <c>Tag</c>).</summary>
+    /// <summary>Text s ikonou z pole <see cref="ListColumn.IconKey"/> před ním a <see cref="ListColumn.TrailingIconKey"/>
+    /// za ním; hledání a řazení dál jdou podle textu (klíč sloupce v <c>Tag</c>).</summary>
     private static DataGridColumn BuildTextWithIcon(ListColumn col, DataGridLength width)
     {
         var panel = new FrameworkElementFactory(typeof(DockPanel));
         panel.SetValue(DockPanel.LastChildFillProperty, true);
 
-        var image = new FrameworkElementFactory(typeof(Image));
-        image.SetValue(FrameworkElement.WidthProperty, 16.0);
-        image.SetValue(FrameworkElement.HeightProperty, 16.0);
-        image.SetValue(FrameworkElement.MarginProperty, new Thickness(2, 0, 6, 0));
-        image.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
-        image.SetValue(RenderOptions.BitmapScalingModeProperty, BitmapScalingMode.HighQuality);
-        image.SetBinding(Image.SourceProperty,
-            new Binding($"[{col.IconKey}]") { Converter = new ListIconKeyToImageConverter() });
-        panel.AppendChild(image);
+        if (col.IconKey.Length > 0)
+        {
+            var image = new FrameworkElementFactory(typeof(Image));
+            image.SetValue(FrameworkElement.WidthProperty, 16.0);
+            image.SetValue(FrameworkElement.HeightProperty, 16.0);
+            image.SetValue(FrameworkElement.MarginProperty, new Thickness(2, 0, 6, 0));
+            image.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            image.SetValue(RenderOptions.BitmapScalingModeProperty, BitmapScalingMode.HighQuality);
+            image.SetBinding(Image.SourceProperty,
+                new Binding($"[{col.IconKey}]") { Converter = new ListIconKeyToImageConverter() });
+            panel.AppendChild(image);
+        }
 
         var text = new FrameworkElementFactory(typeof(TextBlock));
         text.SetBinding(TextBlock.TextProperty, new Binding($"[{col.Key}]"));
         text.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
         text.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
-        panel.AppendChild(text);
+
+        if (col.TrailingIconKey.Length == 0)
+        {
+            panel.AppendChild(text);
+        }
+        else
+        {
+            // Vnitřní panel zarovnaný vlevo je jen tak široký jako text: ikona stojí hned za textem, ne u pravého okraje
+            // sloupce, a dlouhý text se zkrátí výpustkou dřív, než by ikonu vytlačil ven.
+            var textAndIcon = new FrameworkElementFactory(typeof(DockPanel));
+            textAndIcon.SetValue(DockPanel.LastChildFillProperty, true);
+            textAndIcon.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+
+            // Bez pevné šířky: řádek bez ikony nemá zdroj obrázku a nezabere nic.
+            var trailing = new FrameworkElementFactory(typeof(Image));
+            trailing.SetValue(DockPanel.DockProperty, Dock.Right);
+            trailing.SetValue(FrameworkElement.HeightProperty, 14.0);
+            trailing.SetValue(FrameworkElement.MarginProperty, new Thickness(6, 0, 2, 0));
+            trailing.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            trailing.SetValue(RenderOptions.BitmapScalingModeProperty, BitmapScalingMode.HighQuality);
+            trailing.SetBinding(Image.SourceProperty,
+                new Binding($"[{col.TrailingIconKey}]") { Converter = new ListIconKeyToImageConverter() });
+            textAndIcon.AppendChild(trailing);
+            textAndIcon.AppendChild(text);
+            panel.AppendChild(textAndIcon);
+        }
 
         return new DataGridTemplateColumn
         {
@@ -106,7 +134,7 @@ internal static class EDListColumnFactory
             };
         }
 
-        if (col.Type == ListColumnType.Text && col.IconKey.Length > 0)
+        if (col.Type == ListColumnType.Text && (col.IconKey.Length > 0 || col.TrailingIconKey.Length > 0))
             return BuildTextWithIcon(col, width);
 
         if (col.Type == ListColumnType.Image)

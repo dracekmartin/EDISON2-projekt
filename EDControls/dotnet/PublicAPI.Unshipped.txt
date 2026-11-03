@@ -7,3 +7,5 @@ EDControls.EDViewModel.PopupDisplayer.InfoSystem(string message, System.Windows.
 EDControls.EDViewModel.EDAction.IsSeparator.get -> bool
 static readonly EDControls.EDViewModel.EDAction.Separator -> EDControls.EDViewModel.EDAction
 EDControls.EDViewModel.EDViewModel.StandardActionsAccessor.Custom(string label, System.Windows.Input.ICommand command, string iconKey, System.Windows.Input.Key key = System.Windows.Input.Key.None, System.Windows.Input.ModifierKeys modifiers = System.Windows.Input.ModifierKeys.None) -> EDControls.EDViewModel.EDAction
+EDControls.EDList.ListColumn.TrailingIconKey.get -> string
+EDControls.EDList.ListColumn.TrailingIconKey.set -> void

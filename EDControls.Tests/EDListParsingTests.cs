@@ -102,6 +102,17 @@ public class EDListParsingTests
     }
 
     [Fact]
+    public void ParseColumns_TrailingIconKey()
+    {
+        var output = new CVar();
+        output["1"] = new CVar("""[{"key":"name","type":"TEXT","trailingIconKey":"znacka"},{"key":"agenda","type":"TEXT"}]""");
+
+        var columns = EDListParsing.ParseColumns(output);
+
+        Assert.Equal(["znacka", ""], columns.Select(c => c.TrailingIconKey));
+    }
+
+    [Fact]
     public void ParseRows_FormatsValuesByColumnType()
     {
         var rows = EDListParsing.ParseRows(

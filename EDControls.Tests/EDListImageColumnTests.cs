@@ -57,6 +57,42 @@ public class EDListImageColumnTests
         });
     }
 
+    /// <summary>Značka výchozí šablony pro tisk (Jan 3. 11.): hvězdička za názvem, aby název neposunula proti ostatním
+    /// řádkům. Panel s textem a značkou je zarovnaný vlevo, jinak by značka stála u pravého okraje sloupce.</summary>
+    [Fact]
+    public void TextSIkonouZa_IkonaHnedZaTextem()
+    {
+        RunSta(() =>
+        {
+            var sloupec = EDListColumnFactory.BuildDataColumn(
+                new ListColumn { Key = "name", IconKey = "ikona", TrailingIconKey = "znacka" });
+
+            var sablona = Assert.IsType<DataGridTemplateColumn>(sloupec).CellTemplate;
+            sablona.Seal();   // jako DataGrid před prvním použitím, LoadContent jinak odmítne
+            var bunka = Assert.IsType<DockPanel>(sablona.LoadContent());
+            Assert.IsType<Image>(bunka.Children[0]);
+            var textAZnacka = Assert.IsType<DockPanel>(bunka.Children[1]);
+            Assert.Equal(HorizontalAlignment.Left, textAZnacka.HorizontalAlignment);
+            Assert.IsType<Image>(textAZnacka.Children[0]);
+            Assert.Equal(Dock.Right, DockPanel.GetDock(textAZnacka.Children[0]));
+            Assert.IsType<TextBlock>(textAZnacka.Children[1]);
+        });
+    }
+
+    [Fact]
+    public void JenIkonaZa_BezIkonyPred()
+    {
+        RunSta(() =>
+        {
+            var sloupec = EDListColumnFactory.BuildDataColumn(new ListColumn { Key = "name", TrailingIconKey = "znacka" });
+
+            var sablona = Assert.IsType<DataGridTemplateColumn>(sloupec).CellTemplate;
+            sablona.Seal();
+            var bunka = Assert.IsType<DockPanel>(sablona.LoadContent());
+            Assert.IsType<DockPanel>(Assert.Single(bunka.Children.Cast<UIElement>()));
+        });
+    }
+
     [Fact]
     public void TextBezIkony_ZustavaTextovymSloupcem() =>
         RunSta(() => Assert.IsType<DataGridTextColumn>(EDListColumnFactory.BuildDataColumn(new ListColumn { Key = "name" })));

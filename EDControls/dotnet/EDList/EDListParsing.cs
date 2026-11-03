@@ -43,6 +43,7 @@ namespace EDControls.EDList
             Sortable = el.Bool("sortable"),
             Visible  = el.Bool("visible", defaultValue: true),
             IconKey  = el.Str("iconKey"),
+            TrailingIconKey = el.Str("trailingIconKey"),
         };
 
         /// <summary>Literály typů sloupce = protokol, zrcadlí <c>$$$ListColumnType*</c> v <c>CACHE/EDList.inc</c>.</summary>

@@ -29,4 +29,8 @@ Property visible As %Boolean [ InitialExpression = 1 ];
 /// prázdný = bez ikony. Posílá se jen vyplněný, starší klient ho ignoruje a ukáže jen text.
 Property iconKey As %String;
 
+/// TEXT sloupec: klíč pole řádku s ikonou, kterou klient ukáže hned za textem (značka stavu řádku, výchozí šablona
+/// pro tisk); prázdný = bez ikony. Posílá se jen vyplněný, starší klient ho ignoruje.
+Property trailingIconKey As %String;
+
 }

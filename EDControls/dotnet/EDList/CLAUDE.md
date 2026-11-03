@@ -43,6 +43,7 @@ v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
 - **NUMBER bez `format` se nijak neformátuje** - v UI zůstane „142.5" s tečkou.
 - **IMAGE i `iconKey` nesou klíč sdílené ikony** (`EDIcons.MlineLogo`), obrázek drží klient; ikona u textu
   (`iconKey` TEXT sloupce = pole řádku s klíčem) se posílá jen vyplněná, starší klient ukáže jen text.
+  `trailingIconKey` = značka stavu řádku hned za textem (ne u okraje sloupce), aby text neposunula proti ostatním řádkům.
   CODEBOOK je rezervovaný (kreslí se jako text). Neparsovatelné datum se zobrazí raw, bez chyby. COLOR kreslí
   obdélník, ne podbarvení buňky.
 - **Akce nad řádky** (`Actions`, typicky `EDViewModel.Actions` okna) jsou ikony v pruhu, ne tlačítka v okně -

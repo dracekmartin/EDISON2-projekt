@@ -17,5 +17,8 @@ namespace EDControls.EDList
         /// <summary>Pole řádku s klíčem sdílené ikony (<c>EDIcons.*</c>), kterou textový sloupec ukáže před hodnotou;
         /// prázdné = bez ikony. Odliší druh řádku přímo u názvu (šablona M-line × vlastní).</summary>
         public string IconKey { get; set; } = "";
+        /// <summary>Pole řádku s klíčem sdílené ikony, kterou textový sloupec ukáže hned za hodnotou; prázdné = bez ikony.
+        /// Značka stavu jednoho řádku (výchozí šablona pro tisk) - za textem neposune hodnotu proti ostatním řádkům.</summary>
+        public string TrailingIconKey { get; set; } = "";
     }
 }
