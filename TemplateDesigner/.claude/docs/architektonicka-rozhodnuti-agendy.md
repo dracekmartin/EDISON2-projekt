@@ -397,10 +397,14 @@ Vlastní kanál návrhář nestaví. Sdílení firmě povoluje administrátor IS
 **Navrženo, k potvrzení:** z víceprvkové zásilky uživatel převezme vybrané šablony a zbytek odmítne; ISYCloudu
 se zásilka ohlásí jako načtená, až je vyřízená celá (odmítnout jde v API jen celou zásilku).
 
-**Potřeba od ISYCloudu:** typ dat pro šablony (např. `SABLONA`) bez povinných atributů, s textovým seznamem
-šablon pro portál; `verzeStruktury` 1, verze formátu je uvnitř JSON. Typ `SOUBOR` ne: typ zásilky je filtr
-příjmu, se `SOUBOR` by se šablony míchaly s PDF a návrhář by musel každou zásilku stáhnout. Dále klient API
-v Caché (registrace, klíč v globálu serveru, odeslání, příjem), sdílený s ISYJR - 3. 11. zatím nikde není.
+**Typ dat `SABLONA`** si přidala agenda sama migrací v edwcore (`TypSablona`, 3. 11., každá agenda si typ dělá sama):
+bez kontroly obsahu, atribut `sablony` = názvy pro portál, `verzeStruktury` 1 (verze formátu je uvnitř JSON).
+Typ `SOUBOR` ne: typ zásilky je filtr příjmu, se `SOUBOR` by se šablony míchaly s PDF.
+**Klient API běží v Caché** (`Sdileni.Klient`), ne v návrháři: API chce klíč firmy na serveru. Klíč leží
+v `^["MLINE"]ALVA.SdileniDat`, protože ISYCloud vydá firmě jediný klíč pro všechny agendy (převezme ho ISYJR).
+Vývojový server bez nastavené adresy ostrý ISYCloud nevolá - registroval by tam firmy z DEV dat.
+**Testuje se proti ISYCloudu na Railway:** DEV server nenaváže spojení na počítač připojený přes VPN, lokální
+ISYCloud z něj vidět není. Tok API s typem `SABLONA` je ověřený proti lokálnímu ISYCloudu z počítače vývojáře.
 
 Mimo R9 zůstává sdílení uvnitř firmy (práva k šablonám, osobní šablony) - otevřené v `B189`.
 

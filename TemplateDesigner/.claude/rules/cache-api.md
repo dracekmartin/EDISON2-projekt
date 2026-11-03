@@ -61,6 +61,9 @@ Kontrola má dvě části, protože chyba má dvě podoby:
 - **`ALVA.TemplateDesigner.EDList.*`** - dispatch třídy pro EDList komponentu (UI contract). Příklady: `Sablony` (backing pro CacheTemplatePickerDialog), `Instance` (backing pro InstancePickerDialog).
 - **`ALVA.TemplateDesigner.EDInputForm.*`** - dispatch třídy pro EDInputForm komponentu (hlavní editační cesta elementů).
 - **`ALVA.TemplateDesigner.EDInputGrid.*`** - dispatch třídy pro EDInputGrid (až bude potřeba).
+- **`ALVA.TemplateDesigner.Sdileni.*`** - spojení s ISYCloudem pro sdílení dat mezi firmami (`B189`, R9). `Klient` je obecný
+  (o šablonách neví, převezme ho ISYJR) a klíč firmy drží v `^["MLINE"]ALVA.SdileniDat`, ne v globálu návrháře:
+  ISYCloud vydá firmě jediný klíč pro všechny agendy. Co je o šablonách, patří do `API.SdileniSablon`.
 
 **Klíčový princip:** folder/namespace 1:1 mapuje na **roli třídy**. Doménový název může opakovat napříč rolemi - `API.Sablony` (CRUD) vs `EDList.Sablony` (EDList dispatch nad šablonami) jsou jasně rozlišené namespace prefixem.
 
