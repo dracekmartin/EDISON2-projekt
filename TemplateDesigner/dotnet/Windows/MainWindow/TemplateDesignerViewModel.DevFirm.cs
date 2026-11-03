@@ -38,6 +38,8 @@ public partial class TemplateDesignerViewModel
         ("CB_CSADAD", "CB_CSADAD - ČSAD Autobusy (AD)"),
         ("CB_GWBUS",  "CB_GWBUS - GW BUS (AD)"),
         ("KV_DP",     "KV_DP - DP Karlovy Vary (MHD)"),
+        // Příjemce šablon od CB_CSADAD při zkoušení sdílení proti testovacímu ISYCloudu (`B189`).
+        ("CB_DP",     "CB_DP - DP České Budějovice (MHD)"),
         // Slovenská data: jediná firma, kde se pozná rozdíl mezi českou a slovenskou variantou
         // symbolového fontu (na znamení = dlaň místo křížku) a kde jsou vyplněné per-linkové
         // seznamy „nevypisovat značku ve sloupci". Podněty #12843 se testují tady.
