@@ -104,12 +104,23 @@ public class KlavesoveZkratkyTests
 
     private static void Over(List<(string Kde, string Zkratka)> nalezene, string kde)
     {
-        var zname = KeyboardShortcuts.All.SelectMany(z => Zkratky(z.Gesture)).ToHashSet();
+        var zname = KeyboardShortcuts.All.SelectMany(z => Zkratky(z.Gesture)).Concat(ZkratkyOknaSablon()).ToHashSet();
         var nezname = nalezene.Where(n => !zname.Contains(n.Zkratka)).Select(n => $"{n.Kde}: {n.Zkratka}").ToList();
 
         Assert.True(nezname.Count == 0,
             $"Zkratka v {kde}, kterou KeyboardShortcuts nezná - oprav text, nebo zkratku doplň do tabulky:\n" +
             string.Join("\n", nezname));
+    }
+
+    /// <summary>Akce okna šablon (Nový / Upravit / Odstranit) mají zkratky seznamů EDISONu ze sdílených komponent,
+    /// ne z tabulky hlavního okna; bere je z okna samotného, ať příručka nezná zkratku, kterou okno nemá.</summary>
+    private static IEnumerable<string> ZkratkyOknaSablon()
+    {
+        EDControls.EDViewModel.EDServices.Initialize(new EDControls.EDViewModel.EDServices(
+            NSubstitute.Substitute.For<EDControls.IMLRest>(),
+            NSubstitute.Substitute.For<EDControls.EDViewModel.IWindowNavigator>(),
+            NSubstitute.Substitute.For<EDControls.EDViewModel.IPopupDisplayer>()));
+        return new CacheTemplatePickerDialogViewModel(null!).Actions!.Select(a => a.ShortcutText);
     }
 
     /// <summary>Zkratka s modifikátorem: „Ctrl+Shift+P", „Alt+klik", „Ctrl + kolečko". Samotné klávesy (F2, Enter)
