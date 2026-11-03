@@ -7,7 +7,9 @@ namespace TemplateDesigner.Services;
 /// z registru agend a nic v něm uloženého není; okno šablon podle něj filtruje seznam a ukazuje výchozí šablonu
 /// pro tisk. „Strom šablony" (sekce a prvky jedné šablony) je jiná věc.
 /// </summary>
-public sealed record TemplateCatalog(IReadOnlyList<CatalogArea> Areas)
+/// <param name="PrintFromModule">Tisk z okna jízdních řádů je ve firmě zapnutý (týž přepínač jako položka v okně JŘ);
+/// bez něj okno šablon výchozí šablonu pro tisk neukazuje - nastavení by nemělo účinek a mátlo (Jan 3. 11.).</param>
+public sealed record TemplateCatalog(IReadOnlyList<CatalogArea> Areas, bool PrintFromModule = false)
 {
     public const string CacheClass = "ALVA.TemplateDesigner.API.StromSablon";
 
@@ -36,7 +38,7 @@ public sealed record TemplateCatalog(IReadOnlyList<CatalogArea> Areas)
             }
             areas.Add(new CatalogArea(Text(area, "code"), Text(area, "label"), agendas));
         }
-        return new TemplateCatalog(areas);
+        return new TemplateCatalog(areas, root?["tiskZModulu"]?.ToString() == "true");
     }
 
     private static DefaultPrintTemplate? ParseDefault(JsonNode? node) =>

@@ -37,6 +37,13 @@ public partial class CacheTemplatePickerDialog : Window
             return win.ShowDialog() == true ? dvm.Name : null;
         };
 
+        // Výchozí šablona pro tisk tučně, jen se zapnutým tiskem z okna JŘ (přepínač přijde se stromem ze serveru).
+        _vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(CacheTemplatePickerDialogViewModel.ShowsPrintDefault))
+                TheList.CellStyle = _vm.ShowsPrintDefault ? (Style)FindResource("TemplateCell") : null;
+        };
+
         // Zavření (OK, Storno, Esc, dvojklik) obsluhuje EDFooter - druhý odběratel RequestClose by po zavřeném
         // okně nastavoval DialogResult a spadl.
 

@@ -109,15 +109,37 @@ public class TemplateCatalogTests
         Assert.Null(TemplateCatalogNodeVM.Find(uzly, "varianta:NENI"));
     }
 
+    /// <summary>Výchozí je vždy právě jedna a jen se přesouvá (Jan 3. 11.): nastavit jde šablonu, která výchozí ještě
+    /// není; výchozí firmy ani M-line „zrušit" nejde a agenda bez tisku z modulu (Obecná) výchozí nemá.</summary>
     [Theory]
-    [InlineData("", true, DefaultAction.Set)]
-    [InlineData(null, true, DefaultAction.Set)]
-    [InlineData("firma", true, DefaultAction.Clear)]
-    [InlineData("mline", true, DefaultAction.AlreadyDefault)]
-    [InlineData("", false, DefaultAction.None)]
-    [InlineData("firma", false, DefaultAction.None)]
-    public void VychoziSablona_CoUdelaTlacitko(string? vychozi, bool canPrint, DefaultAction ocekavana) =>
-        Assert.Equal(ocekavana, DecideDefaultAction(vychozi, canPrint));
+    [InlineData("", true, true)]
+    [InlineData(null, true, true)]
+    [InlineData("firma", true, false)]
+    [InlineData("mline", true, false)]
+    [InlineData("", false, false)]
+    public void VychoziSablona_NastavitJenNevychozi(string? vychozi, bool canPrint, bool ocekavano) =>
+        Assert.Equal(ocekavano, CanSetDefault(vychozi, canPrint));
+
+    /// <summary>Přepínač tisku z okna JŘ přijde se stromem; bez něj (i ze staršího serveru) okno výchozí neukazuje.</summary>
+    [Fact]
+    public void Parse_TiskZModulu()
+    {
+        Assert.False(TemplateCatalog.Parse(Odpoved).PrintFromModule);
+        Assert.True(TemplateCatalog.Parse(Odpoved.Replace("{\"oblasti\":", "{\"tiskZModulu\":true,\"oblasti\":")).PrintFromModule);
+    }
+
+    /// <summary>Věta pod seznamem vysvětlí tučnou šablonu jen u uzlu jedné agendy a jen se zapnutým tiskem z okna JŘ.</summary>
+    [Fact]
+    public void Napoveda_VychoziSablonaJenSeZapnutymTiskem()
+    {
+        var uzly = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
+        var linkaAd = uzly[1].Children[0].Children[0];
+
+        Assert.Equal("A4 poznámky pod", linkaAd.DefaultName);
+        Assert.Contains("(A4 poznámky pod)", PrintDefaultHint(linkaAd, showsPrintDefault: true));
+        Assert.Equal("", PrintDefaultHint(linkaAd, showsPrintDefault: false));
+        Assert.Equal("", PrintDefaultHint(uzly[1].Children[0], showsPrintDefault: true));   // agenda s víc variantami
+    }
 
     [Fact]
     public void Build_UrovenUzluProVzhled()

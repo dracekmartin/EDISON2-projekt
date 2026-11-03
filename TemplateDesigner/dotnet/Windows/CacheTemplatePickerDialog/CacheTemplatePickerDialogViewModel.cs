@@ -44,7 +44,13 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
 
     /// <summary>Řádek pod seznamem: co uživatel nad výběrem může udělat - jak založit novou šablonu, která jde jen ve
     /// vybrané agendě a variantě, a proč šablonu M-line nejde upravit ani odstranit.</summary>
-    public string Hint => HintFor(Nodes, _selectedNode, IsSelectedSystem);
+    public string Hint => HintFor(Nodes, _selectedNode, IsSelectedSystem) + PrintDefaultHint(_selectedNode, ShowsPrintDefault);
+
+    /// <summary>Proč je šablona tučně a jak výchozí přesunout - jen u uzlu jedné agendy se zapnutým tiskem z okna JŘ.</summary>
+    public static string PrintDefaultHint(TemplateCatalogNodeVM? node, bool showsPrintDefault) =>
+        showsPrintDefault && node?.DefaultName is { Length: > 0 } nazev
+            ? $" Tučně je výchozí šablona pro tisk z okna jízdních řádů ({nazev}); jinou nastavíte akcí Nastavit jako výchozí pro tisk."
+            : "";
 
     /// <summary>Varianta s agendou („Linkový JŘ · AD"), jinak název uzlu.</summary>
     public static string TitleFor(IReadOnlyList<TemplateCatalogNodeVM> nodes, TemplateCatalogNodeVM? node) =>
@@ -87,7 +93,6 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         {
             if (Set(ref _selected, value))
             {
-                OnPropertyChanged(nameof(DefaultButtonText));
                 OnPropertyChanged(nameof(Hint));
                 System.Windows.Input.CommandManager.InvalidateRequerySuggested();
             }
@@ -123,60 +128,46 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     public RelayCommand      NewTemplateCommand { get; }
     public AsyncRelayCommand DeleteTemplateCommand { get; }
     public AsyncRelayCommand EditTemplateCommand { get; }
-    public AsyncRelayCommand ToggleDefaultCommand { get; }
+    public AsyncRelayCommand SetDefaultCommand { get; }
 
     // ── Výchozí šablona pro tisk ──────────────────────────────────────────────
 
-    /// <summary>Co udělá tlačítko výchozí šablony u vybrané šablony.</summary>
-    public enum DefaultAction
-    {
-        /// <summary>Agenda se z modulu netiskne (Obecná, nezveřejněná) - výchozí šablonu mít nemůže.</summary>
-        None,
-        /// <summary>Nastavit jako výchozí šablonu firmy pro tisk agendy.</summary>
-        Set,
-        /// <summary>Je výchozí šablonou firmy - zrušit, tisk pak vezme výchozí šablonu M-line.</summary>
-        Clear,
-        /// <summary>Je výchozí šablonou M-line a firma žádnou nemá - už je výchozí, zrušit ji nejde.</summary>
-        AlreadyDefault,
-    }
+    /// <summary>Okno ukazuje výchozí šablonu pro tisk (tučně, akce, věta pod seznamem) jen se zapnutým tiskem z okna
+    /// jízdních řádů - bez něj by nastavení nemělo účinek a mátlo (Jan 3. 11.).</summary>
+    public bool ShowsPrintDefault => _catalog.PrintFromModule;
 
-    /// <summary>
-    /// Akce podle sloupce <c>vychozi</c> řádku (firma | mline | prázdné) a podle toho, jestli se agenda tiskne
-    /// z modulu. Výchozí šablonu M-line firma zrušit nemůže, jen ji přebít svou.
-    /// </summary>
-    public static DefaultAction DecideDefaultAction(string? vychozi, bool canPrint) =>
-        !canPrint ? DefaultAction.None
-        : vychozi == "firma" ? DefaultAction.Clear
-        : vychozi == "mline" ? DefaultAction.AlreadyDefault
-        : DefaultAction.Set;
-
-    private DefaultAction SelectedDefaultAction =>
-        Selected is null ? DefaultAction.None
-        : DecideDefaultAction(Selected["vychozi"], CanPrint(Selected["agendaCode"]));
+    /// <summary>Šablona jde nastavit jako výchozí pro tisk: agenda se tiskne z modulu a šablona výchozí ještě není
+    /// (sloupec <c>vychozi</c> prázdný). Výchozí je vždy právě jedna a jen se přesouvá, zrušit ji nejde (Jan 3. 11.).</summary>
+    public static bool CanSetDefault(string? vychozi, bool canPrint) => canPrint && string.IsNullOrEmpty(vychozi);
 
     private bool CanPrint(string? agendaCode) =>
         _catalog.Areas.SelectMany(a => a.Agendas).SelectMany(a => a.Variants)
             .Any(v => v.Code == agendaCode && v.CanPrint);
 
-    public string DefaultButtonText => SelectedDefaultAction == DefaultAction.Clear
-        ? "Zrušit výchozí pro tisk"
-        : "Nastavit jako výchozí pro tisk";
-
-    private async Task ToggleDefaultAsync()
+    private async Task SetDefaultAsync()
     {
         if (Selected is null || !Guid.TryParse(Selected.Id, out var id)) return;
         var agendaCode = Selected["agendaCode"];
         if (string.IsNullOrEmpty(agendaCode)) return;
-
-        var action = SelectedDefaultAction;
-        if (action is not (DefaultAction.Set or DefaultAction.Clear)) return;
         try
         {
-            await _service.SetDefaultTemplateAsync(agendaCode, action == DefaultAction.Set ? id : null);
+            await _service.SetDefaultTemplateAsync(agendaCode, id);
             await LoadCatalogAsync();
             RequestReload?.Invoke();
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+    }
+
+    /// <summary>Nový, Upravit, Odstranit a se zapnutým tiskem z okna JŘ za oddělovačem výchozí šablona pro tisk.</summary>
+    private void BuildActions()
+    {
+        List<EDAction> akce = [StandardActions.Add(NewTemplateCommand), StandardActions.Edit(EditTemplateCommand),
+                               StandardActions.Delete(DeleteTemplateCommand)];
+        if (ShowsPrintDefault)
+            akce.AddRange([EDAction.Separator,
+                           StandardActions.Custom("Nastavit jako výchozí pro tisk", SetDefaultCommand, "EDIcons.Star")]);
+        Actions = akce;
+        OnPropertyChanged(nameof(Actions));
     }
 
     /// <summary>
@@ -194,7 +185,8 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         }
         Nodes = TemplateCatalogNodeVM.Build(_catalog);
         OnPropertyChanged(nameof(Nodes));
-        OnPropertyChanged(nameof(DefaultButtonText));
+        OnPropertyChanged(nameof(ShowsPrintDefault));
+        BuildActions();
         System.Windows.Input.CommandManager.InvalidateRequerySuggested();
 
         // Uzel se vybere dřív, než ho strom ukáže; strom pak výběr ohlásí stejným uzlem a seznam se znovu nenačte.
@@ -305,12 +297,11 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         NewTemplateCommand    = Command(NewTemplate,      () => SelectedNode?.NewTemplateAgendaCode is not null);
         DeleteTemplateCommand = CommandAsync(DeleteAsync, () => Selected is not null && !IsSelectedSystem);
         EditTemplateCommand   = CommandAsync(EditAsync,   () => Selected is not null && !IsSelectedSystem);
-        ToggleDefaultCommand  = CommandAsync(ToggleDefaultAsync,
-            () => SelectedDefaultAction is DefaultAction.Set or DefaultAction.Clear);
+        SetDefaultCommand     = CommandAsync(SetDefaultAsync,
+            () => Selected is not null && CanSetDefault(Selected["vychozi"], CanPrint(Selected["agendaCode"])));
 
         // Ikony v pruhu nad seznamem a zkratky Ctrl+N/E/D jako seznamy legacy EDISONu.
-        Actions = [StandardActions.Add(NewTemplateCommand), StandardActions.Edit(EditTemplateCommand),
-                   StandardActions.Delete(DeleteTemplateCommand)];
+        BuildActions();
     }
 
     private void Open()

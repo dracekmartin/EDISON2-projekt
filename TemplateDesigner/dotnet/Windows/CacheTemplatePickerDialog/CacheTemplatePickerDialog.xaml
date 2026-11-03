@@ -29,8 +29,7 @@
 
     <DockPanel>
     <!-- Výběrové okno jako legacy BaseForm2 ve výběru s úpravami: OK otevře vybranou šablonu (i dvojklik, Ctrl+Enter),
-         Storno a Esc zavřou, vlevo nabídka Akce se stejnými akcemi jako ikony nad seznamem. Výchozí šablona pro tisk
-         (ToggleDefaultCommand) se vrátí s tiskem z okna JŘ - do formuláře Upravit nebo do řádku pod seznamem. -->
+         Storno a Esc zavřou, vlevo nabídka Akce se stejnými akcemi jako ikony nad seznamem. -->
     <ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel"/>
 
     <DockPanel Margin="12">
@@ -172,7 +171,7 @@
                            HostId="TemplateDesigner.TemplatePicker"
                            Title="{Binding ListTitle}" Actions="{Binding Actions}"/>
             </DockPanel>
-            <!-- Tučná šablona pro tisk (CellStyle="{StaticResource TemplateCell}") se vrátí s tiskem z okna jízdních řádů. -->
+            <!-- Tučnou výchozí šablonu pro tisk (TemplateCell) zapíná code-behind jen se zapnutým tiskem z okna JŘ. -->
         </Grid>
 
     </DockPanel>

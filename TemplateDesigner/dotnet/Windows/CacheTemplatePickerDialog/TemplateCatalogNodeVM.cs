@@ -19,6 +19,9 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
     /// <summary>Úroveň uzlu; strom podle ní volí vzhled (oblast jako nadpis, agenda tučně).</summary>
     public TemplateCatalogNodeKind Kind { get; init; }
 
+    /// <summary>Výchozí šablona pro tisk uzlu jedné agendy (firmy, jinak M-line); null u ostatních uzlů a bez šablony.</summary>
+    public string? DefaultName { get; init; }
+
     /// <summary>Počet šablon pod uzlem; u Všech šablon <c>null</c> (patří k nim i šablony agend mimo strom).</summary>
     public int? Count { get; }
 
@@ -89,11 +92,11 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
         {
             var only = agenda.Variants[0];
             return new TemplateCatalogNodeVM($"agenda:{agenda.Code}", agenda.Label, only.Count, DetailFor(only), [only.Code])
-                { Kind = TemplateCatalogNodeKind.Agenda };
+                { Kind = TemplateCatalogNodeKind.Agenda, DefaultName = only.Default?.Name };
         }
         var variants = agenda.Variants
             .Select(v => new TemplateCatalogNodeVM($"varianta:{v.Code}", v.Label, v.Count, DetailFor(v), [v.Code])
-                { Kind = TemplateCatalogNodeKind.Variant })
+                { Kind = TemplateCatalogNodeKind.Variant, DefaultName = v.Default?.Name })
             .ToList();
         return new TemplateCatalogNodeVM($"agenda:{agenda.Code}", agenda.Label, variants.Sum(v => v.Count ?? 0), null,
             [.. variants.SelectMany(v => v.AgendaCodes)], variants) { Kind = TemplateCatalogNodeKind.Agenda };

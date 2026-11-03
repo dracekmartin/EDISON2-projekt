@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-11-03 (10) - Výchozí šablona pro tisk v okně šablon: vždy právě jedna, jen se přesouvá (příprava `B190`)
+
+Výchozí šablona pro tisk šla dřív nastavit i zrušit a seznam s víc agendami ukazoval víc „výchozích"; šablona M-line nastavená firmou vypadala jako výchozí firmy (Jan 3. 11., mátlo).
+Rozhodnutí Jan 3. 11.: v agendě a variantě je **právě jedna** výchozí šablona, firmy nebo M-line. Akce „Nastavit jako výchozí pro tisk" (za oddělovačem pod Nový / Upravit / Odstranit, ikona hvězdičky) ji jen přesouvá, zrušit ji nejde; volba výchozí šablony M-line záznam firmy smaže (`SablonyProTisk.WriteVychoziFirmy`). Výchozí šablona je tučně a řádek pod seznamem ji jmenuje.
+Výchozí šablonu M-line má nově každá agenda jízdních řádů (zastávkový AD a MHD, linkový MHD - jejich jediná šablona M-line), hlídá `VychoziSablonyMlineTests`.
+Vše o výchozí šabloně okno ukazuje jen se zapnutým tiskem z okna JŘ - týž přepínač jako položka v okně JŘ (`^JRR("TiskNovymNavrharem")`), strom ho posílá jako `tiskZModulu`. Vydat až s tiskem z okna JŘ (příští verze).
+Sdílené akce (EDControls) umí oddělovač (`EDAction.Separator`) a vlastní akci se sdílenou ikonou (`StandardActions.Custom`).
+Ověřeno: Caché testy TemplateDesigneru 306/306 (nové: volba výchozí M-line smaže záznam firmy, strom posílá přepínač), `GetStrom` na DEV vrací výchozí M-line u všech čtyř agend JŘ; .NET testy návrháře 2727/2727, EDControls 1283/1283.
+
 ## 2026-11-03 (9) - Okno šablon jako seznamy EDISONu: Nový / Upravit / Odstranit nad seznamem, OK a Storno, logo M-line
 
 Akce byly rozházené (Přejmenovat a Smazat vlevo dole, Nová šablona vpravo vedle Otevřít) a nedržely se ani starého EDISONu, ani EDISON2; Upravit a Odstranit u šablony M-line byly šedé bez vysvětlení (Jan).
