@@ -33,6 +33,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
             _selectedNode = value;
             _selectedNodeKey = value.Key;
             OnPropertyChanged();
+            System.Windows.Input.CommandManager.InvalidateRequerySuggested();
             if (changed) RequestReload?.Invoke();
         }
     }
@@ -61,6 +62,9 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     /// <summary>Vybraná šablona po stisku Otevřít. Null = dialog zrušen.</summary>
     public Guid? SelectedTemplateId { get; private set; }
 
+    /// <summary>Agenda nové prázdné šablony po stisku Nová šablona. Null = otevírá se šablona nebo dialog zrušen.</summary>
+    public string? NewTemplateAgendaCode { get; private set; }
+
     /// <summary>Po Otevřít: byla vybraná šablona systémová (M-line)? Řídí načtení z MLINE větve
     /// + otevření jako „kopie" (Ctrl+S → Uložit jako do firmy).</summary>
     public bool SelectedIsSystem { get; private set; }
@@ -69,6 +73,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     private bool IsSelectedSystem => string.Equals(Selected?["zdroj"], "M-line", StringComparison.Ordinal);
 
     public RelayCommand      OpenCommand   { get; }
+    public RelayCommand      NewTemplateCommand { get; }
     public AsyncRelayCommand DeleteTemplateCommand { get; }
     public AsyncRelayCommand RenameCommand { get; }
     public AsyncRelayCommand ToggleDefaultCommand { get; }
@@ -146,7 +151,10 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         System.Windows.Input.CommandManager.InvalidateRequerySuggested();
 
         // Uzel se vybere dřív, než ho strom ukáže; strom pak výběr ohlásí stejným uzlem a seznam se znovu nenačte.
-        var target = TemplateCatalogNodeVM.Find(Nodes, _selectedNodeKey) ?? Nodes[0];
+        // Předvybraná agenda platí jen při otevření - po smazání nebo přejmenování zůstane uzel, kde uživatel je.
+        var target = TemplateCatalogNodeVM.FindAgenda(Nodes, _preselectAgendaCode)
+                     ?? TemplateCatalogNodeVM.Find(Nodes, _selectedNodeKey) ?? Nodes[0];
+        _preselectAgendaCode = null;
         foreach (var node in TemplateCatalogNodeVM.PathTo(Nodes, target).SkipLast(1))
             node.IsExpanded = true;
         _selectedNode = target;
@@ -230,15 +238,22 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     /// <summary>Code-behind napojí - VM žádá o nový název (rename dialog). Vrátí název nebo null (zrušeno). VM nezná WPF.</summary>
     public Func<string, string?>? RequestRenameInput { get; set; }
 
+    private string? _preselectAgendaCode;
+
     /// <param name="lastNodeKey">Uzel stromu vybraný při posledním otevření; null = Všechny šablony.</param>
-    public CacheTemplatePickerDialogViewModel(CacheTemplateService service, string? lastNodeKey = null)
+    /// <param name="preselectAgendaCode">Agenda, jejíž uzel se vybere místo posledního (změna agendy); když ve stromu
+    /// není, platí poslední uzel.</param>
+    public CacheTemplatePickerDialogViewModel(CacheTemplateService service, string? lastNodeKey = null,
+        string? preselectAgendaCode = null)
     {
         _service = service;
         _channel = new SystemTemplateChannelSync(service);
         _selectedNodeKey = lastNodeKey ?? TemplateCatalogNodeVM.AllKey;
+        _preselectAgendaCode = preselectAgendaCode;
 
         // Systémové (M-line) jsou read-only - otevřít lze, mazat/přejmenovat ne.
         OpenCommand           = Command(Open,             () => Selected is not null);
+        NewTemplateCommand    = Command(NewTemplate,      () => SelectedNode?.NewTemplateAgendaCode is not null);
         DeleteTemplateCommand = CommandAsync(DeleteAsync, () => Selected is not null && !IsSelectedSystem);
         RenameCommand         = CommandAsync(RenameAsync, () => Selected is not null && !IsSelectedSystem);
         ToggleDefaultCommand  = CommandAsync(ToggleDefaultAsync,
@@ -251,6 +266,13 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         if (!Guid.TryParse(Selected.Id, out var id)) return;
         SelectedTemplateId = id;
         SelectedIsSystem = IsSelectedSystem;
+        CloseDialog(true);
+    }
+
+    private void NewTemplate()
+    {
+        if (SelectedNode?.NewTemplateAgendaCode is not { } code) return;
+        NewTemplateAgendaCode = code;
         CloseDialog(true);
     }
 

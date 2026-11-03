@@ -198,7 +198,17 @@ public partial class TemplateDesignerViewModel
         }
     }
 
+    /// <summary>Změna agendy otevře okno šablon s vybranou aktuální agendou: uživatel v něm vidí šablony, které
+    /// v agendě už má, a prázdnou šablonu založí tlačítkem Nová šablona (zkouška Jan 3. 11.).</summary>
     private async Task ChangeAgendaAsync()
+    {
+        if (TemplateStorage is null) { await ChangeAgendaInDialogAsync(); return; }
+        await OpenTemplateWindowAsync(State.CurrentTemplate.AgendaCode);
+    }
+
+    /// <summary>Původní okno Změnit agendu - bez databáze šablon nemá okno šablon co ukázat. Zůstává i pro návrat,
+    /// kdyby se změna agendy přes okno šablon neosvědčila.</summary>
+    private async Task ChangeAgendaInDialogAsync()
     {
         // Registr agend (dvouosý: agenda × varianta) - dialog staví seskupený výběr jen ze
         // ZVEŘEJNĚNÝCH agend (Released; pilotní jako Linkový JŘ / Faktury se uživatelům nenabízí).
@@ -467,16 +477,27 @@ public partial class TemplateDesignerViewModel
     /// ještě není v DB (Ctrl+S ji založí). Pro indikátor původu v titulku.</summary>
     public bool IsCacheBacked => _loadedFromCache;
 
-    private async Task OpenFromCacheAsync()
+    private Task OpenFromCacheAsync() => OpenTemplateWindowAsync(preselectAgendaCode: null);
+
+    /// <param name="preselectAgendaCode">Agenda, jejíž uzel se ve stromu vybere; null = uzel z posledního otevření.</param>
+    private async Task OpenTemplateWindowAsync(string? preselectAgendaCode)
     {
         if (TemplateStorage is null) return;
 
         // Confirmace neuložených změn AŽ po explicitním Otevřít - dialog funguje i jako
         // správce (smazat / přejmenovat) bez intent načíst do editoru.
-        var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, TemplatePickerNode);
-        bool open = Dialogs?.ShowCacheTemplatePicker(vm) == true;
+        var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, TemplatePickerNode, preselectAgendaCode);
+        bool confirmed = Dialogs?.ShowCacheTemplatePicker(vm) == true;
         TemplatePickerNode = vm.SelectedNodeKey;
-        if (!open || vm.SelectedTemplateId is null) return;
+        if (!confirmed) return;
+
+        if (vm.NewTemplateAgendaCode is { } agendaCode)
+        {
+            if (!await ConfirmUnsavedChangesAsync()) return;
+            ReplaceWithBlankTemplate(agendaCode);
+            return;
+        }
+        if (vm.SelectedTemplateId is null) return;
 
         if (!await ConfirmUnsavedChangesAsync()) return;
 

@@ -118,4 +118,36 @@ public class TemplateCatalogTests
     [InlineData("firma", false, DefaultAction.None)]
     public void VychoziSablona_CoUdelaTlacitko(string? vychozi, bool canPrint, DefaultAction ocekavana) =>
         Assert.Equal(ocekavana, DecideDefaultAction(vychozi, canPrint));
+
+    [Fact]
+    public void NovaSablona_JenUzelJedneAgendy()
+    {
+        var uzly = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
+        var linka = uzly[1].Children[0];
+
+        Assert.Null(uzly[0].NewTemplateAgendaCode);              // Všechny šablony
+        Assert.Null(uzly[1].NewTemplateAgendaCode);              // oblast s víc agendami
+        Assert.Null(linka.NewTemplateAgendaCode);                // agenda s víc variantami
+        Assert.Equal("LINKA_MHD", linka.Children[1].NewTemplateAgendaCode);
+        Assert.Equal("RELACE_AD", uzly[1].Children[1].NewTemplateAgendaCode);
+    }
+
+    [Theory]
+    [InlineData("LINKA_MHD", "varianta:LINKA_MHD")]
+    [InlineData("linka_ad", "varianta:LINKA_AD")]
+    [InlineData("RELACE_AD", "agenda:RELACE")]
+    [InlineData("OBECNA", "agenda:OBECNA")]   // ne oblast Obecné, i když má jen tuhle agendu
+    public void FindAgenda_NejhlubsiUzelAgendy(string agendaCode, string ocekavanyKlic)
+    {
+        var uzly = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
+
+        Assert.Equal(ocekavanyKlic, TemplateCatalogNodeVM.FindAgenda(uzly, agendaCode)?.Key);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("LINKA_AD_ROZDILOVY")]   // nezveřejněná agenda ve stromu není
+    public void FindAgenda_AgendaMimoStrom_Null(string? agendaCode) =>
+        Assert.Null(TemplateCatalogNodeVM.FindAgenda(TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved)), agendaCode));
 }

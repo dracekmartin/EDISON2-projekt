@@ -43,6 +43,10 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
     /// <summary>Hodnota filtru seznamu šablon (<c>agendaCodes</c> v <c>EDList.Sablony</c>).</summary>
     public string FilterValue => string.Join(",", AgendaCodes);
 
+    /// <summary>Agenda, ve které tlačítko Nová šablona založí prázdnou šablonu; null, když uzel neurčuje jednu
+    /// agendu (Všechny šablony, oblast nebo agenda s víc variantami).</summary>
+    public string? NewTemplateAgendaCode => AgendaCodes.Count == 1 ? AgendaCodes[0] : null;
+
     private bool _isExpanded;
     public bool IsExpanded
     {
@@ -102,6 +106,19 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
         {
             if (node.Key == key) return node;
             if (Find(node.Children, key) is { } found) return found;
+        }
+        return null;
+    }
+
+    /// <summary>Nejhlubší uzel, který ukazuje jen šablony dané agendy (varianta, nebo agenda s jedinou variantou);
+    /// null, když agenda ve stromu není (nezveřejněná).</summary>
+    public static TemplateCatalogNodeVM? FindAgenda(IEnumerable<TemplateCatalogNodeVM> nodes, string? agendaCode)
+    {
+        if (string.IsNullOrEmpty(agendaCode)) return null;
+        foreach (var node in nodes)
+        {
+            if (FindAgenda(node.Children, agendaCode) is { } deeper) return deeper;
+            if (string.Equals(node.NewTemplateAgendaCode, agendaCode, StringComparison.OrdinalIgnoreCase)) return node;
         }
         return null;
     }

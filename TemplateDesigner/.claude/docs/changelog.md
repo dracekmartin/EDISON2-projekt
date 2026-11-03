@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-11-03 (4) - Změna agendy otevírá okno šablon, v okně tlačítko Nová šablona (zkouška)
+
+Agendu vybírala dvě okna a každé jinak: Změnit agendu jako seznam seskupený podle agendy, okno šablon (Ctrl+O) stromem oblast práce → agenda → varianta.
+Štítek agendy, Ctrl+Shift+A, menu i tlačítko na úvodní obrazovce teď otevřou okno šablon s vybranou aktuální agendou; uživatel rovnou vidí šablony, které v agendě má, včetně šablon M-line.
+Tlačítko **Nová šablona** založí prázdnou šablonu v agendě vybraného uzlu; na uzlu, který neurčuje jednu agendu (Všechny šablony, oblast, agenda s víc variantami), je nedostupné.
+Staré okno Změnit agendu zůstává pro běh bez databáze šablon a pro návrat, kdyby se zkouška neosvědčila (Jan 3. 11.: „dobrý směr"). Popisky v menu a příručka se upraví po doladění okna.
+Ověřeno: .NET testy návrháře 2715/2715 (nové testy tlačítka a předvýběru agendy), proklikal Jan v debug buildu.
+
 ## 2026-11-03 (3) - Prázdná třída Faktury, aby šel projekt nahrát na REL
 
 Import projektu na REL 3. 11. spadl na staré ukázkové agendě Faktury: v repu je od 30. 10. smazaná (`B56` S11), na REL a u zákazníků ale zůstala z dřívějších vydání a volá metodu základu agend, která už neexistuje (`WriteTemplate2Col`).

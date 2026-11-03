@@ -36,6 +36,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <Button Grid.Column="0" Content="Přejmenovat…" Command="{Binding RenameCommand}"
@@ -48,10 +49,13 @@
                     Visibility="Collapsed" Padding="10,4"
                     ToolTip="Šablona, kterou vezme tisk z modulu (okno jízdních řádů), když uživatel nevybere jinou. Bez výchozí šablony firmy tiskne výchozí šablona M-line."/>
 
-            <Button Grid.Column="4" Content="Otevřít" IsDefault="True"
+            <Button Grid.Column="4" Content="Nová šablona" Command="{Binding NewTemplateCommand}"
+                    Padding="10,4" Margin="0,0,8,0" ToolTipService.ShowOnDisabled="True"
+                    ToolTip="Prázdná šablona ve vybrané agendě. Ve stromu vyberte agendu, u jízdních řádů i AD nebo MHD."/>
+            <Button Grid.Column="5" Content="Otevřít" IsDefault="True"
                     Command="{Binding OpenCommand}"
                     Padding="14,4" Width="90" Margin="0,0,8,0"/>
-            <Button Grid.Column="5" Content="{StaticResource EDStrings.Cancel}"  IsCancel="True" Width="80"/>
+            <Button Grid.Column="6" Content="{StaticResource EDStrings.Cancel}"  IsCancel="True" Width="80"/>
         </Grid>
 
         <!-- Nabídka nových šablon z kanálu M-line. Není to modální otázka: zobrazí se, jen když

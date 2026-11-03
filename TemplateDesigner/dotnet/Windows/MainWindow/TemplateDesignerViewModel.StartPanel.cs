@@ -81,13 +81,15 @@ public partial class TemplateDesignerViewModel
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
 
-    /// <summary>Změna agendy z úvodní obrazovky založí prázdnou šablonu nové agendy (a tím obrazovku
-    /// zavře) - obrazovka se pak ukáže znovu, už se šablonami té nové agendy.</summary>
+    /// <summary>Změna agendy z úvodní obrazovky otevře okno šablon a uživatel v něm rovnou otevře šablonu nebo
+    /// založí prázdnou - obrazovka se pak už neukazuje. Jen původní okno Změnit agendu (bez databáze šablon)
+    /// založí prázdnou šablonu sám, a obrazovka se proto ukáže znovu se šablonami nové agendy.</summary>
     internal async Task ChangeAgendaFromStartPanelAsync()
     {
         var puvodni = State.CurrentTemplate;
+        bool oknoSablon = TemplateStorage is not null;
         await ChangeAgendaAsync();
-        if (!ReferenceEquals(puvodni, State.CurrentTemplate)) await ShowStartPanelAsync();
+        if (!oknoSablon && !ReferenceEquals(puvodni, State.CurrentTemplate)) await ShowStartPanelAsync();
     }
 
     /// <summary>Otevře hotovou šablonu M-line agendy jako kopii - Ctrl+S ji uloží jako šablonu firmy.</summary>
