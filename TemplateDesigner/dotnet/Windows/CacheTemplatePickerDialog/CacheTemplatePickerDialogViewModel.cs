@@ -183,10 +183,14 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
             _catalog = TemplateCatalog.Empty;
             PopupDisplayer.Error(ex);
         }
-        var stare = Nodes;
-        Nodes = TemplateCatalogNodeVM.Build(_catalog);
-        TemplateCatalogNodeVM.KeepExpansion(stare, Nodes);
-        OnPropertyChanged(nameof(Nodes));
+        // Stejný strom se jen obnoví na místě - nový by ve WPF zahodil výběr (okno skočilo na Všechny šablony) i rozbalení.
+        var nove = TemplateCatalogNodeVM.Build(_catalog);
+        if (!TemplateCatalogNodeVM.UpdateInPlace(Nodes, nove))
+        {
+            TemplateCatalogNodeVM.KeepExpansion(Nodes, nove);
+            Nodes = nove;
+            OnPropertyChanged(nameof(Nodes));
+        }
         OnPropertyChanged(nameof(ShowsPrintDefault));
         BuildActions();
         System.Windows.Input.CommandManager.InvalidateRequerySuggested();

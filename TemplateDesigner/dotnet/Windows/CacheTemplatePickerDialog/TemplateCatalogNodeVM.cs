@@ -19,14 +19,23 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
     /// <summary>Úroveň uzlu; strom podle ní volí vzhled (oblast jako nadpis, agenda tučně).</summary>
     public TemplateCatalogNodeKind Kind { get; init; }
 
+    // Počet, výchozí šablona a detail se po nastavení výchozí šablony, odstranění a přejmenování obnoví v uzlech na místě
+    // (UpdateInPlace) - nový strom by zahodil výběr i rozbalení (nález Jan 3. 11.), proto jdou nastavit.
+    private string? _defaultName;
     /// <summary>Výchozí šablona pro tisk uzlu jedné agendy (firmy, jinak M-line); null u ostatních uzlů a bez šablony.</summary>
-    public string? DefaultName { get; init; }
+    public string? DefaultName
+    {
+        get => _defaultName;
+        init => _defaultName = value;
+    }
 
+    private int? _count;
     /// <summary>Počet šablon pod uzlem; u Všech šablon <c>null</c> (patří k nim i šablony agend mimo strom).</summary>
-    public int? Count { get; }
+    public int? Count => _count;
 
+    private string? _detail;
     /// <summary>Šablona, kterou tisk vezme („Pro tisk: …"), jen u uzlu jedné agendy šablon, která se tiskne z modulu.</summary>
-    public string? Detail { get; }
+    public string? Detail => _detail;
 
     /// <summary>Kódy agend šablon pod uzlem; prázdné = všechny šablony bez filtru.</summary>
     public IReadOnlyList<string> AgendaCodes { get; }
@@ -38,8 +47,8 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
     {
         Key = key;
         Label = label;
-        Count = count;
-        Detail = detail;
+        _count = count;
+        _detail = detail;
         AgendaCodes = agendaCodes;
         Children = children ?? [];
     }
@@ -118,9 +127,30 @@ public sealed class TemplateCatalogNodeVM : INotifyPropertyChanged
         return null;
     }
 
-    /// <summary>Znovu načtený strom (po nastavení výchozí šablony, odstranění, přejmenování) převezme rozbalení uzlů ze
-    /// starého podle klíče - jinak by se rozbalily všechny oblasti jako při otevření okna (nález Jan 3. 11.).
-    /// Uzel, který ve starém stromu nebyl, má výchozí rozbalení.</summary>
+    /// <summary>Strom se stejnými uzly (klíči v témže pořadí) jen převezme počty, výchozí šablonu a detail z nově
+    /// načteného a vrátí true; strom se ve WPF nepřestaví, takže zůstane výběr i rozbalení. Jiný tvar (přibyla agenda)
+    /// vrátí false a volající vezme nový strom.</summary>
+    public static bool UpdateInPlace(IReadOnlyList<TemplateCatalogNodeVM> current, IReadOnlyList<TemplateCatalogNodeVM> fresh)
+    {
+        var stare = All(current).ToList();
+        var nove = All(fresh).ToList();
+        if (!stare.Select(n => n.Key).SequenceEqual(nove.Select(n => n.Key))) return false;
+        for (int i = 0; i < stare.Count; i++)
+        {
+            var (uzel, zdroj) = (stare[i], nove[i]);
+            uzel._count = zdroj._count;
+            uzel._detail = zdroj._detail;
+            uzel._defaultName = zdroj._defaultName;
+            uzel.OnPropertyChanged(nameof(Count));
+            uzel.OnPropertyChanged(nameof(Detail));
+            uzel.OnPropertyChanged(nameof(HasDetail));
+            uzel.OnPropertyChanged(nameof(DefaultName));
+        }
+        return true;
+    }
+
+    /// <summary>Znovu načtený strom jiného tvaru převezme rozbalení uzlů ze starého podle klíče - jinak by se rozbalily
+    /// všechny oblasti jako při otevření okna. Uzel, který ve starém stromu nebyl, má výchozí rozbalení.</summary>
     public static void KeepExpansion(IEnumerable<TemplateCatalogNodeVM> oldNodes, IEnumerable<TemplateCatalogNodeVM> newNodes)
     {
         var stare = All(oldNodes).ToDictionary(n => n.Key, n => n.IsExpanded);

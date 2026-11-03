@@ -126,6 +126,31 @@ public class TemplateCatalogTests
         Assert.True(nove[1].Children[0].IsExpanded);
     }
 
+    /// <summary>Po nastavení výchozí šablony se stejný strom jen obnoví na místě: nové uzly by ve WPF zahodily výběr
+    /// a okno skočilo na Všechny šablony (nález Jan 3. 11.).</summary>
+    [Fact]
+    public void StejnyStrom_ObnoviSeNaMiste()
+    {
+        var strom = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
+        var linkaAd = strom[1].Children[0].Children[0];
+        var zmeneny = Odpoved.Replace("\"name\":\"A4 poznámky pod\",\"zdroj\":\"mline\"", "\"name\":\"Naše\",\"zdroj\":\"firma\"")
+                             .Replace("\"pocet\":3", "\"pocet\":4");
+
+        Assert.True(TemplateCatalogNodeVM.UpdateInPlace(strom, TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(zmeneny))));
+        Assert.Same(linkaAd, strom[1].Children[0].Children[0]);
+        Assert.Equal("Naše", linkaAd.DefaultName);
+        Assert.Equal(4, linkaAd.Count);
+    }
+
+    [Fact]
+    public void JinyStrom_NeobnoviSe()
+    {
+        var strom = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
+        var bezRelaci = TemplateCatalogNodeVM.Build(TemplateCatalog.Empty);
+
+        Assert.False(TemplateCatalogNodeVM.UpdateInPlace(strom, bezRelaci));
+    }
+
     /// <summary>Výchozí je vždy právě jedna a jen se přesouvá (Jan 3. 11.): nastavit jde šablonu, která výchozí ještě
     /// není; výchozí firmy ani M-line „zrušit" nejde a agenda bez tisku z modulu (Obecná) výchozí nemá.</summary>
     [Theory]
