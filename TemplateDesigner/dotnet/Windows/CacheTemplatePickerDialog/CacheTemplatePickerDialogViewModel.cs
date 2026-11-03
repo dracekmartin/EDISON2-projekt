@@ -33,9 +33,38 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
             _selectedNode = value;
             _selectedNodeKey = value.Key;
             OnPropertyChanged();
+            NotifySelectionTexts();
             System.Windows.Input.CommandManager.InvalidateRequerySuggested();
             if (changed) RequestReload?.Invoke();
         }
+    }
+
+    /// <summary>Pruh nad seznamem: co je ve stromu vybrané, ať uživatel ví, ve které agendě je.</summary>
+    public string ListTitle => TitleFor(Nodes, _selectedNode);
+
+    /// <summary>Řádek pod seznamem: co uživatel nad vybraným uzlem může udělat - hlavně jak založit novou šablonu,
+    /// která jde jen ve vybrané agendě a variantě.</summary>
+    public string Hint => HintFor(Nodes, _selectedNode);
+
+    /// <summary>Varianta s agendou („Linkový JŘ · AD"), jinak název uzlu.</summary>
+    public static string TitleFor(IReadOnlyList<TemplateCatalogNodeVM> nodes, TemplateCatalogNodeVM? node) =>
+        node is null ? "Všechny šablony"
+        : node.Kind == TemplateCatalogNodeKind.Variant
+            ? string.Join(" · ", TemplateCatalogNodeVM.PathTo(nodes, node).Skip(1).Select(n => n.Label))
+            : node.Label;
+
+    public static string HintFor(IReadOnlyList<TemplateCatalogNodeVM> nodes, TemplateCatalogNodeVM? node) =>
+        node?.NewTemplateAgendaCode is null
+            ? "Šablonu otevřete dvojklikem. Novou šablonu založíte, až vlevo vyberete agendu, u jízdních řádů i AD nebo MHD."
+        : node.Count == 0
+            ? $"{TitleFor(nodes, node)} zatím nemá žádnou šablonu. Prázdnou šablonu založíte tlačítkem Nová šablona."
+        : "Šablonu otevřete dvojklikem, šablona M-line se otevře jako kopie a uložíte ji jako svou. "
+          + $"Prázdnou šablonu pro {TitleFor(nodes, node)} založíte tlačítkem Nová šablona.";
+
+    private void NotifySelectionTexts()
+    {
+        OnPropertyChanged(nameof(ListTitle));
+        OnPropertyChanged(nameof(Hint));
     }
 
     /// <summary>Filtr seznamu šablon podle vybraného uzlu; Všechny šablony = bez filtru.</summary>
@@ -161,6 +190,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         _selectedNodeKey = target.Key;
         target.IsSelected = true;
         OnPropertyChanged(nameof(SelectedNode));
+        NotifySelectionTexts();
     }
 
     // ── Nové šablony od M-line (distribuční kanál) ────────────────────────────

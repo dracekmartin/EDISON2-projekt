@@ -133,6 +133,45 @@ public class TemplateCatalogTests
     }
 
     [Fact]
+    public void Pruh_UkazujeVybranyUzelVariantaSAgendou()
+    {
+        var uzly = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
+        var linka = uzly[1].Children[0];
+
+        Assert.Equal("Všechny šablony", TitleFor(uzly, null));
+        Assert.Equal("Všechny šablony", TitleFor(uzly, uzly[0]));
+        Assert.Equal("Jízdní řády", TitleFor(uzly, uzly[1]));
+        Assert.Equal("Linkový JŘ", TitleFor(uzly, linka));
+        Assert.Equal("Linkový JŘ · MHD", TitleFor(uzly, linka.Children[1]));
+        Assert.Equal("Relace", TitleFor(uzly, uzly[1].Children[1]));
+    }
+
+    [Fact]
+    public void Napoveda_RekneJakZalozitNovouSablonu()
+    {
+        var uzly = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
+        var linka = uzly[1].Children[0];
+
+        // Uzel bez jedné agendy: nová šablona až po výběru agendy.
+        Assert.Contains("až vlevo vyberete agendu", HintFor(uzly, uzly[0]));
+        Assert.Contains("až vlevo vyberete agendu", HintFor(uzly, linka));
+        // Agenda: kde nová šablona vznikne a že M-line se otevře jako kopie.
+        var mhd = HintFor(uzly, linka.Children[1]);
+        Assert.Contains("pro Linkový JŘ · MHD založíte tlačítkem Nová šablona", mhd);
+        Assert.Contains("jako kopie", mhd);
+    }
+
+    [Fact]
+    public void Napoveda_AgendaBezSablon()
+    {
+        var odpoved = Odpoved.Replace("\"pocet\":4", "\"pocet\":0");
+        var uzly = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(odpoved));
+
+        Assert.Equal("Obecná (bez dat) zatím nemá žádnou šablonu. Prázdnou šablonu založíte tlačítkem Nová šablona.",
+            HintFor(uzly, uzly[2].Children[0]));
+    }
+
+    [Fact]
     public void NovaSablona_JenUzelJedneAgendy()
     {
         var uzly = TemplateCatalogNodeVM.Build(TemplateCatalog.Parse(Odpoved));
