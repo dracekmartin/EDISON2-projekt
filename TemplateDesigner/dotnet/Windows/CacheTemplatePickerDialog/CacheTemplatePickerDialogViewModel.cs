@@ -94,6 +94,11 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     /// <summary>Agenda nové prázdné šablony po stisku Nová šablona. Null = otevírá se šablona nebo dialog zrušen.</summary>
     public string? NewTemplateAgendaCode { get; private set; }
 
+    private readonly Dictionary<Guid, string> _renamed = [];
+    /// <summary>Šablony přejmenované v okně (i když bylo zrušeno). Otevřená šablona si z něj vezme nový název,
+    /// jinak by ho Ctrl+S přepsal zpátky.</summary>
+    public IReadOnlyDictionary<Guid, string> Renamed => _renamed;
+
     /// <summary>Po Otevřít: byla vybraná šablona systémová (M-line)? Řídí načtení z MLINE větve
     /// + otevření jako „kopie" (Ctrl+S → Uložit jako do firmy).</summary>
     public bool SelectedIsSystem { get; private set; }
@@ -332,6 +337,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         try
         {
             await _service.RenameAsync(id, newName);
+            _renamed[id] = newName;
             await LoadCatalogAsync();
             RequestReload?.Invoke();
         }

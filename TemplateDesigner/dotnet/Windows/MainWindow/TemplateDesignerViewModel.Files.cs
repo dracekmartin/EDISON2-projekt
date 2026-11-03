@@ -489,6 +489,7 @@ public partial class TemplateDesignerViewModel
         var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, TemplatePickerNode, preselectAgendaCode);
         bool confirmed = Dialogs?.ShowCacheTemplatePicker(vm) == true;
         TemplatePickerNode = vm.SelectedNodeKey;
+        ApplyRenameOfOpenTemplate(vm.Renamed);
         if (!confirmed) return;
 
         if (vm.NewTemplateAgendaCode is { } agendaCode)
@@ -509,6 +510,15 @@ public partial class TemplateDesignerViewModel
             await ShowTemplateFromDatabaseAsync(template, isSystem: vm.SelectedIsSystem, loadInstanceDefaults: true);
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+    }
+
+    /// <summary>Otevřená šablona přejmenovaná v okně šablon převezme nový název - uložení posílá název z otevřené
+    /// šablony a vrátilo by starý. Změna není neuložená práce, v databázi už je.</summary>
+    internal void ApplyRenameOfOpenTemplate(IReadOnlyDictionary<Guid, string> renamed)
+    {
+        if (!renamed.TryGetValue(State.CurrentTemplate.Id, out var name)) return;
+        State.CurrentTemplate.Name = name;
+        RequestTitleUpdate?.Invoke();
     }
 
     /// <summary>Otevře šablonu načtenou z databáze (výběr šablony i spuštění z modulu JŘ).</summary>

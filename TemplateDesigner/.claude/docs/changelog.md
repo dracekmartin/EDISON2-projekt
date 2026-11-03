@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-11-03 (8) - Přejmenování otevřené šablony v okně šablon se už neztratí
+
+Uložení posílá název z otevřené šablony: když uživatel v okně šablon přejmenoval šablonu, kterou měl otevřenou, titulek dál ukazoval starý název a Ctrl+S ho do databáze vrátil (nález 3. 11. v kódu, `API.Sablony.SaveTemplate` zapisuje `Metadata.Name` z IN).
+Po zavření okna (i Stornem) si otevřená šablona vezme nový název; není to neuložená práce, v databázi už je.
+Ověřeno: .NET testy návrháře 2721/2721 (nový `PrejmenovaniOtevreneSablonyTests`).
+
+## 2026-11-03 (7) - Okno šablon říká, kde uživatel je a co může udělat
+
+Tlačítko Nová šablona bylo na většině uzlů šedé bez vysvětlení a pruh nad seznamem pořád říkal „Šablony v databázi" (Jan: pro nového uživatele „mystické").
+Pruh nad seznamem ukazuje vybraný uzel („Linkový JŘ · AD"), pod seznamem je řádek, co nad výběrem jde udělat: bez vybrané agendy kde se šablona otevře a že novou založí až po výběru agendy, u agendy kde nová šablona vznikne a že šablona M-line se otevře jako kopie, u agendy bez šablon jen nová šablona. Do řádku přibude výchozí šablona pro tisk.
+Ověřeno: .NET testy návrháře (testy pruhu a nápovědy), proklikal Jan v debug buildu.
+
 ## 2026-11-03 (6) - Strom agend v okně šablon výraznější
 
 Strom splýval: všechny úrovně stejným písmem, počet šablon šedým číslem hned za názvem, nad stromem nic, zatímco seznam vpravo měl modrý pruh.
