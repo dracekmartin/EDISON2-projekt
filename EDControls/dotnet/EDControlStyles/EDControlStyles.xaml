@@ -1838,35 +1838,39 @@
         </Setter>
     </Style>
 
-    <!-- Barevné tlačítko panelu Podpora (EDSupportPanel). Barvu plochy dodává volající
-         z tokenů EDTheme.Support.* - hover/pressed jsou průhledné bílé overlaye nad ní,
-         takže se nemusí dopočítávat světlejší odstín pro každou barvu zvlášť. -->
+    <!-- Tlačítko panelu Podpora (EDSupportPanel): tónovaná plocha, rámeček a text v barvě akce
+         (Background / BorderBrush / Foreground z tokenů EDTheme.Support.*). Hover/pressed je nádech
+         barvy textu přes plochu, takže světlý i tmavý režim i každá akce ztmavnou správným odstínem. -->
     <Style x:Key="EDTheme.SupportPanelButton" TargetType="Button">
         <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <!-- MinHeight, ne Height: popisek se při user škálování fontu zalomí na víc řádků
              a tlačítko musí povyrůst, ne text ořezat. -->
-        <Setter Property="MinHeight" Value="30"/>
-        <Setter Property="Padding" Value="6,3"/>
-        <Setter Property="Foreground" Value="{DynamicResource EDTheme.OnAccent.Text}"/>
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="FontFamily" Value="{DynamicResource EDTheme.FontFamily}"/>
         <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid>
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6"
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6"
                                 SnapsToDevicePixels="True"/>
-                        <Border x:Name="Overlay" CornerRadius="6" Background="Transparent"
-                                SnapsToDevicePixels="True"/>
+                        <Border x:Name="Overlay" CornerRadius="6" Background="{TemplateBinding Foreground}"
+                                Opacity="0" SnapsToDevicePixels="True"/>
                         <ContentPresenter Margin="{TemplateBinding Padding}"
-                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="Center"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Overlay" Property="Background" Value="{DynamicResource EDTheme.OnAccent.HoverOverlay}"/>
+                            <Setter TargetName="Overlay" Property="Opacity" Value="0.08"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Overlay" Property="Background" Value="{DynamicResource EDTheme.OnAccent.PressedOverlay}"/>
+                            <Setter TargetName="Overlay" Property="Opacity" Value="0.16"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>

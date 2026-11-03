@@ -167,21 +167,48 @@
 
     <!-- ═══════════════════════════════════════════════════════════════════
          COLORS - Support panel (EDSupportPanel)
-         Hodnoty přebírají legacy SideMenu, aby panel vypadal stejně jako
-         v EDISONu 1. Accent (úchyt, titulek) je záměrně jiná zelená než
-         Portal (tlačítko) - tak to má legacy.
+         Tytéž hodnoty kreslí legacy SideMenu v EDISONu 1 (EDFORMS/SideMenuPodpora.cs)
+         - měň obojí. Tlačítka mají paletu widgetu podpora.m-line.cz edison2: zpětná
+         vazba jantarová, podpora červená (helpdesk), Nápověda fialová, Novinky modré.
          ═══════════════════════════════════════════════════════════════════ -->
     <Color x:Key="EDTheme.Support.Accent.Color">#FF16A34A</Color>
     <SolidColorBrush x:Key="EDTheme.Support.Accent" Color="{StaticResource EDTheme.Support.Accent.Color}"/>
 
-    <Color x:Key="EDTheme.Support.Feedback.Color">#FF1E88E5</Color>
-    <SolidColorBrush x:Key="EDTheme.Support.Feedback" Color="{StaticResource EDTheme.Support.Feedback.Color}"/>
+    <Color x:Key="EDTheme.Support.Feedback.Bg.Color">#FFFFFBEB</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Feedback.Bg" Color="{StaticResource EDTheme.Support.Feedback.Bg.Color}"/>
+    <Color x:Key="EDTheme.Support.Feedback.Border.Color">#FFFDE68A</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Feedback.Border" Color="{StaticResource EDTheme.Support.Feedback.Border.Color}"/>
+    <Color x:Key="EDTheme.Support.Feedback.Text.Color">#FFB45309</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Feedback.Text" Color="{StaticResource EDTheme.Support.Feedback.Text.Color}"/>
+    <Color x:Key="EDTheme.Support.Feedback.Icon.Color">#FFF59E0B</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Feedback.Icon" Color="{StaticResource EDTheme.Support.Feedback.Icon.Color}"/>
 
-    <Color x:Key="EDTheme.Support.Portal.Color">#FF43A047</Color>
-    <SolidColorBrush x:Key="EDTheme.Support.Portal" Color="{StaticResource EDTheme.Support.Portal.Color}"/>
+    <Color x:Key="EDTheme.Support.Portal.Bg.Color">#FFFEF2F2</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Portal.Bg" Color="{StaticResource EDTheme.Support.Portal.Bg.Color}"/>
+    <Color x:Key="EDTheme.Support.Portal.Border.Color">#FFFECACA</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Portal.Border" Color="{StaticResource EDTheme.Support.Portal.Border.Color}"/>
+    <Color x:Key="EDTheme.Support.Portal.Text.Color">#FFB91C1C</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Portal.Text" Color="{StaticResource EDTheme.Support.Portal.Text.Color}"/>
+    <Color x:Key="EDTheme.Support.Portal.Icon.Color">#FFDC2626</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Portal.Icon" Color="{StaticResource EDTheme.Support.Portal.Icon.Color}"/>
 
-    <Color x:Key="EDTheme.Support.Version.Color">#FF8E24AA</Color>
-    <SolidColorBrush x:Key="EDTheme.Support.Version" Color="{StaticResource EDTheme.Support.Version.Color}"/>
+    <Color x:Key="EDTheme.Support.Help.Bg.Color">#FFF5F3FF</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Help.Bg" Color="{StaticResource EDTheme.Support.Help.Bg.Color}"/>
+    <Color x:Key="EDTheme.Support.Help.Border.Color">#FFDDD6FE</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Help.Border" Color="{StaticResource EDTheme.Support.Help.Border.Color}"/>
+    <Color x:Key="EDTheme.Support.Help.Text.Color">#FF6D28D9</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Help.Text" Color="{StaticResource EDTheme.Support.Help.Text.Color}"/>
+    <Color x:Key="EDTheme.Support.Help.Icon.Color">#FF7C3AED</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Help.Icon" Color="{StaticResource EDTheme.Support.Help.Icon.Color}"/>
+
+    <Color x:Key="EDTheme.Support.News.Bg.Color">#FFEFF6FF</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.News.Bg" Color="{StaticResource EDTheme.Support.News.Bg.Color}"/>
+    <Color x:Key="EDTheme.Support.News.Border.Color">#FFBFDBFE</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.News.Border" Color="{StaticResource EDTheme.Support.News.Border.Color}"/>
+    <Color x:Key="EDTheme.Support.News.Text.Color">#FF1D4ED8</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.News.Text" Color="{StaticResource EDTheme.Support.News.Text.Color}"/>
+    <Color x:Key="EDTheme.Support.News.Icon.Color">#FF2563EB</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.News.Icon" Color="{StaticResource EDTheme.Support.News.Icon.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
          COLORS - Semantic (status indikátory)

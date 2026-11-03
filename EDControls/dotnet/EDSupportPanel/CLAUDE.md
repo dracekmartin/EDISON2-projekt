@@ -1,8 +1,8 @@
 # EDSupportPanel - poznámky pro vývojáře
 
-Vysouvací panel „PODPORA" u pravého okraje okna (úchyt se šipkou → karta se třemi
-tlačítky). Port legacy `ALVA.EDFORMS.SideMenu` + `BaseForm.AttachSideMenu`
-(`c:\MLineRepos\EDISON\EDFORMS\`).
+Vysouvací panel „PODPORA" u pravého okraje okna (úchyt se šipkou → karta se čtyřmi
+tlačítky: Zpětná vazba, Podpora M-line, Nápověda, Novinky). Port legacy `ALVA.EDFORMS.SideMenu` + `BaseForm.AttachSideMenu`
+(`c:\MLineRepos\EDISON\EDFORMS\`), **vzhled obou drž stejný** (barvy, ikony, pořadí, popisky).
 
 ## Připojení: class handler na `Window.Loaded`, ne ViewModel
 
@@ -48,11 +48,14 @@ velikosti propustil), `EDViewModel.ShowSupportPanel = false`, a okno, které pan
 - **Vzhled bere všechno přes `DynamicResource`** (i `Style` tlačítek a hover úchytu) - panel se
   vytváří do libovolného hosta a `StaticResource`/`FindResource` na hosta bez `EDTheme.xaml`
   hází výjimku, u hoveru při každém přejezdu myší.
-- Barvy: tokeny `EDTheme.Support.*` (hodnoty z legacy SideMenu; accent úchytu je jiná zelená než
-  tlačítko Portal - tak to má legacy), hover/pressed přes `EDTheme.OnAccent.*`, styl tlačítka
-  `EDTheme.SupportPanelButton` v `EDControlStyles.xaml`. Popisky jsou zalamovací `TextBlock`
-  a styl má `MinHeight` - karta má pevnou šířku, při větším fontu se text zalomí, neořeže.
-- „Informace o verzi" (týž text má menu Nápověda shellu) i `v=` ve feedbacku berou jméno a verzi z `AppIdentity`
+- Barvy: tokeny `EDTheme.Support.<Akce>.Bg/Border/Text/Icon` = paleta widgetu podpora.m-line.cz edison2,
+  ikony `EDIcons.Support*` = jeho SVG kresby. Styl `EDTheme.SupportPanelButton` (`EDControlStyles.xaml`) dělá
+  hover nádechem barvy textu. **Popisek má `Foreground` vázaný na tlačítko** - implicitní styl `TextBlock`
+  by mu jinak vnutil `Text.Primary`. Popisky se zalamují a styl má `MinHeight` (pevná šířka karty, větší font).
+- **Nápověda a Novinky neznají agendu**: otevřou `help/open` widget API s `agenda` = assembly okna (jako zpětná
+  vazba) a MLWeb přesměruje do sekce Články / Novinky agendy podle **Kódů modulů v číselníku agend**. Okno bez
+  shody vede na úvod Nápovědy - chybějící kód se opravuje v MLWebu, ne tady.
+- `v=` ve feedbacku (i „Informace o verzi" v menu Nápověda shellu) bere jméno a verzi z `AppIdentity`
   jako hlášení chyb: `EDServices.AppDisplayName` / `AppVersion` (shell z `VERZE.INF`), nenastaveno → entry
   assembly (`1.0.0+<hash>`, TD), nikdy verze assembly okna (všude 1.0.0.0).
 - `context` ve feedback URL je tvrdě zkrácený na 255 znaků - limit widget API.

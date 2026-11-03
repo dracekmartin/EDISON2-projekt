@@ -96,6 +96,38 @@ public class SupportPanelTests
     }
 
     [Fact]
+    public void HelpUrl_OpensWidgetRedirectWithModuleCodeAndSection()
+    {
+        // Agendu z kódu modulu dohledává server (Kódy modulů v číselníku agend MLWebu), klient ji neodhaduje.
+        var prefix = $"{SupportActions.WidgetBaseUrl}help/open?key={SupportActions.WidgetKey}&agenda=MZDY%202";
+
+        Assert.Equal(prefix + "&section=articles", SupportActions.BuildHelpUrl("MZDY 2", SupportHelpSection.Articles));
+        Assert.Equal(prefix + "&section=changes", SupportActions.BuildHelpUrl("MZDY 2", SupportHelpSection.Changes));
+    }
+
+    [Fact]
+    public void HelpUrl_WithoutModule_OmitsAgenda()
+    {
+        // Server bez agendy otevře úvod Nápovědy - prázdný parametr by jen mátl.
+        var url = SupportActions.BuildHelpUrl(null, SupportHelpSection.Changes);
+
+        Assert.DoesNotContain("agenda=", url);
+        Assert.EndsWith("&section=changes", url);
+    }
+
+    [Fact]
+    public void HelpUrlFromWindow_UsesWindowAssemblyLikeFeedback()
+    {
+        // Nápověda a zpětná vazba musí najít tutéž agendu - obojí posílá assembly okna.
+        var help = SupportActions.BuildWindowHelpUrl(typeof(SupportPanelTests), SupportHelpSection.Articles);
+        var feedback = SupportActions.BuildWindowFeedbackUrl(
+            MockServices(), typeof(SupportPanelTests), null, typeof(SupportPanelTests).Assembly);
+
+        Assert.Contains("&agenda=EDControls.Tests&", help);
+        Assert.Contains("&agenda=EDControls.Tests&", feedback);
+    }
+
+    [Fact]
     public void Context_JoinsPartsWithPipe()
     {
         var ctx = SupportActions.BuildContext("UserProfileWindow", "Uživatelský profil",

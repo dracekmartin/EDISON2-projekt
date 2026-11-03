@@ -1,6 +1,14 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!-- Obrysové ikony panelu Podpora: kresba 24×24 z widgetu podpora.m-line.cz edison2 (ICONS v widgetEdison2Service.ts),
+         tahem 1,8 v Canvas 24×24 (Stretch by bral meze kresby, ne rámeček, a ikony by měly různou velikost).
+         Tytéž cesty kreslí legacy SideMenu (EDFORMS/SideMenuPodpora.cs) - měň obojí. -->
+    <Geometry x:Key="EDIcons.SupportFeedback">M9.5,18.5 h5 M10.5,21 h3 M12,3 a6,6 0 0 0 -3.5,10.9 c0.6,0.4 1,1.1 1,1.9 v0.2 h5 v-0.2 c0,-0.8 0.4,-1.5 1,-1.9 A6,6 0 0 0 12,3 Z</Geometry>
+    <Geometry x:Key="EDIcons.SupportPortal">M20,12 A8,8 0 1 1 4,12 A8,8 0 1 1 20,12 Z M9.9,9.7 a2.2,2.2 0 1 1 2.9,2.1 c-0.5,0.2 -0.8,0.7 -0.8,1.2 v0.5 M12,16.4 h0.01</Geometry>
+    <Geometry x:Key="EDIcons.SupportHelp">M12,6.6 C10.5,5.3 8.4,4.6 6,4.6 c-0.9,0 -1.7,0.1 -2.5,0.3 v13 c0.8,-0.2 1.6,-0.3 2.5,-0.3 c2.4,0 4.5,0.7 6,2 c1.5,-1.3 3.6,-2 6,-2 c0.9,0 1.7,0.1 2.5,0.3 v-13 c-0.8,-0.2 -1.6,-0.3 -2.5,-0.3 c-2.4,0 -4.5,0.7 -6,2 Z M12,6.6 v13</Geometry>
+    <Geometry x:Key="EDIcons.SupportNews">M4,5.5 h11.5 a1,1 0 0 1 1,1 V17 a2.5,2.5 0 0 0 2.5,2.5 H6.5 A2.5,2.5 0 0 1 4,17 V5.5 Z M16.5,9 H19 a1,1 0 0 1 1,1 v7.5 a2,2 0 0 1 -2,2 M7,8.5 h6 M7,11.5 h6 M7,14.5 h4</Geometry>
+
     <!-- Logo EDISON: brand barvy natvrdo, dark mode je nepřebarví. Molecule má pro 16-24 px silnější vazby.
          MoleculeLarge je opsaná z výpočtu CubeAssembly (koule a vazby hlídá test), změna kresby = překreslit i cube_molecule.ico. -->
     <DrawingImage x:Key="EDIcons.Molecule">

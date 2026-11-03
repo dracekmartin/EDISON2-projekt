@@ -7,6 +7,23 @@
         SizeToContent="Height" Width="12" MinWidth="0"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
 
+    <Window.Resources>
+        <!-- Lokální styly netematizovaných prvků (Viewbox, Path) - nic nepřebíjejí, BasedOn netřeba. -->
+        <Style x:Key="SupportIconBox" TargetType="Viewbox">
+            <Setter Property="DockPanel.Dock" Value="Left"/>
+            <Setter Property="Width" Value="{DynamicResource EDTheme.IconSize.Default}"/>
+            <Setter Property="Height" Value="{DynamicResource EDTheme.IconSize.Default}"/>
+            <Setter Property="Margin" Value="0,0,7,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="SupportIconPath" TargetType="Path">
+            <Setter Property="StrokeThickness" Value="1.8"/>
+            <Setter Property="StrokeLineJoin" Value="Round"/>
+            <Setter Property="StrokeStartLineCap" Value="Round"/>
+            <Setter Property="StrokeEndLineCap" Value="Round"/>
+        </Style>
+    </Window.Resources>
+
     <!-- Klip na hranici okna = karta „vyjíždí zpod" pravé hrany; šířku okna řídí code-behind. -->
     <Grid ClipToBounds="True">
         <!-- Pevná šířka odpojuje měření obsahu od (měnící se) šířky okna - bez ní by
@@ -25,24 +42,79 @@
                                Foreground="{DynamicResource EDTheme.Support.Accent}"/>
 
                     <!-- Popisek je zalamovací TextBlock, ne string: karta má pevnou šířku a při
-                         user zvětšení fontu se text musí zalomit, ne ořezat. -->
+                         user zvětšení fontu se text musí zalomit, ne ořezat. Ikona je kresba 24×24
+                         v Canvas (Viewbox škáluje i tah, jako SVG ve widgetu). -->
                     <Button x:Name="FeedbackBtn"
                             Style="{DynamicResource EDTheme.SupportPanelButton}"
-                            Background="{DynamicResource EDTheme.Support.Feedback}"
+                            Background="{DynamicResource EDTheme.Support.Feedback.Bg}"
+                            BorderBrush="{DynamicResource EDTheme.Support.Feedback.Border}"
+                            Foreground="{DynamicResource EDTheme.Support.Feedback.Text}"
                             Margin="0,0,0,4" Click="Feedback_Click">
-                        <TextBlock Text="Zpětná vazba" TextWrapping="Wrap" TextAlignment="Center"/>
+                        <DockPanel>
+                            <Viewbox Style="{StaticResource SupportIconBox}">
+                                <Canvas Width="24" Height="24">
+                                    <Path Style="{StaticResource SupportIconPath}"
+                                          Data="{DynamicResource EDIcons.SupportFeedback}"
+                                          Stroke="{DynamicResource EDTheme.Support.Feedback.Icon}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Zpětná vazba" TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        </DockPanel>
                     </Button>
                     <Button x:Name="PortalBtn"
                             Style="{DynamicResource EDTheme.SupportPanelButton}"
-                            Background="{DynamicResource EDTheme.Support.Portal}"
+                            Background="{DynamicResource EDTheme.Support.Portal.Bg}"
+                            BorderBrush="{DynamicResource EDTheme.Support.Portal.Border}"
+                            Foreground="{DynamicResource EDTheme.Support.Portal.Text}"
                             Margin="0,0,0,4" Click="Portal_Click">
-                        <TextBlock Text="Uživatelská podpora" TextWrapping="Wrap" TextAlignment="Center"/>
+                        <DockPanel>
+                            <Viewbox Style="{StaticResource SupportIconBox}">
+                                <Canvas Width="24" Height="24">
+                                    <Path Style="{StaticResource SupportIconPath}"
+                                          Data="{DynamicResource EDIcons.SupportPortal}"
+                                          Stroke="{DynamicResource EDTheme.Support.Portal.Icon}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Podpora M-line" TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        </DockPanel>
                     </Button>
-                    <Button x:Name="VersionBtn"
+                    <Button x:Name="HelpBtn"
                             Style="{DynamicResource EDTheme.SupportPanelButton}"
-                            Background="{DynamicResource EDTheme.Support.Version}"
-                            Margin="0,0,0,4" Click="Version_Click">
-                        <TextBlock Text="Informace o verzi" TextWrapping="Wrap" TextAlignment="Center"/>
+                            Background="{DynamicResource EDTheme.Support.Help.Bg}"
+                            BorderBrush="{DynamicResource EDTheme.Support.Help.Border}"
+                            Foreground="{DynamicResource EDTheme.Support.Help.Text}"
+                            Margin="0,0,0,4" Click="Help_Click">
+                        <DockPanel>
+                            <Viewbox Style="{StaticResource SupportIconBox}">
+                                <Canvas Width="24" Height="24">
+                                    <Path Style="{StaticResource SupportIconPath}"
+                                          Data="{DynamicResource EDIcons.SupportHelp}"
+                                          Stroke="{DynamicResource EDTheme.Support.Help.Icon}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Nápověda" TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        </DockPanel>
+                    </Button>
+                    <Button x:Name="NewsBtn"
+                            Style="{DynamicResource EDTheme.SupportPanelButton}"
+                            Background="{DynamicResource EDTheme.Support.News.Bg}"
+                            BorderBrush="{DynamicResource EDTheme.Support.News.Border}"
+                            Foreground="{DynamicResource EDTheme.Support.News.Text}"
+                            Margin="0,0,0,4" Click="News_Click">
+                        <DockPanel>
+                            <Viewbox Style="{StaticResource SupportIconBox}">
+                                <Canvas Width="24" Height="24">
+                                    <Path Style="{StaticResource SupportIconPath}"
+                                          Data="{DynamicResource EDIcons.SupportNews}"
+                                          Stroke="{DynamicResource EDTheme.Support.News.Icon}"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Novinky" TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        </DockPanel>
                     </Button>
 
                     <TextBlock Text="M-line software" HorizontalAlignment="Center" Margin="0,2,0,2"

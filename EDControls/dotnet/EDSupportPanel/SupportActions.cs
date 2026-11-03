@@ -6,7 +6,7 @@ namespace EDControls.EDSupportPanel;
 
 /// <summary>
 /// Akce panelu Podpora bez závislosti na WPF - skládání URL widgetů podpora.m-line.cz
-/// a textu „Informace o verzi". Testuje se přímo, panel jen volá.
+/// a textu „Informace o verzi" (menu Nápověda shellu). Testuje se přímo, panel jen volá.
 /// </summary>
 public static class SupportActions
 {
@@ -50,6 +50,19 @@ public static class SupportActions
             services.MLRest?.LoginName,
             ownerType.Assembly.GetName().Name,
             BuildContext(ownerType.Name, ownerTitle, ownerType.Namespace, AppIdentity.Resolve(services, entry).Version));
+
+    /// <summary>
+    /// URL tlačítek Nápověda a Novinky: widget podpora.m-line.cz přesměruje do Nápovědy agendy, kterou
+    /// najde podle <paramref name="agenda"/> (kód modulu = assembly okna) v Kódech modulů číselníku agend,
+    /// stejně jako zpětnou vazbu; neznámý nebo prázdný kód vede na úvod Nápovědy.
+    /// </summary>
+    internal static string BuildHelpUrl(string? agenda, SupportHelpSection section) =>
+        $"{WidgetBaseUrl}help/open?key={WidgetKey}" + Param("agenda", agenda) +
+        "&section=" + (section == SupportHelpSection.Articles ? "articles" : "changes");
+
+    /// <summary>URL Nápovědy či Novinek z okna <paramref name="ownerType"/> - agenda jako u zpětné vazby.</summary>
+    internal static string BuildWindowHelpUrl(Type ownerType, SupportHelpSection section) =>
+        BuildHelpUrl(ownerType.Assembly.GetName().Name, section);
 
     /// <summary>
     /// Kontext okna pro feedback widget: <c>form=…|title=…|ns=…|v=…</c>. Svislítko je
@@ -96,4 +109,14 @@ public static class SupportActions
 
     private static string Param(string name, string? value) =>
         string.IsNullOrEmpty(value) ? "" : $"&{name}={Uri.EscapeDataString(value)}";
+}
+
+/// <summary>Sekce agendy v Nápovědě, kterou otevírá tlačítko panelu.</summary>
+internal enum SupportHelpSection
+{
+    /// <summary>Články (postupy, popis oken) - tlačítko Nápověda.</summary>
+    Articles,
+
+    /// <summary>Novinky (vydání) - tlačítko Novinky.</summary>
+    Changes,
 }

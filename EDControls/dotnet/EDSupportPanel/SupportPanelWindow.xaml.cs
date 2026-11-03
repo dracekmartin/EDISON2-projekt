@@ -109,9 +109,11 @@ internal sealed partial class SupportPanelWindow : Window, IOverlayWindow
     private void Portal_Click(object sender, RoutedEventArgs e) =>
         Guarded(() => SupportActions.OpenUrl(SupportActions.PortalUrl));
 
-    private void Version_Click(object sender, RoutedEventArgs e) => Guarded(() =>
-        _popups.Info(SupportActions.BuildVersionInfo(
-            _services.MLRest, _services.AppDisplayName, _services.AppVersion), _owner));
+    private void Help_Click(object sender, RoutedEventArgs e) => Guarded(() =>
+        SupportActions.OpenUrl(SupportActions.BuildWindowHelpUrl(_owner.GetType(), SupportHelpSection.Articles)));
+
+    private void News_Click(object sender, RoutedEventArgs e) => Guarded(() =>
+        SupportActions.OpenUrl(SupportActions.BuildWindowHelpUrl(_owner.GetType(), SupportHelpSection.Changes)));
 
     // Chyba akce nesmí shodit aplikaci (panel je v každém okně) - mirror legacy, které
     // výjimky handlerů polykalo; tady je ale aspoň ukážeme.
