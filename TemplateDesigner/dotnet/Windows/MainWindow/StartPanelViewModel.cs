@@ -9,7 +9,7 @@ namespace TemplateDesigner;
 public sealed record StartPanelItem(Guid TemplateId, string Name, string Detail, bool IsMline = false);
 
 /// <summary>
-/// Úvodní obrazovka přes prázdné plátno po spuštění bez linky (zkušební verze, Jan 29.-30. 10.).
+/// Úvodní obrazovka přes celé okno po spuštění bez linky (Jan 29.-30. 10., do verze 3. 11.).
 /// Zkušený uživatel pokračuje poslední šablonou nebo otevře šablonu firmy, nový najde v seznamu
 /// výchozí šablonu M-line (Jan 30. 10.: každý má mít jednu jasnou cestu). Jen nabízí, nic sama neotevře.
 /// </summary>
@@ -105,15 +105,6 @@ public class StartPanelViewModel : EDViewModel
 
     private RelayCommand? _closeCommand;
     public RelayCommand CloseCommand => _closeCommand ??= Command(Hide);
-
-    // Data z SQL databáze ani z CSV návrhář zatím neumí; nabídka zjišťuje, jestli o ně někdo stojí
-    // (backlog „Externí datové zdroje").
-    private RelayCommand? _sqlCommand, _csvCommand;
-    public RelayCommand ConnectSqlCommand => _sqlCommand ??= Command(() => ZatimNeumi("Připojení k databázi SQL"));
-    public RelayCommand LoadCsvCommand => _csvCommand ??= Command(() => ZatimNeumi("Načtení dat ze souboru CSV"));
-
-    private void ZatimNeumi(string co) => PopupDisplayer.Info(
-        $"{co} návrhář zatím neumí. Pokud byste ho využili, napište nám přes podporu M-line - podle zájmu ho zařadíme.");
 
     /// <param name="systemTemplateName">Výchozí šablona M-line pro agendu; null = agenda žádnou nemá (Obecná).</param>
     internal void Show(string agendaName, bool canOpenFromDatabase, string? systemTemplateName,

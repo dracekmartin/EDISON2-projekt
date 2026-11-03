@@ -11,7 +11,7 @@ public partial class TemplateDesignerViewModel
     public StartPanelViewModel StartPanel { get; }
 
     private AsyncRelayCommand? _showStartPanel;
-    /// <summary>Nástroje → Úvodní obrazovka: kdykoli, i nad rozdělanou šablonou (zatím na zkoušení, Jan 30. 10.).</summary>
+    /// <summary>Nástroje → Úvodní obrazovka: kdykoli, i nad rozdělanou šablonou.</summary>
     public AsyncRelayCommand ShowStartPanelCommand => _showStartPanel ??= CommandAsync(() => ShowStartPanelAsync(zMenu: true));
 
     /// <summary>
@@ -55,7 +55,7 @@ public partial class TemplateDesignerViewModel
         return Task.WhenAny(hotovo.Task, Task.Delay(TimeSpan.FromSeconds(3)));
     }
 
-    /// <summary>Zapamatuje šablonu z databáze pro „Pokračovat" na úvodní obrazovce.</summary>
+    /// <summary>Zapamatuje šablonu z databáze pro „Poslední otevřené šablony" na úvodní obrazovce.</summary>
     private void RememberTemplate(Guid templateId) => _ = Preferences?.AddRecentTemplateAsync(templateId);
 
     /// <summary>Prázdná šablona z úvodní obrazovky. Po startu na plátně už je a obrazovka se jen

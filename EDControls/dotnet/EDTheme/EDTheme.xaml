@@ -73,6 +73,10 @@
     <Color x:Key="EDTheme.Bg.InfoBanner.Color">#FFF0F4F8</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.InfoBanner" Color="{StaticResource EDTheme.Bg.InfoBanner.Color}"/>
 
+    <!-- Ztlumení okna pod kartou, která leží přes celé okno (úvodní obrazovka návrháře). -->
+    <Color x:Key="EDTheme.Bg.Scrim.Color">#660F172A</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Scrim" Color="{StaticResource EDTheme.Bg.Scrim.Color}"/>
+
     <!-- ═══════════════════════════════════════════════════════════════════
          COLORS - Text
          ═══════════════════════════════════════════════════════════════════ -->

@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-11-03 (2) - Okno šablon do verze bez nastavování výchozí šablony a bez sloupců Kým a Autor
+
+Tisk z okna JŘ, kterému výchozí šablona slouží, do verze nejde (domluva s kolegou), a ovládání při zkoušení mátlo: šablona M-line nastavená jako výchozí firmy vzala výchozí šabloně M-line označení a seznam s víc agendami ukazoval víc „výchozích firmy".
+Tlačítko „Nastavit jako výchozí pro tisk" je proto do příští verze schované (Jan 3. 11.); okno dál ukazuje, která šablona je výchozí, takže uživatel vidí výchozí šablonu M-line. Testovací výchozí šablony firmy CB_CSADAD na DEV jsou smazané.
+Sloupce Kým a Autor jsou skryté (údaje se dál ukládají), v přehledu uživateli nic neříkaly.
+Sjednocení s oknem „Změnit agendu" je v roadmapě k rozmyšlení.
+
+## 2026-11-03 - Úvodní obrazovka přes celé okno, bez nabídky SQL a CSV (příprava verze)
+
+Úvodní obrazovka ležela jen v ploše plátna: panel náhledu ji při roztažení odsunul nebo ořízl a na rozcestník působila divně (Jan).
+Teď leží přes celé okno nad ztlumeným návrhářem (nový token motivu `EDTheme.Bg.Scrim`, světlý i tmavý) a zavře ji i klik vedle karty; „Zeptat se Pomocníka" ji zavře, aby levý panel nezůstal pod ní.
+Vzhled: oddíl „Pokračovat" se jmenuje „Poslední otevřené šablony", bílá karta bez stínu (posuvná oblast ho ořízne a rohy pak vypadaly uříznuté) a bez společného podkladu, záhlaví s logem na brandovém pruhu `EDTheme.Accent.Header` jako hlavičky seznamů a formulářů, řádky šablon se podbarví modře, nadpisy oddílů s modrou značkou; odkaz „Příručka návrháře" je „Nápověda".
+Nabídka „Externí datové zdroje - připravujeme" (SQL a CSV jen hlásily, že to návrhář neumí) je pryč: není v plánu a slibovala funkci, na kterou by zákazníci čekali (Jan 3. 11.).
+Ověřeno: .NET testy úvodní obrazovky 13/13, test shody motivů EDControls; vzhled proklikal Jan v debug buildu.
+
 ## 2026-11-02 (4) - Okno šablon se stromem podle oblasti práce, agendy a varianty; výchozí šablona pro tisk (`B190` krok 4)
 
 Výchozí šablona pro tisk šla nastavit jen přes API a okno Ctrl+O mělo plochý seznam s filtrem agendy, který by se s agendami report generátoru nevešel.

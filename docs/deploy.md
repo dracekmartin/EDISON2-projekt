@@ -55,7 +55,9 @@ souborů, duplicitní jména `*.resources.dll`).
 ## Caché projekty
 
 Nové jsou v sekci `PATCH~EDISON2` (řádky `PATCH~EDISON2~XML~<projekt>.prj`). Projekt musí existovat
-na REL Caché (Compiler DEV→REL), `.project` v repu je jen jméno:
+na REL Caché (Compiler DEV→REL), `.project` v repu je jen jméno. **Před vydáním porovnej členy projektu na DEV
+(`cache_project_info`) s produkčními třídami v `<projekt>/CACHE`:** nasazovací hook novou třídu na server nahraje,
+ale do projektu ji nepřidá, a co v projektu není, do vydání nejde (3. 11. tak v TD chybělo 10 tříd).
 
 - `ALVA_EDISONMAIN2` - `ALVA.EDISONMAIN2.API.Tree`, `ALVA.EDISONMAIN2.EDInputForm.UserProfile`
   a testy `ALVA.EDISONMAIN2.Tests.*`

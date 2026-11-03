@@ -114,10 +114,10 @@ Titulek okna má formát `[Agenda · Varianta] [DB nebo neuloženo] Název šabl
 
 ### Úvodní obrazovka
 
-Po spuštění bez vybrané linky ukáže návrhář přes prázdnou stránku úvodní obrazovku.
-V části „Pokračovat" jsou šablony, se kterými jste naposledy pracovali.
+Po spuštění bez vybrané linky ukáže návrhář nad celým oknem úvodní obrazovku.
+V části „Poslední otevřené šablony" jsou šablony, se kterými jste naposledy pracovali.
 Pod ní je vybraná agenda a její šablony: šablony vaší firmy a na konci výchozí šablona M-line (s logem M-line), která se otevře jako kopie a uložíte ji jako svou.
-Obrazovka zmizí s první úpravou, zavřete ji také klávesou Esc nebo křížkem; znovu ji otevřete v menu `Nástroje → Úvodní obrazovka`.
+Obrazovka zmizí, když šablonu vyberete; zavřete ji také klávesou Esc, křížkem nebo kliknutím vedle ní. Znovu ji otevřete v menu `Nástroje → Úvodní obrazovka`.
 
 ### Nová šablona
 `Soubor → Nová šablona` (Ctrl+N). Nová šablona obsahuje dvě výchozí sekce, **Záhlaví** a **Obsah** -
@@ -146,14 +146,12 @@ a jaké **specializované prvky** máte k dispozici.
 Šablony se ukládají **do databáze** (centrálně, podle firmy), ne do lokálních souborů na stanici:
 
 - `Soubor → Otevřít z databáze…` - dialog „Šablony v databázi".
-  Vlevo je strom podle oblasti práce (Jízdní řády…), agendy a varianty (AD, MHD), u každé agendy počet šablon a šablona, kterou bere tisk.
+  Vlevo je strom podle oblasti práce (Jízdní řády…), agendy a varianty (AD, MHD), u každé agendy počet šablon a její výchozí šablona.
   Vpravo jsou šablony vybrané větve; **Všechny šablony** nahoře ukážou všechny a hledání v seznamu pak prohledá všechny agendy.
   Sloupec **Zdroj**: „M-line" jsou dodané předlohy (jen ke čtení, upravenou verzi uložíte jako vlastní šablonu), „vlastní" jsou šablony vaší firmy.
   Tlačítka Přejmenovat…, Smazat, Otevřít.
-- **Výchozí šablona pro tisk** - šablona, kterou vezme tisk z modulu (okno jízdních řádů), když uživatel nevybere jinou.
-  V dialogu „Šablony v databázi" je tučně a ve sloupci **Pro tisk** je „výchozí firmy" nebo „výchozí M-line".
-  Šablonu vyberete a stisknete **Nastavit jako výchozí pro tisk**; platí pro celou firmu.
-  **Zrušit výchozí pro tisk** vrátí tisk k výchozí šabloně M-line.
+- **Výchozí šablona agendy** - hotová šablona M-line, kterou agenda nabízí jako první; najdete ji i na úvodní obrazovce.
+  V dialogu „Šablony v databázi" je tučně a ve sloupci **Pro tisk** je „výchozí M-line".
 - `Soubor → Uložit do databáze` - u šablony již uložené v databázi provede tichý update.
 - `Soubor → Uložit do databáze jako…` - dialog s názvem šablony; nová/importovaná šablona se
   takto poprvé zařadí do databáze. Agendu dialog jen ukáže - změníte ji přes `Nástroje → Změnit agendu`.

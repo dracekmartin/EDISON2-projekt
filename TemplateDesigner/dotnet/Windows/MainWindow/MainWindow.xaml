@@ -181,6 +181,8 @@
         </ResourceDictionary>
     </Window.Resources>
 
+    <!-- Kořen: obsah okna a nad ním úvodní obrazovka přes celé okno. -->
+    <Grid>
     <DockPanel LastChildFill="True">
 
         <!-- ═══ Menu ═══ -->
@@ -800,181 +802,6 @@
                     </Canvas>
                 </Grid>
             </ScrollViewer>
-
-            <!-- Úvodní obrazovka po spuštění bez linky (zkušební verze, Jan 29.-30. 10.). Leží nad
-                 posuvným plátnem, ne v něm, aby zůstala uprostřed viditelné plochy. Zmizí s první
-                 změnou šablony - viz StartPanelViewModel. -->
-            <ScrollViewer DataContext="{Binding StartPanel}" VerticalScrollBarVisibility="Auto"
-                          HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16"
-                          Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
-                <Border Width="560" Background="{DynamicResource EDTheme.Bg.Panel}"
-                        BorderBrush="{DynamicResource EDTheme.Border.Medium}" BorderThickness="1"
-                        CornerRadius="6" Padding="24,20">
-                    <Border.Resources>
-                        <!-- Šablona na jeden klik: řádek se zarovnáním vlevo, vpravo kdy byla upravena. Vlastní
-                             šablona tlačítka - výchozí vzhled tlačítka obsah centruje a řádky pak působily rozházeně. -->
-                        <DataTemplate x:Key="StartPanelSablona">
-                            <Button Command="{Binding DataContext.OpenTemplateCommand, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
-                                    CommandParameter="{Binding}" Cursor="Hand" Margin="0,0,0,4">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="ToolTip" Value="Otevřít šablonu"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsMline}" Value="True">
-                                                <Setter Property="ToolTip" Value="Otevře se jako kopie - po úpravě ji uložíte jako šablonu vaší firmy."/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <Button.Template>
-                                    <!-- Řádek s rámečkem a šipkou „›", ať je vidět, že se vybírá; doporučená
-                                         šablona má rámeček zvýrazněný. -->
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Pozadi" Background="{DynamicResource EDTheme.Bg.Panel}" CornerRadius="4" Padding="10,7"
-                                                BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1">
-                                            <ContentPresenter/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Pozadi" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
-                                                <Setter TargetName="Pozadi" Property="BorderBrush" Value="{DynamicResource EDTheme.Accent.Blue}"/>
-                                            </Trigger>
-                                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                                <Setter TargetName="Pozadi" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
-                                                <Setter TargetName="Pozadi" Property="BorderBrush" Value="{DynamicResource EDTheme.Accent.Blue}"/>
-                                            </Trigger>
-                                            <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="Pozadi" Property="Background" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                                <DockPanel>
-                                    <Image Width="18" Height="18" Margin="0,0,10,0"
-                                           VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Setter Property="Source" Value="{StaticResource EDIcons.Document}"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsMline}" Value="True">
-                                                        <Setter Property="Source" Value="{StaticResource EDIcons.MlineLogo}"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
-                                    <TextBlock Text="›" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="10,-2,0,0"
-                                               FontSize="{DynamicResource EDTheme.FontSize.Title}"
-                                               Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                                    <TextBlock Text="{Binding Detail}" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="12,0,0,0"
-                                               FontSize="{DynamicResource EDTheme.FontSize.Small}"
-                                               Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                                               FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                                               Foreground="{DynamicResource EDTheme.Text.Primary}"/>
-                                </DockPanel>
-                            </Button>
-                        </DataTemplate>
-                    </Border.Resources>
-                    <StackPanel>
-                        <!-- Záhlaví: název a k čemu obrazovka je. -->
-                        <DockPanel>
-                            <Button DockPanel.Dock="Right" Content="×" Command="{Binding CloseCommand}" ToolTip="Zavřít"
-                                    VerticalAlignment="Top" Padding="6,0" Margin="12,-6,-10,0"
-                                    FontSize="{DynamicResource EDTheme.FontSize.Title}" Background="Transparent" BorderThickness="0"/>
-                            <StackPanel>
-                                <TextBlock Text="Návrhář sestav" FontSize="{DynamicResource EDTheme.FontSize.Title}"
-                                           FontWeight="SemiBold" Foreground="{DynamicResource EDTheme.Text.Header}"/>
-                                <TextBlock Text="Otevřete šablonu, se kterou chcete pracovat, nebo založte novou." Margin="0,2,0,0"
-                                           TextWrapping="Wrap" FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                                           Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                            </StackPanel>
-                        </DockPanel>
-
-                        <!-- Pokračovat: šablony, se kterými uživatel naposledy pracoval, v kterékoli agendě -
-                             proto nad kartou agendy, ne v ní. -->
-                        <StackPanel Visibility="{Binding HasRecent, Converter={StaticResource BoolToVis}}" Margin="0,16,0,0">
-                            <TextBlock Text="Pokračovat" Margin="0,0,0,4" FontWeight="SemiBold"
-                                       FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Header}"/>
-                            <ItemsControl ItemsSource="{Binding Recent}" ItemTemplate="{StaticResource StartPanelSablona}"/>
-                        </StackPanel>
-
-                        <!-- Karta agendy: nahoře agenda nové šablony a její změna, pod ní šablony té agendy
-                             (šablony firmy, na konci výchozí šablona M-line s ikonou M-line). Žádné „Doporučeno":
-                             kterou šablonu vzít, si uživatel rozhodne sám (Jan 30. 10.). -->
-                        <Border Margin="0,16,0,0" CornerRadius="4"
-                                BorderBrush="{DynamicResource EDTheme.Border.Medium}" BorderThickness="1">
-                            <StackPanel>
-                                <Border Padding="12,8" CornerRadius="4,4,0,0" Background="{DynamicResource EDTheme.Bg.PanelAlt}"
-                                        BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
-                                    <DockPanel>
-                                        <Button DockPanel.Dock="Right" Content="Změnit agendu…" Command="{Binding ChangeAgendaCommand}"
-                                                ToolTip="{td:Tip ChangeAgenda}" Padding="10,3" VerticalAlignment="Center"/>
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="Agenda" FontSize="{DynamicResource EDTheme.FontSize.Small}"
-                                                       Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                                            <TextBlock Text="{Binding AgendaName}" FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-                                        </StackPanel>
-                                    </DockPanel>
-                                </Border>
-                                <StackPanel Margin="8,10,8,10">
-                                    <TextBlock Text="Vyberte šablonu" Margin="2,0,0,6" FontWeight="SemiBold"
-                                               FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Header}"/>
-                                    <ItemsControl ItemsSource="{Binding AgendaTemplates}" ItemTemplate="{StaticResource StartPanelSablona}"/>
-                                    <TextBlock Text="Pro tuto agendu zatím nejsou žádné šablony." Margin="2,0,0,4"
-                                               Visibility="{Binding HasNoAgendaTemplates, Converter={StaticResource BoolToVis}}"
-                                               FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                                    <TextBlock FontSize="{DynamicResource EDTheme.FontSize.Small}" Margin="8,6,0,0">
-                                        <Hyperlink Command="{Binding OpenFromDatabaseCommand}" Foreground="{DynamicResource EDTheme.Accent.Blue}"
-                                                   ToolTip="{td:Tip Open}">Všechny šablony…</Hyperlink>
-                                        <Run Text="   "/>
-                                        <Hyperlink Command="{Binding StartBlankCommand}" Foreground="{DynamicResource EDTheme.Accent.Blue}"
-                                                   ToolTip="{td:Tip New}">Začít s prázdnou šablonou</Hyperlink>
-                                    </TextBlock>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Externí datové zdroje: zatím jen nabídka, zjišťuje zájem (stejnojmenná položka backlogu). -->
-                        <TextBlock Margin="0,18,0,6" FontWeight="SemiBold"
-                                   FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Header}">
-                            <Run Text="Externí datové zdroje"/><Run Text=" - připravujeme" FontWeight="Normal"
-                                                                     FontSize="{DynamicResource EDTheme.FontSize.Small}"
-                                                                     Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                        </TextBlock>
-                        <UniformGrid Columns="2">
-                            <Button Command="{Binding ConnectSqlCommand}" HorizontalContentAlignment="Left" Padding="10,6" Margin="0,0,4,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="{StaticResource EDIcons.Server}" Width="18" Height="18" Margin="0,0,8,0"
-                                           VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                    <TextBlock Text="Připojit databázi SQL" VerticalAlignment="Center" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding LoadCsvCommand}" HorizontalContentAlignment="Left" Padding="10,6" Margin="4,0,0,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="{StaticResource EDIcons.Folder}" Width="18" Height="18" Margin="0,0,8,0"
-                                           VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                    <TextBlock Text="Načíst soubor CSV" VerticalAlignment="Center" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-                                </StackPanel>
-                            </Button>
-                        </UniformGrid>
-
-                        <Border Margin="0,18,0,0" Padding="0,10,0,0" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0">
-                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource EDTheme.FontSize.Small}">
-                                <Hyperlink Click="StartPanelManual_Click" Foreground="{DynamicResource EDTheme.Accent.Blue}"
-                                           ToolTip="Otevře uživatelskou příručku v prohlížeči">Příručka návrháře</Hyperlink>
-                                <Run Text="   "/>
-                                <Hyperlink Click="StartPanelNews_Click" Foreground="{DynamicResource EDTheme.Accent.Blue}"
-                                           ToolTip="Otevře novinky v prohlížeči">Novinky</Hyperlink>
-                                <Run Text="   "/>
-                                <Hyperlink Click="StartPanelShortcuts_Click" Foreground="{DynamicResource EDTheme.Accent.Blue}">Klávesové zkratky (F1)</Hyperlink>
-                                <Run Text="   "/>
-                                <Hyperlink Click="StartPanelGuide_Click" Foreground="{DynamicResource EDTheme.Accent.Blue}">Zeptat se Pomocníka</Hyperlink>
-                            </TextBlock>
-                        </Border>
-                    </StackPanel>
-                </Border>
-            </ScrollViewer>
             </Grid>
             </DockPanel>
 
@@ -1362,4 +1189,196 @@
 
         </Grid>
     </DockPanel>
+
+    <!-- Úvodní obrazovka po spuštění bez linky: karta přes celé okno nad ztlumeným návrhářem, aby ji
+         nepřekryl ani neodsunul žádný panel (Jan 3. 11.). Zmizí volbou, křížkem, Esc nebo klikem vedle karty -
+         viz StartPanelViewModel. -->
+    <Grid DataContext="{Binding StartPanel}"
+          Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
+        <Border Background="{DynamicResource EDTheme.Bg.Scrim}" MouseLeftButtonDown="StartPanelScrim_MouseLeftButtonDown"/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24">
+            <!-- Karta bez stínu a bez společného podkladu: stín posuvná oblast ořízne do obdélníku a pod
+                 zakulaceným záhlavím by prosvítal podklad karty (Jan 3. 11.). Okraj tvoří záhlaví, tělo
+                 a patička samy, od okna kartu oddělí ztlumení. -->
+            <Border Width="600">
+                <Border.Resources>
+                    <!-- Šablona na jeden klik: řádek se zarovnáním vlevo, vpravo kdy byla upravena. Vlastní
+                         šablona tlačítka - výchozí vzhled tlačítka obsah centruje a řádky pak působily rozházeně. -->
+                    <DataTemplate x:Key="StartPanelSablona">
+                        <Button Command="{Binding DataContext.OpenTemplateCommand, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
+                                CommandParameter="{Binding}" Cursor="Hand" Margin="0,0,0,6">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Setter Property="ToolTip" Value="Otevřít šablonu"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMline}" Value="True">
+                                            <Setter Property="ToolTip" Value="Otevře se jako kopie - po úpravě ji uložíte jako šablonu vaší firmy."/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Button.Template>
+                                <!-- Řádek s rámečkem a šipkou, ať je vidět, že se vybírá. -->
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Pozadi" Background="{DynamicResource EDTheme.Bg.Surface}" CornerRadius="6" Padding="12,9"
+                                            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1">
+                                        <ContentPresenter/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Pozadi" Property="Background" Value="{DynamicResource EDTheme.Accent.BlueBg}"/>
+                                            <Setter TargetName="Pozadi" Property="BorderBrush" Value="{DynamicResource EDTheme.Accent.Blue}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                            <Setter TargetName="Pozadi" Property="Background" Value="{DynamicResource EDTheme.Accent.BlueBg}"/>
+                                            <Setter TargetName="Pozadi" Property="BorderBrush" Value="{DynamicResource EDTheme.Accent.Blue}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="Pozadi" Property="Background" Value="{DynamicResource EDTheme.Accent.BlueSelected}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <DockPanel>
+                                <Image Width="20" Height="20" Margin="0,0,12,0"
+                                       VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Source" Value="{StaticResource EDIcons.Document}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMline}" Value="True">
+                                                    <Setter Property="Source" Value="{StaticResource EDIcons.MlineLogo}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="›" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="10,-2,0,0"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Title}"
+                                           Foreground="{DynamicResource EDTheme.Accent.Blue}"/>
+                                <TextBlock Text="{Binding Detail}" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="12,0,0,0"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Small}"
+                                           Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                           FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                           Foreground="{DynamicResource EDTheme.Text.Primary}"/>
+                            </DockPanel>
+                        </Button>
+                    </DataTemplate>
+
+                    <!-- Nadpis oddílu vedle akcentové značky. -->
+                    <Style x:Key="StartPanelNadpis" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Body}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Header}"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                    </Style>
+                </Border.Resources>
+                <StackPanel>
+                    <!-- Záhlaví: logo, název a k čemu obrazovka je, na brandovém pruhu jako hlavičky seznamů a formulářů. -->
+                    <Border CornerRadius="8,8,0,0" Padding="24,18,12,18" Background="{DynamicResource EDTheme.Accent.Header}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="×" Command="{Binding CloseCommand}" ToolTip="Zavřít"
+                                    VerticalAlignment="Top" Margin="12,-8,0,0" Cursor="Hand"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Title}" Foreground="{DynamicResource EDTheme.OnAccent.Text}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Pozadi" Background="Transparent" CornerRadius="4" Padding="8,0,8,2">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Pozadi" Property="Background" Value="{DynamicResource EDTheme.OnAccent.HoverOverlay}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Pozadi" Property="Background" Value="{DynamicResource EDTheme.OnAccent.PressedOverlay}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <Image Source="{StaticResource EDIcons.MoleculeLarge}" Width="40" Height="40" Margin="0,0,16,0"
+                                   VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Návrhář sestav" FontSize="{DynamicResource EDTheme.FontSize.Large}"
+                                           FontWeight="SemiBold" Foreground="{DynamicResource EDTheme.OnAccent.Text}"/>
+                                <TextBlock Text="Otevřete šablonu, se kterou chcete pracovat, nebo založte novou." Margin="0,2,0,0"
+                                           TextWrapping="Wrap" FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                           Foreground="{DynamicResource EDTheme.OnAccent.Text}" Opacity="0.85"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <Border Background="{DynamicResource EDTheme.Bg.Surface}" Padding="24,18,24,18">
+                    <StackPanel>
+                        <!-- Poslední otevřené šablony: šablony, se kterými uživatel naposledy pracoval, v kterékoli agendě -
+                             proto nad kartou agendy, ne v ní. -->
+                        <StackPanel Visibility="{Binding HasRecent, Converter={StaticResource BoolToVis}}" Margin="0,0,0,16">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Border Width="3" Height="14" CornerRadius="1.5" Margin="0,0,8,0" Background="{DynamicResource EDTheme.Accent.Blue}"/>
+                                <TextBlock Text="Poslední otevřené šablony" Style="{StaticResource StartPanelNadpis}"/>
+                            </StackPanel>
+                            <ItemsControl ItemsSource="{Binding Recent}" ItemTemplate="{StaticResource StartPanelSablona}"/>
+                        </StackPanel>
+
+                        <!-- Karta agendy: nahoře agenda nové šablony a její změna, pod ní šablony té agendy
+                             (šablony firmy, na konci výchozí šablona M-line s ikonou M-line). Žádné „Doporučeno":
+                             kterou šablonu vzít, si uživatel rozhodne sám (Jan 30. 10.). -->
+                        <Border CornerRadius="8" BorderBrush="{DynamicResource EDTheme.Accent.BlueBorder}" BorderThickness="1">
+                            <StackPanel>
+                                <Border Padding="14,10" CornerRadius="7,7,0,0" Background="{DynamicResource EDTheme.Accent.BlueBg}"
+                                        BorderBrush="{DynamicResource EDTheme.Accent.BlueBorder}" BorderThickness="0,0,0,1">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="Změnit agendu…" Command="{Binding ChangeAgendaCommand}"
+                                                ToolTip="{td:Tip ChangeAgenda}" Padding="10,3" VerticalAlignment="Center"/>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="Agenda" FontSize="{DynamicResource EDTheme.FontSize.Small}"
+                                                       Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                                            <TextBlock Text="{Binding AgendaName}" FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Header}"
+                                                       Foreground="{DynamicResource EDTheme.Text.Primary}"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                                <StackPanel Margin="12,12,12,10">
+                                    <StackPanel Orientation="Horizontal" Margin="2,0,0,8">
+                                        <Border Width="3" Height="14" CornerRadius="1.5" Margin="0,0,8,0" Background="{DynamicResource EDTheme.Accent.Blue}"/>
+                                        <TextBlock Text="Vyberte šablonu" Style="{StaticResource StartPanelNadpis}"/>
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding AgendaTemplates}" ItemTemplate="{StaticResource StartPanelSablona}"/>
+                                    <TextBlock Text="Pro tuto agendu zatím nejsou žádné šablony." Margin="2,0,0,4"
+                                               Visibility="{Binding HasNoAgendaTemplates, Converter={StaticResource BoolToVis}}"
+                                               FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                                    <TextBlock FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="4,6,0,0">
+                                        <Hyperlink Command="{Binding OpenFromDatabaseCommand}" Foreground="{DynamicResource EDTheme.Accent.Blue}"
+                                                   ToolTip="{td:Tip Open}">Všechny šablony…</Hyperlink>
+                                        <Run Text="   "/>
+                                        <Hyperlink Command="{Binding StartBlankCommand}" Foreground="{DynamicResource EDTheme.Accent.Blue}"
+                                                   ToolTip="{td:Tip New}">Začít s prázdnou šablonou</Hyperlink>
+                                    </TextBlock>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    </Border>
+
+                    <!-- Patička s odkazy na pomoc. -->
+                    <Border Padding="24,10" CornerRadius="0,0,8,8" Background="{DynamicResource EDTheme.Bg.PanelAlt}"
+                            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0">
+                        <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource EDTheme.FontSize.Small}">
+                            <Hyperlink Click="StartPanelManual_Click" Foreground="{DynamicResource EDTheme.Accent.Blue}"
+                                       ToolTip="Otevře nápovědu návrháře v prohlížeči">Nápověda</Hyperlink>
+                            <Run Text="   "/>
+                            <Hyperlink Click="StartPanelNews_Click" Foreground="{DynamicResource EDTheme.Accent.Blue}"
+                                       ToolTip="Otevře novinky v prohlížeči">Novinky</Hyperlink>
+                            <Run Text="   "/>
+                            <Hyperlink Click="StartPanelShortcuts_Click" Foreground="{DynamicResource EDTheme.Accent.Blue}">Klávesové zkratky (F1)</Hyperlink>
+                            <Run Text="   "/>
+                            <Hyperlink Click="StartPanelGuide_Click" Foreground="{DynamicResource EDTheme.Accent.Blue}">Zeptat se Pomocníka</Hyperlink>
+                        </TextBlock>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </Grid>
+    </Grid>
 </Window>

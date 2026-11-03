@@ -26,8 +26,13 @@
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **do příští verze (Jan 2. 11.)**, obě strany děláme my.
   Okno JŘ → Tisky → „Tisk linkového JŘ (nový)": formulář se šablonou, parametry a složkou, PDF bez návrháře.
   Hotové kroky 1-3 (linkový JŘ AD); položka je zákazníkům skrytá, na DEV ji zapne `^JRR("TiskNovymNavrharem")=1`.
-  Krok 4 (2. 11.): výchozí šablona pro tisk se nastavuje v okně šablon (Ctrl+O) se stromem podle oblasti práce, agendy a varianty.
-  Zbývá: zastávkový JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
+  Krok 4 (2. 11.): výchozí šablonu nastavuje okno šablon (Ctrl+O); tlačítko je do příští verze schované (Jan 3. 11.),
+  ovládání mate: šablona M-line nastavená jako výchozí firmy „vyhodí" výchozí M-line a víc agend v seznamu ukazuje víc výchozích.
+  Zbývá: odladit nastavení výchozí šablony (např. u varianty ve stromu), zastávkový JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
+
+- **Okno „Změnit agendu" a okno šablon (Ctrl+O) dělají podobnou věc a vypadají jinak** [M] (Jan 3. 11., **rozmyslet způsob**).
+  Obě vybírají agendu stromem nebo seskupeným seznamem. Návrh: jedno okno šablon se stromem a tlačítkem „Nová šablona
+  v této agendě", čip agendy a Ctrl+Shift+A by ho otevřely s vybranou aktuální agendou.
 
 - **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
   dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),
@@ -51,8 +56,8 @@
   `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je
   **headless tisk** („pošli šablonu a JSON, vrať PDF"); samostatně by prvním krokem byl generický
   JSON zdroj ze souboru nebo URL. Dořešit přihlašovací údaje a odvození schématu z dat
-  (analýza 12. 7., detail v historii roadmapy). ⚠️ **Před vydáním:** úvodní obrazovka nabízí „Připojit databázi SQL"
-  a „Načíst soubor CSV" jen jako průzkum zájmu - když nebudou hotové, tlačítka odstranit (Jan 30. 10.).
+  (analýza 12. 7., detail v historii roadmapy). Nabídku SQL a CSV z úvodní obrazovky Jan 3. 11. před vydáním
+  odstranil - není v plánu; vrátí se, až se do něj dostane.
 
 - **Nová pole v jízdních řádech, dohodnutá s kolegy 10. 8.** [S] - **čeká na kolegu**; v lokálním zdroji
   nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5, ověřit, že po

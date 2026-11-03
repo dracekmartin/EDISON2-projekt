@@ -42,8 +42,10 @@
                     Padding="10,4" Margin="0,0,8,0"/>
             <Button Grid.Column="1" Content="Smazat"         Command="{Binding DeleteTemplateCommand}"
                     Padding="10,4" Margin="0,0,8,0"/>
+            <!-- Nastavení výchozí šablony do příští verze schované (Jan 3. 11.): tisk z okna JŘ, kterému slouží,
+                 do verze nejde a ovládání se ještě ladí. Uživatel vidí jen výchozí šablonu M-line. -->
             <Button Grid.Column="2" Content="{Binding DefaultButtonText}" Command="{Binding ToggleDefaultCommand}"
-                    Padding="10,4"
+                    Visibility="Collapsed" Padding="10,4"
                     ToolTip="Šablona, kterou vezme tisk z modulu (okno jízdních řádů), když uživatel nevybere jinou. Bez výchozí šablony firmy tiskne výchozí šablona M-line."/>
 
             <Button Grid.Column="4" Content="Otevřít" IsDefault="True"

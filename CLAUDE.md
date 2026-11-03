@@ -128,6 +128,9 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
   (dvojí nasazení si přepisuje výsledek). ⚠️ **Úprava `.cls` mimo Edit/Write hook nespustí**: na serveru
   zůstane stará třída (EDInputForm: „pole je prázdné, uložení nic neudělá") a drift testy to nechytí, čtou
   repo. Deploy vynuť `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`.
+  ⚠️ **Novou třídu hook do projektu Caché nepřidá** (`<projekt>/CACHE/.project`) a do vydání jde jen obsah
+  projektu: produkční třídu přidej `cache_add_to_project`, testovou ne (`docs/deploy.md`). 3. 11. chybělo
+  ve vydání TD 10 tříd, mimo jiné celé `Agendy.Jr.*`.
 - **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - `.cs`→.NET
   (bez `Category=Integration`/`E2E`), `.cls`→Caché zúžená na dotčené package, `.cs/.cls/.inc`→integrační
   sada (při `.cls/.inc` povinná), změna shellu→E2E (cesty `EDISON2.E2ETests/CLAUDE.md`), `tools/nasazeni/`→jeho testy. Produkční `.cls`
