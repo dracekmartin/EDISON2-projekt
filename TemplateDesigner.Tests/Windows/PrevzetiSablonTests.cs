@@ -47,7 +47,7 @@ public class PrevzetiSablonTests
         Assert.True(await _zasilky.AcceptAsync([Z()]));
 
         await _sdileni.Received(1).AcceptShipmentAsync("Z1", Arg.Is<IReadOnlyCollection<string>>(p => p.Count == 0));
-        _popup.DidNotReceiveWithAnyArgs().ConfirmYesNoCancel(default!);
+        _popup.DidNotReceiveWithAnyArgs().ConfirmChoice(default!, default!, default!);
         _popup.Received(1).Info("Šablona „Linky A4“ je převzatá. Najdete ji mezi vlastními šablonami v agendě Linkový JŘ · AD.");
     }
 
@@ -83,18 +83,31 @@ public class PrevzetiSablonTests
     public async Task UzPrevzata_AnoPrepiseNeUloziJakoNovou(bool ano, string[] prepsat)
     {
         Zasilka(Sablona(existujici: Prevzata()));
-        _popup.ConfirmYesNoCancel(default!).ReturnsForAnyArgs(ano);
+        _popup.ConfirmChoice(default!, default!, default!).ReturnsForAnyArgs(ano);
 
         Assert.True(await _zasilky.AcceptAsync([Z()]));
 
         await _sdileni.Received(1).AcceptShipmentAsync("Z1", Arg.Is<IReadOnlyCollection<string>>(p => p.SequenceEqual(prepsat)));
     }
 
+    /// <summary>Tlačítka říkají, co se stane (Jan 4. 11.); do té doby Ano / Ne s návodem ve větě.</summary>
+    [Fact]
+    public async Task UzPrevzata_OtazkaMaTlacitkaPrepsatAUlozitJakoNovou()
+    {
+        Zasilka(Sablona(existujici: Prevzata()));
+        _popup.ConfirmChoice(default!, default!, default!).ReturnsForAnyArgs(true);
+
+        await _zasilky.AcceptAsync([Z()]);
+
+        _popup.Received(1).ConfirmChoice(Arg.Is<string>(t => !t.Contains("Ano") && !t.Contains("Ne -")), "Přepsat",
+            "Uložit jako novou", Arg.Any<string?>(), Arg.Any<System.Windows.Window?>());
+    }
+
     [Fact]
     public async Task UzPrevzata_StornoNicNeprevezme()
     {
         Zasilka(Sablona(existujici: Prevzata(upravena: true)));
-        _popup.ConfirmYesNoCancel(default!).ReturnsForAnyArgs((bool?)null);
+        _popup.ConfirmChoice(default!, default!, default!).ReturnsForAnyArgs((bool?)null);
 
         Assert.False(await _zasilky.AcceptAsync([Z()]));
 
@@ -150,7 +163,7 @@ public class PrevzetiSablonTests
         Zasilka("Z1", Sablona());
         Zasilka("Z2", Sablona(existujici: Prevzata()));
         Zasilka("Z3", Sablona());
-        _popup.ConfirmYesNoCancel(default!).ReturnsForAnyArgs((bool?)null);
+        _popup.ConfirmChoice(default!, default!, default!).ReturnsForAnyArgs((bool?)null);
 
         Assert.True(await _zasilky.AcceptAsync([Z("Z1"), Z("Z2"), Z("Z3")]));
 

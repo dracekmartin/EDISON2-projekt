@@ -60,7 +60,8 @@ public sealed class ReceivedShipments(ITemplateSharing sharing, IPopupDisplayer 
         var overwrite = new List<string>();
         foreach (var template in templates.Where(t => t.Existing is not null))
         {
-            bool? choice = popup.ConfirmYesNoCancel(OverwriteQuestion(template, sender), "Šablona už je převzatá");
+            bool? choice = popup.ConfirmChoice(OverwriteQuestion(template, sender), OverwriteAction, SaveAsNewAction,
+                "Šablona už je převzatá");
             if (choice is null) return null;
             if (choice == true) overwrite.Add(template.FileId);
         }
@@ -111,15 +112,17 @@ public sealed class ReceivedShipments(ITemplateSharing sharing, IPopupDisplayer 
         return null;
     }
 
-    /// <summary>Otázka u šablony, kterou firma už převzala; dialog má jen Ano, Ne a Storno, proto je volba ve větě.</summary>
+    /// <summary>Tlačítka otázky na přepsání: říkají, co se stane (do 4. 11. Ano / Ne s návodem ve větě).</summary>
+    internal const string OverwriteAction = "Přepsat", SaveAsNewAction = "Uložit jako novou";
+
+    /// <summary>Otázka u šablony, kterou firma už převzala; odpovídá se tlačítky Přepsat / Uložit jako novou / Storno.</summary>
     internal static string OverwriteQuestion(ReceivedTemplate template, string sender) =>
         template.Existing is { Modified: true } existing
             ? $"Šablonu „{existing.Name}“ jste od firmy {sender} už převzali a od té doby ji upravili.\n\n"
-              + "Ano - přepsat ji novou verzí, vaše úpravy se ztratí.\n"
-              + "Ne - uložit novou verzi jako další šablonu, vaše šablona zůstane, jak je."
+              + "Přepsáním ji nahradíte novou verzí a vaše úpravy se ztratí. Uložením jako nové vaše šablona zůstane, "
+              + "jak je, a nová verze přibude jako další šablona."
             : $"Šablonu „{template.Existing?.Name}“ jste od firmy {sender} už převzali.\n\n"
-              + "Ano - nahradit ji novou verzí.\n"
-              + "Ne - uložit novou verzi jako další šablonu.";
+              + "Přepsáním ji nahradíte novou verzí. Uložením jako nové přibude nová verze jako další šablona.";
 
     /// <summary>Zpráva po převzetí: kde převzaté šablony najít a které zásilky převzít nešly; null = nic se nestalo
     /// (Storno hned u první zásilky).</summary>
