@@ -41,6 +41,10 @@ if (-not (Test-Path $MLRestDll)) {
 
 $pkgs = @($Package -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 
+# MLRest sends through HttpWebRequest, which .NET Framework limits to 2 connections per host
+# (shared by all runspaces): a small package then waited for TemplateDesigner to finish.
+[Net.ServicePointManager]::DefaultConnectionLimit = [Math]::Max(8, 2 * $pkgs.Count)
+
 # One package run = one RunPackage request on a private MLRest instance.
 # Returns a plain result object (no CVar leaves the runspace).
 $runOne = {
