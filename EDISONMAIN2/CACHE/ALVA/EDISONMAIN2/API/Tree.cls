@@ -508,7 +508,6 @@ ClassMethod FillMain() [ Private ]
 	d ..AddFamilyEnd()
 	d ..AddFamily("Mzdy a personalistika", 0, "53", 1, 0)
 		d ..AddExe("Zaměstnanci", "MZDY2.exe", "ALVA.MZDY2.formMZDY2Main", "146001", 1, "", 0, "", 0, "Zaměstnanci Mzdy")
-		d ..AddExe("Financování", "ESFINANCOVANI.exe", "ALVA.ESFINANCOVANI.formESFINANCOVANIMain", "99001", 0, "", 0, "", 0)
 		d ..AddExe("Požadavky na volno", "MZDY2.exe", "ALVA.MZDY2.formMZDY2ZamNep", "146014", 0, "", 0, "", 0)
 		d ..AddExe("Události", "UDALOSTI.exe", "ALVA.UDALOSTI.formUDALOSTIHistorieZmen", "154005", 0, "agd=MZDY2", 0, "", 0, "Události Mzdy")
 		d ..AddExe("Zaúčtování", "ZauMzdy.exe", "ALVA.ZAUCTOVANI.ZauMzdy.formZAUMZDYMain", "168001", 0, "", 0, "", 0, "Zaúčtování Mzdy")
