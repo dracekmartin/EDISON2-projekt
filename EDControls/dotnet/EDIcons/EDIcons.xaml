@@ -263,6 +263,24 @@
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/edit.png"/>
     <BitmapImage x:Key="EDIcons.Delete"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/delete2.png"/>
+    <!-- Převzít / přijmout: zelené kolečko s bílou fajfkou, dvojice k červenému křížku Odstranit. Barevná, aby byla
+         vidět i na modrém pruhu nad seznamem (černobílá ikona Uložit tam zanikala, Jan 4. 11.). -->
+    <DrawingImage x:Key="EDIcons.Accept">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="#FF2E8B3E">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="8,8" RadiusX="7.5" RadiusY="7.5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="M 4.3,8.2 L 6.9,10.8 L 11.7,5.6">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="White" Thickness="1.9" StartLineCap="Round" EndLineCap="Round" LineJoin="Round"/>
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
     <BitmapImage x:Key="EDIcons.Car"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/car.png"/>
     <BitmapImage x:Key="EDIcons.Help"
