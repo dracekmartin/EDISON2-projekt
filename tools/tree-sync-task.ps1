@@ -176,6 +176,8 @@ function Invoke-Run {
 
     Step 'Fetch legacy EDISON a EDISON2'
     Invoke-Native git -C $legacy fetch --quiet --depth 1 origin
+    # Seznam souboru se meni s testy, ktere pre-push pousti: bez nastaveni pri kazdem behu by platil az po -Install.
+    Invoke-Native git -C $legacy sparse-checkout set --no-cone @legacyFiles
     Invoke-Native git -C $legacy reset --quiet --hard '@{u}'
     foreach ($state in 'rebase-merge', 'rebase-apply') {
         if (Test-Path -LiteralPath (Join-Path $repo ".git\$state")) { & git -C $repo rebase --abort }
