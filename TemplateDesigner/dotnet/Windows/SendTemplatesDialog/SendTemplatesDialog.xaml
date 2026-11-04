@@ -76,9 +76,9 @@
                 </Border>
             </DockPanel>
 
-            <!-- Firmy s povoleným sdílením dat. -->
+            <!-- Firmy s povoleným sdílením dat; „Příjemci", aby bylo jasné, že zaškrtnutým se šablony pošlou (Jan 4. 11.). -->
             <DockPanel Grid.Column="2">
-                <edct:EDComponentToolbar DockPanel.Dock="Top" Title="Firmy" ShowSearch="True"
+                <edct:EDComponentToolbar DockPanel.Dock="Top" Title="Příjemci" ShowSearch="True"
                                          SearchText="{Binding RecipientFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 <Border BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,0,1,1">
                     <Grid>

@@ -61,13 +61,13 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         if (row is null || row["prijata"] != "1")
             return count == 0
                 ? "Žádná jiná firma vám teď šablony neposlala. Až nějaké pošle, najdete je tady."
-                : "Šablony, které vám poslaly jiné firmy. Zaškrtnuté zásilky převezmete akcí Převzít a šablony pak najdete "
-                  + "mezi vlastními šablonami ve své agendě. Zásilky, které nechcete, odmítněte.";
+                : "Šablony, které vám poslaly jiné firmy. Akcí Převzít je uložíte mezi vlastní šablony ve své agendě, "
+                  + "co nechcete, odmítněte. Víc najednou vyberete zaškrtnutím.";
         var odeslal = string.IsNullOrEmpty(row["odeslal"]) ? "" : $" (poslal {row["odeslal"]})";
         var zprava = string.IsNullOrWhiteSpace(row["zprava"]) ? "" : $" Zpráva: {row["zprava"]}";
         var akce = checkedCount > 0
-            ? $" Zaškrtnuté zásilky ({checkedCount}) převezmete akcí Převzít, nebo je odmítnete."
-            : " Převezměte ji akcí Převzít, nebo ji odmítněte.";
+            ? $" Převzít a Odmítnout platí pro zaškrtnuté ({checkedCount})."
+            : " Převzít, nebo odmítnout jde akcemi nad seznamem.";
         return $"Od firmy {row["zdroj"]}{odeslal}: {row["sablony"]}.{zprava}{akce}";
     }
 
@@ -223,7 +223,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     {
         if (IsReceivedNode)
         {
-            Actions = [StandardActions.Custom("Převzít", AcceptShipmentCommand, "EDIcons.Save"),
+            Actions = [StandardActions.Custom("Převzít", AcceptShipmentCommand, "EDIcons.Accept"),
                        StandardActions.Custom("Odmítnout", RejectShipmentCommand, "EDIcons.Delete")];
             OnPropertyChanged(nameof(Actions));
             return;

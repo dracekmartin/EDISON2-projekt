@@ -157,7 +157,7 @@ public class PrevzetiSablonTests
         await _sdileni.Received(1).AcceptShipmentAsync("Z1", Arg.Any<IReadOnlyCollection<string>>());
         await _sdileni.DidNotReceive().AcceptShipmentAsync("Z2", Arg.Any<IReadOnlyCollection<string>>());
         await _sdileni.DidNotReceive().GetShipmentTemplatesAsync("Z3");
-        _popup.Received(1).Info(Arg.Is<string>(t => t.Contains("je převzatá") && t.EndsWith("Ostatní zásilky zůstaly k převzetí.")));
+        _popup.Received(1).Info(Arg.Is<string>(t => t.Contains("je převzatá") && t.EndsWith("Ostatní zůstaly mezi přijatými šablonami.")));
     }
 
     [Fact]
@@ -269,13 +269,13 @@ public class PrevzetiSablonTests
 
         Assert.Contains("Od firmy ČSAD Autobusy (poslal novak): Linky A4, Linky A5.", text);
         Assert.Contains("Zpráva: Nové vzory", text);
-        Assert.EndsWith("Převezměte ji akcí Převzít, nebo ji odmítněte.", text);
+        Assert.EndsWith("Převzít, nebo odmítnout jde akcemi nad seznamem.", text);
         Assert.DoesNotContain("Zpráva", CacheTemplatePickerDialogViewModel.ReceivedHint(Radek(), 1));
     }
 
     [Fact]
     public void NapovedaZasilky_SeZaskrtnutymiRekneZeAkcePlatiProNe() =>
-        Assert.EndsWith("Zaškrtnuté zásilky (2) převezmete akcí Převzít, nebo je odmítnete.",
+        Assert.EndsWith("Převzít a Odmítnout platí pro zaškrtnuté (2).",
             CacheTemplatePickerDialogViewModel.ReceivedHint(Radek(), 3, checkedCount: 2));
 
     [Fact]
@@ -293,8 +293,8 @@ public class PrevzetiSablonTests
     [InlineData(1, 1, "Firma ČSAD vám poslala šablonu „Linky A4“.")]
     [InlineData(1, 3, "Firma ČSAD vám poslala 3 šablony.")]
     [InlineData(1, 5, "Firma ČSAD vám poslala 5 šablon.")]
-    [InlineData(2, 1, "Jiné firmy vám poslaly šablony: 2 zásilky k převzetí.")]
-    [InlineData(5, 1, "Jiné firmy vám poslaly šablony: 5 zásilek k převzetí.")]
+    [InlineData(2, 1, "Jiné firmy vám poslaly nové šablony, naposledy firma ČSAD.")]
+    [InlineData(5, 1, "Jiné firmy vám poslaly nové šablony, naposledy firma ČSAD.")]
     public void Pruh_VetaPodlePoctu(int zasilek, int sablon, string? veta) =>
         Assert.Equal(veta, new ReceivedSummary(zasilek, "ČSAD", "Linky A4", sablon).Notice);
 

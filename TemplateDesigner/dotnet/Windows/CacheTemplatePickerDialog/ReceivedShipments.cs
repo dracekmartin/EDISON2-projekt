@@ -130,7 +130,7 @@ public sealed class ReceivedShipments(ITemplateSharing sharing, IPopupDisplayer 
         if (taken.Count > 0) parts.Add(AcceptedMessage(taken, agendas));
         parts.AddRange(problems);
         if (parts.Count == 0) return null;
-        if (stopped) parts.Add("Ostatní zásilky zůstaly k převzetí.");
+        if (stopped) parts.Add("Ostatní zůstaly mezi přijatými šablonami.");
         return string.Join("\n\n", parts);
     }
 

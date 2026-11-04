@@ -53,11 +53,11 @@ public class OdeslaniSablonTests
         Assert.False(okno.CanSend());
         okno.VisibleRecipients[0].IsChecked = true;
         Assert.True(okno.CanSend());
-        Assert.Equal("1 šablona, 1 firma", okno.Summary);
+        Assert.Equal("1 šablona, 1 příjemce", okno.Summary);
 
         okno.Templates[1].IsChecked = true;
         okno.Templates[2].IsChecked = true;
-        Assert.Equal("3 šablony, 1 firma", okno.Summary);
+        Assert.Equal("3 šablony, 1 příjemce", okno.Summary);
     }
 
     [Fact]

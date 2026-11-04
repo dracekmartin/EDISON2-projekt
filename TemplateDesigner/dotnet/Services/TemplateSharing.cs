@@ -56,7 +56,7 @@ public sealed record ReceivedSummary(int Shipments, string Sender, string Name, 
         <= 0 => null,
         1 when Templates == 1 => $"Firma {Sender} vám poslala šablonu „{Name}“.",
         1 => $"Firma {Sender} vám poslala {Pocet(Templates, "šablonu", "šablony", "šablon")}.",
-        _ => $"Jiné firmy vám poslaly šablony: {Pocet(Shipments, "zásilka", "zásilky", "zásilek")} k převzetí.",
+        _ => $"Jiné firmy vám poslaly nové šablony, naposledy firma {Sender}.",
     };
 
     internal static string Pocet(int n, string jedna, string dve, string vic) =>

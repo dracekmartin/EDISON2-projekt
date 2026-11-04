@@ -53,10 +53,10 @@ public sealed class SendTemplatesDialogViewModel : EDViewModel
 
     private bool _isSending;
 
-    /// <summary>Co odejde: „2 šablony, 1 firma"; uživatel to vidí u tlačítka Odeslat.</summary>
+    /// <summary>Co odejde: „2 šablony, 1 příjemce"; uživatel to vidí u tlačítka Odeslat.</summary>
     public string Summary =>
         $"{Pocet(Checked(Templates).Count, "šablona", "šablony", "šablon")}, " +
-        $"{Pocet(Checked(_recipients).Count, "firma", "firmy", "firem")}";
+        $"{Pocet(Checked(_recipients).Count, "příjemce", "příjemci", "příjemců")}";
 
     public AsyncRelayCommand SendCommand { get; }
 
