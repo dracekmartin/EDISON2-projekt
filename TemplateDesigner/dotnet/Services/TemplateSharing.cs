@@ -39,7 +39,8 @@ public interface ITemplateSharing
 /// <param name="Sender">Firma, která poslala nejnovější zásilku.</param>
 /// <param name="Name">Název nejnovější zásilky: název šablony, nebo „3 šablony".</param>
 /// <param name="Templates">Šablon v nejnovější zásilce.</param>
-public sealed record ReceivedSummary(int Shipments, string Sender, string Name, int Templates)
+/// <param name="Latest">Kdy přišla nejnovější zásilka nebo její nová verze (ISO 8601); prázdné u staršího serveru.</param>
+public sealed record ReceivedSummary(int Shipments, string Sender, string Name, int Templates, string Latest = "")
 {
     public static readonly ReceivedSummary None = new(0, "", "", 0);
 
@@ -47,8 +48,18 @@ public sealed record ReceivedSummary(int Shipments, string Sender, string Name, 
     {
         if (SharingState.TryParse(json) is not { } root) return None;
         return new ReceivedSummary(Number(root, "pocet"), SharingState.Text(root, "odesilatel"),
-            SharingState.Text(root, "nazev"), Number(root, "sablon"));
+            SharingState.Text(root, "nazev"), Number(root, "sablon"), SharingState.Text(root, "posledni"));
     }
+
+    /// <summary>Pruh se ukáže, když firmě přišla zásilka novější než ta, kterou uživatel viděl naposledy
+    /// (<paramref name="seen"/>, null = žádnou). Bez času (starší server) rozhoduje jen to, jestli nějaká zásilka je.</summary>
+    public bool IsNewerThan(string? seen) =>
+        Shipments > 0 && (seen is null
+            || !DateTimeOffset.TryParse(Latest, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AssumeUniversal, out var latest)
+            || !DateTimeOffset.TryParse(seen, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AssumeUniversal, out var seenAt)
+            || latest > seenAt);
 
     /// <summary>Věta pruhu v hlavním okně; null, když firmě nic nepřišlo.</summary>
     public string? Notice => Shipments switch

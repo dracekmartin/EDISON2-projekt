@@ -152,15 +152,16 @@ ClassMethod GetStav(ByRef sys As %String) As %Status
 // Údaje o šablonách zásilky (název, agenda, verze formátu, Id u odesílatele) si server drží, ať se soubory
 // nestahují při každém zobrazení seznamu: ^ALVA.TemplateDesigner.Templates(IdFa, "PRIJATE", zásilka, soubor) = $lb(…)
 
-/// Nevyřízené zásilky: OUT["1"] = {pocet, odesilatel, nazev, sablon} - počet zásilek a nejnovější z nich pro pruh
-/// v hlavním okně a počet u uzlu Přijaté šablony. Firma bez klíče sdílení nikdy nepoužila a nikdo jí nic poslat
-/// nemohl, server bez sdílení ho nenabízí: ISYCloud se pak nevolá.
+/// Nevyřízené zásilky: OUT["1"] = {pocet, odesilatel, nazev, sablon, posledni} - počet zásilek a nejnovější z nich pro
+/// pruh v hlavním okně a počet u uzlu Přijaté šablony. `posledni` = kdy přišla nejnovější zásilka nebo její nová verze
+/// (ISO 8601 UTC); pruh, který uživatel zavřel, ukáže znovu jen novější. Firma bez klíče sdílení nikdy nepoužila
+/// a nikdo jí nic poslat nemohl, server bez sdílení ho nenabízí: ISYCloud se pak nevolá.
 ClassMethod GetSouhrnPrijatych(ByRef sys As %String) As %Status
 {
     s err = ""
     try {
         $$$FillParams
-        s souhrn = {"pocet": 0, "odesilatel": "", "nazev": "", "sablon": 0}
+        s souhrn = {"pocet": 0, "odesilatel": "", "nazev": "", "sablon": 0, "posledni": ""}
         i ..JeZapnute() && (##class(ALVA.TemplateDesigner.Sdileni.Klient).Klic(IdFa) '= "") {
             s odpoved = ##class(ALVA.TemplateDesigner.Sdileni.Klient).Request(IdFa, "GET", ..CestaPrijatych(1))
             s souhrn.pocet = +odpoved.celkem
@@ -169,6 +170,7 @@ ClassMethod GetSouhrnPrijatych(ByRef sys As %String) As %Status
                 s souhrn.odesilatel = prvni.odesilatel.nazev
                 s souhrn.nazev = prvni.nazev
                 s souhrn.sablon = $s($isobject(prvni.soubory):prvni.soubory.%Size(), 1:0)
+                s souhrn.posledni = $s(prvni.aktualizovano'="":prvni.aktualizovano, 1:prvni.odeslano)
             }
         }
         s ^||ML("OUT","1") = souhrn.%ToJSON()

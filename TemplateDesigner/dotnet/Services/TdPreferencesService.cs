@@ -33,6 +33,7 @@ public class TdPreferencesService
     private const string RecentFilesKey        = "RecentFiles";
     private const string RecentColorsKey       = "RecentColors";
     private const string RecentTemplatesKey    = "RecentTemplates";
+    private const string ReceivedSeenKey       = "ReceivedSeen";
     private const string InstanceDefaultsScope = "TemplateDesigner.InstanceDefaults";
     private const string PrintParamsScope      = "TemplateDesigner.PrintParams";
 
@@ -57,6 +58,11 @@ public class TdPreferencesService
     /// nejnovější první. Jen ID: název a agendu bere úvodní obrazovka z aktuálního seznamu šablon,
     /// aby neukázala smazanou šablonu ani starý název.</summary>
     public List<Guid> RecentTemplates { get; private set; } = [];
+
+    /// <summary>Kdy přišla nejnovější zásilka šablon od jiných firem, kterou uživatel viděl (zavřel pruh nebo dal
+    /// Zobrazit), podle firmy; pruh v hlavním okně ukáže jen novější (Jan 4. 11.). Klíč firmy kvůli přepnutí firmy
+    /// za běhu - jinak drží úložiště hodnotu i tak pro uživatele a firmu.</summary>
+    public Dictionary<string, string> ReceivedSeen { get; private set; } = [];
 
     /// <summary>True jakmile LoadAsync dokončí (úspěch i fallback na defaults).</summary>
     public bool IsLoaded { get; private set; }
@@ -91,6 +97,7 @@ public class TdPreferencesService
         RecentFiles  = await LoadBlobAsync<List<string>>(Scope, RecentFilesKey)  ?? [];
         RecentColors = await LoadBlobAsync<List<string>>(Scope, RecentColorsKey) ?? [];
         RecentTemplates = await LoadBlobAsync<List<Guid>>(Scope, RecentTemplatesKey) ?? [];
+        ReceivedSeen = await LoadBlobAsync<Dictionary<string, string>>(Scope, ReceivedSeenKey) ?? [];
 
         Action? handlers;
         lock (_loadedLock)
@@ -145,6 +152,13 @@ public class TdPreferencesService
         if (RecentTemplates.Count > MaxRecentTemplates)
             RecentTemplates.RemoveRange(MaxRecentTemplates, RecentTemplates.Count - MaxRecentTemplates);
         return SaveBlobAsync(Scope, RecentTemplatesKey, RecentTemplates);
+    }
+
+    /// <summary>Zapamatuje si nejnovější zásilku šablon, kterou uživatel ve firmě viděl. Fire-and-forget.</summary>
+    public Task SetReceivedSeenAsync(string firm, string latest)
+    {
+        ReceivedSeen[firm] = latest;
+        return SaveBlobAsync(Scope, ReceivedSeenKey, ReceivedSeen);
     }
 
     /// <summary>Odebere soubor z Recent Files (volá se po pokusu otevřít missing soubor).</summary>

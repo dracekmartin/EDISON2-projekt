@@ -306,7 +306,20 @@ public class PrevzetiSablonTests
 
         Assert.Equal(new ReceivedSummary(1, "CB_CSADAD (DEV server)", "Obrazek test", 1), souhrn);
         Assert.Equal(ReceivedSummary.None, ReceivedSummary.Parse("není JSON"));
+        Assert.Equal("2026-11-04T08:15:00.000Z",
+            ReceivedSummary.Parse("""{"pocet":1,"posledni":"2026-11-04T08:15:00.000Z"}""").Latest);
     }
+
+    /// <summary>Zavřený pruh (křížek i Zobrazit) se uživateli neukáže znovu, dokud nepřijde novější zásilka - ani po
+    /// restartu (Jan 4. 11.). Do té doby se pamatoval jen do vypnutí návrháře.</summary>
+    [Theory]
+    [InlineData(1, "2026-11-04T08:15:00.000Z", null, true)]
+    [InlineData(1, "2026-11-04T08:15:00.000Z", "2026-11-04T08:15:00.000Z", false)]
+    [InlineData(1, "2026-11-04T09:00:00.000Z", "2026-11-04T08:15:00.000Z", true)]
+    [InlineData(2, "2026-11-04T08:15:00.000Z", "2026-11-04T09:00:00.000Z", false)]
+    [InlineData(0, "", null, false)]
+    public void Pruh_JenNovejsiNezVidena(int zasilek, string posledni, string? videna, bool ukazat) =>
+        Assert.Equal(ukazat, new ReceivedSummary(zasilek, "ČSAD", "Linky A4", 1, posledni).IsNewerThan(videna));
 
     [Fact]
     public void ObsahZasilky_CteSablonyIPrevzatou()

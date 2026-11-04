@@ -386,8 +386,10 @@ Vlastní kanál návrhář nestaví. Sdílení firmě povoluje administrátor IS
 - **Hodnoty platné jen ve firmě** (vybrané typy provozu, skupiny linek…) se při odeslání vymažou a u příjemce
   platí výchozí, stejně jako u šablon M-line (`B191f`).
 - **Přijaté šablony jsou v okně šablon** (uzel Přijaté šablony, řádek = zásilka). Když firmě něco přijde, hlavní okno
-  ukáže pruh s tlačítkem Zobrazit (okno šablon v Přijatých) a křížkem; zavřený se vrátí s další zásilkou.
-  Pruh je výrazný (modrý, tučný text, plné tlačítko), protože zavřít ho jde vždy jedním klikem (Jan 3. 11.).
+  ukáže pruh s tlačítkem Zobrazit (okno šablon v Přijatých) a křížkem. Pruh je výrazný (modrý, tučný text, plné
+  tlačítko), protože zavřít ho jde vždy jedním klikem (Jan 3. 11.). Křížek i Zobrazit ho schovají a uživatel si pro
+  firmu uloží čas nejnovější viděné zásilky (`TdPreferencesService.ReceivedSeen`): pruh se mu ukáže znovu jen kvůli
+  novější zásilce nebo nové verzi, i po restartu; kolegovi, který ho nezavřel, ne (Jan 4. 11.).
 - **Zásilka se převezme nebo odmítne celá** (Jan 3. 11.; API odmítne jen celou): akce Převzít a Odmítnout u řádku
   zásilky. Šablona, kterou převzít nejde, zastaví převzetí celé zásilky dřív, než se cokoli uloží.
 - **Víc zásilek naráz přes zaškrtávání** (Jan 3. 11., po vyzkoušení po jedné): Převzít a Odmítnout platí pro

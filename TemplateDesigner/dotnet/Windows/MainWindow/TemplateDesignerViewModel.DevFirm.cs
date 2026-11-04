@@ -70,7 +70,7 @@ public partial class TemplateDesignerViewModel
         RefreshFieldsList();                      // schéma + parametry pro novou firmu
         OnPropertyChanged(nameof(CurrentFirmIdfa));
         StatusText = $"[DEV] Přepnuto na firmu {code}.";
-        _dismissedShipments = 0;                  // zásilky šablon jsou per-firma
+        _receivedNoticeClosed = false;            // zásilky šablon jsou per-firma
         _ = CheckReceivedTemplatesAsync();
     }
 
