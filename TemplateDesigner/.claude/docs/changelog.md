@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-11-04 - Sdílení šablon mezi firmami zapnuté všem, pruh přijatých si pamatuje zavření (`B189`)
+
+Akce Odeslat jiné firmě… a Přijaté šablony se nabízejí všem firmám (`SdileniSablon.JeZapnute`, Jan 4. 11.); firma bez povoleného sdílení v ISYCloudu po kliknutí dostane důvod. Vydává se s příští verzí návrháře; do té doby musí být typ `SABLONA` v ostrém ISYCloudu.
+Pruh přijatých šablon v hlavním okně schová křížek i Zobrazit a uživatel si pro firmu uloží čas nejnovější viděné zásilky (`TdPreferencesService.ReceivedSeen`, server posílá `posledni`): pruh se vrátí jen kvůli novější zásilce, i po restartu. Do té doby se zavření pamatovalo do vypnutí návrháře (nález Jan). Přepnutí firmy ve vývojovém režimu načte nastavení znovu.
+Texty bez „zásilek k převzetí", okno pro odeslání má seznam Příjemci, pruh je nižší a Převzít má zelenou ikonu `EDIcons.Accept` (černobílá Uložit na modrém pruhu zanikala).
+Ověřeno: .NET testy návrháře 2776/2776, EDControls 1294/1294; `GetSouhrnPrijatych` na DEV vrací `posledni`; zavření pruhu po restartu a přepnutí firmy proklikal Jan.
+
 ## 2026-11-03 (15) - Převzetí víc zásilek naráz a výraznější pruh (`B189`, zatím jen na DEV)
 
 Jan při zkoušení přebíral zásilky po jedné a bylo to zdlouhavé (3. 11.).

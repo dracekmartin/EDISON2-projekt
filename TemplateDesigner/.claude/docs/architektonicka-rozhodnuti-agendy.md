@@ -374,7 +374,7 @@ tatáž oprava na víc místech a nikdo neví, na kterých.
 
 ---
 
-## R9. Sdílení šablon mezi firmami (`B189`) - rozhodnuto 3. 11. 2026, odeslání i příjem zatím jen na DEV
+## R9. Sdílení šablon mezi firmami (`B189`) - rozhodnuto 3. 11. 2026, zapnuto všem 4. 11.
 
 **Cesta.** Obecné sdílení dat mezi firmami EDISONu v ISYCloudu (edwcore `apps/isycloud/docs/sdileni/api-edison.md`):
 zásilka od firmy pro 1 až 100 firem se soubory, stav u každého příjemce, e-mail o přijetí, vlákno v portálu.

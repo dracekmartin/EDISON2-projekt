@@ -242,7 +242,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
 
     // ── Sdílení šablon mezi firmami (`B189`) ──────────────────────────────────
 
-    /// <summary>Okno nabízí posílání šablon jiným firmám; do vydání jen na vývojovém serveru.</summary>
+    /// <summary>Okno nabízí posílání šablon jiným firmám (server, `SdileniSablon.JeZapnute`).</summary>
     public bool ShowsSharing => _catalog.Sharing;
 
     public AsyncRelayCommand SendTemplatesCommand { get; }

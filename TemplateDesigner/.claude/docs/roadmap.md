@@ -30,12 +30,11 @@
   pro tisk", tučně; výchozí M-line mají všechny agendy JŘ. Okno ji ukazuje jen se zapnutým přepínačem - při vydání ho
   zapnout nebo zrušit. Zbývá zastávkový JŘ z okna JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
 
-- **`B189` Sdílení šablon mezi firmami** [L] (Jan 7. 10., návrh 3. 11.). Odeslání víc vlastních šablon jiné firmě
-  a převzetí přijatých v okně šablon přes sdílení dat ISYCloudu; rozhodnutí a pravidla v
-  [`architektonicka-rozhodnuti-agendy.md` R9](architektonicka-rozhodnuti-agendy.md). Odeslání i příjem proklikané end to end na DEV
-  proti testovacímu ISYCloudu na Railway (Jan 3. 11.). **Do vydání:** typ `SABLONA` v ostrém ISYCloudu (David, větev `production-isycloud`;
-  4. 11. je jen na `main`, ne v `test-isycloud` ani `production-isycloud`), zapnutí mimo DEV (`JeZapnute`), adresa ISYCloudu na DEV, příručka a Novinky.
-  **Dodělat:** otázka na přepsání převzaté šablony s tlačítky Přepsat / Uložit jako novou / Storno (dnes Ano/Ne/Storno). Uvnitř firmy (práva, osobní šablony) zatím otevřené.
+- **`B189` Sdílení šablon mezi firmami** [L] (Jan 7. 10.). Odeslání a převzetí šablon přes sdílení dat ISYCloudu hotové,
+  ověřené na DEV proti testu na Railway, akce zapnutá všem (Jan 4. 11.); pravidla v [R9](architektonicka-rozhodnuti-agendy.md).
+  **Do vydání:** typ `SABLONA` v ostrém ISYCloudu (4. 11. jen na `main` edwcore, ne v `production-isycloud`), vydání návrháře
+  v příští verzi, příručka a Novinky. **Dodělat:** otázka na přepsání převzaté s tlačítky Přepsat / Uložit jako novou / Storno.
+  Otevřené: sdílení uvnitř firmy (práva, osobní šablony).
 
 - **Vyhledávač odjezdů pro cestující** [M] (zadání Jan 13. 10.). QR u sloupku (zastávka a stanoviště)
   otevře aplikaci v ISYCloud: cestující zadá cíl a dozví se nejbližší přímé spoje odsud, data z CIS.

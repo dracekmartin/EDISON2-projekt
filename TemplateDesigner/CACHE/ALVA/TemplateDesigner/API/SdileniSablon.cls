@@ -8,10 +8,11 @@ Class ALVA.TemplateDesigner.API.SdileniSablon Extends %RegisteredObject
 /// Nejvýš souborů v jedné zásilce (strop API ISYCloudu); víc šablon jde ve více zásilkách.
 Parameter MaxSablonVZasilce = 20;
 
-/// Sdílení šablon se v návrháři nabízí. Do vydání jen na vývojovém serveru (`B189`), u zákazníků skryté.
+/// Sdílení šablon se v návrháři nabízí - všem firmám od 4. 11. (Jan, `B189`). Firma bez povoleného sdílení
+/// v ISYCloudu akci vidí a po kliknutí dostane důvod (R9). Jediné místo, kde jde sdílení všem vypnout.
 ClassMethod JeZapnute() As %Boolean
 {
-    q ##class(ALVA.GENERALAPI.Server).IsDev()
+    q 1
 }
 
 /// Firmy, kterým jde šablony poslat: OUT["1"] = [{idfa, nazev, zakaznik}], bez vlastní firmy.
