@@ -11,6 +11,8 @@
 #
 #   powershell -NoProfile -File tools/nasazeni/nahraj-na-dev.ps1 -Sestaveni <sestaveni.json> -Seznam <seznam-dev.json> -Soubory a.exe,b.dll
 #   powershell -NoProfile -File tools/nasazeni/nahraj-na-dev.ps1 -Obnov <slozka zalohy>
+#   -UzNaCili c.exe  soubor se nekopiruje, protoze na DEV share uz lezi build s nasimi zmenami (nahral ho kolega
+#                    po nasem pushi, inventura ho hlasi jako cilPoZmene); pro kotvu se pocita jako nasazeny
 #
 # ASCII-only zamerne: WinPS 5.1 cte UTF-8 bez BOM jako CP-1252.
 
@@ -19,6 +21,7 @@ param(
     [Parameter(ParameterSetName = 'Kopie', Mandatory)] [string]$Sestaveni,
     [Parameter(ParameterSetName = 'Kopie', Mandatory)] [string]$Seznam,
     [Parameter(ParameterSetName = 'Kopie')] [string[]]$Soubory = @(),
+    [Parameter(ParameterSetName = 'Kopie')] [string[]]$UzNaCili = @(),
     [Parameter(ParameterSetName = 'Obnov', Mandatory)] [string]$Obnov,
     [string]$Cil,
     [string]$Nastaveni
@@ -64,6 +67,15 @@ $sestaveniData = [IO.File]::ReadAllText($Sestaveni, $utf8) | ConvertFrom-Json
 $seznamData = [IO.File]::ReadAllText($Seznam, $utf8) | ConvertFrom-Json
 if ($seznamData.faze -ne 'dev') { throw "$Seznam neni inventura faze dev." }
 $soubory = @($Soubory | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+$uzNaCili = @($UzNaCili | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+# Bez kopie jen build, o kterem inventura vi, ze ho na DEV nahral nekdo po pushi nasi zmeny, a jen kdyz tam porad lezi.
+foreach ($n in $uzNaCili) {
+    if (-not @($sestaveniData.soubory | Where-Object { $_.jmeno -eq $n })) { throw "$n (-UzNaCili) neni v sestaveni $Sestaveni" }
+    if (-not @($seznamData.buildLegacy | Where-Object { $_.vystup -eq $n -and $_.cilPoZmene })) { throw "$n (-UzNaCili) inventura nehlasi jako build po nasi zmene (cilPoZmene)" }
+    $cil = Join-Path $cilSlozka $n
+    $ted = if (Test-Path -LiteralPath $cil) { Get-Md5 $cil } else { $null }
+    if (-not $ted -or $ted -ne $seznamData.cil.soubory.$n.md5) { throw "$n (-UzNaCili) na DEV share se od inventury zmenil nebo chybi" }
+}
 
 # Vsechny kontroly pred prvni kopii: radsi nic nez pul nasazeni.
 $plan = foreach ($n in $soubory) {
@@ -113,7 +125,7 @@ $stav = Read-NasazeniStav $k
 $souboryStavu = [ordered]@{}
 if ($stav.dev -and $stav.dev.soubory) { foreach ($pr in $stav.dev.soubory.PSObject.Properties) { $souboryStavu[$pr.Name] = $pr.Value } }
 foreach ($p in $plan) { $souboryStavu[$p.Jmeno] = $p.Md5 }
-$kotva = Get-KotvaPoNasazeni $k $seznamData $sestaveniData (@($plan | ForEach-Object { $_.Jmeno }) + $naShare)
+$kotva = Get-KotvaPoNasazeni $k $seznamData $sestaveniData (@($plan | ForEach-Object { $_.Jmeno }) + $naShare + $uzNaCili)
 if ($kotva.chybi.Count -gt 0) { Write-Host "Kotva DEV zustava, nenasazeno: $($kotva.chybi -join ', ')" }
 Write-NasazeniStav $k 'dev' ([ordered]@{ cas = (Get-Date).ToString('s'); commity = $kotva.commity; soubory = $souboryStavu })
 Write-Host "zaloha: $zaloha"

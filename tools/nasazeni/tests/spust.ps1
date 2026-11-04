@@ -218,6 +218,36 @@ try {
     Test-Plati ($s.shell.td.stav -eq 'API EDControls nic neodebira') "TD: bez odebraneho API neni co resit ($($s.shell.td.stav))"
     Test-Plati (-not (@($s.shell.souboryPriZmene) -contains 'UPD.exe')) 'zmena jen dokumentace nevynuti EDUPDATE2.exe'
     Test-Plati (@($s.cizi | Where-Object { $_.modul -eq 'MOD' -and $_.autor -eq 'Kolega' }).Count -ge 1) 'cizi commit nese modul'
+    Test-Plati (-not @($s.buildLegacy | Where-Object { $_.cilPoZmene }).Count) 'bez souboru na DEV share neni build po zmene'
+
+    # APP.exe na DEV share mladsi nez push moje zmeny APP postavil nekdo jiny, MD5 z naseho nasazeni ho vraci mezi nase.
+    $inventuraDev = {
+        $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-Faze', 'dev', '-KotvaEdison', $kotva1, '-KotvaEdison2', $kotva2, '-BezFetch', '-Nastaveni', $nast)
+        [IO.File]::ReadAllText(@($r.Vystup | Where-Object { $_ -match 'seznam-dev-.*\.json$' })[-1], $utf8) | ConvertFrom-Json
+    }
+    $appDev = { param($sp) @($sp.buildLegacy | Where-Object { $_.vystup -eq 'APP.exe' })[0] }
+    Start-Sleep -Seconds 2; Set-Text (Join-Path $share 'APP.exe') 'build kolegy'
+    Test-Plati (-not (& $appDev (& $inventuraDev)).cilPoZmene) 'build na DEV share nese jen pushnutou zmenu, i kdyz je mladsi nez commit'
+    Invoke-G $e1 @('push', '-q', 'origin', 'HEAD:moje') | Out-Null
+    Invoke-G $e1 @('branch', '-q', '--set-upstream-to', 'origin/moje') | Out-Null
+    try {
+        Test-Plati (-not (& $appDev (& $inventuraDev)).cilPoZmene) 'build na DEV share starsi nez push neni build po zmene'
+        Start-Sleep -Seconds 2; Set-Text (Join-Path $share 'APP.exe') 'build kolegy po pushi'
+        $a = & $appDev (& $inventuraDev)
+        Test-Plati ($a.cilPoZmene -and $a.vlastniZmena) 'soubor na DEV share mladsi nez push vlastni zmeny je build po zmene'
+        Write-NasazeniStav (Get-Nastaveni $nast) 'dev' ([ordered]@{ soubory = [ordered]@{ 'APP.exe' = (Get-Md5 (Join-Path $share 'APP.exe')) } })
+        Test-Plati (-not (& $appDev (& $inventuraDev)).cilPoZmene) 'soubor, ktery jsme na DEV nahrali my, neni build kolegy'
+    } finally {
+        Invoke-G $e1 @('branch', '-q', '--set-upstream-to', 'origin/main') | Out-Null
+        Invoke-G $e1 @('push', '-q', 'origin', '--delete', 'moje') | Out-Null
+        Write-NasazeniStav (Get-Nastaveni $nast) 'dev' $null
+        Remove-Item -LiteralPath (Join-Path $share 'APP.exe')
+    }
+
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-Faze', 'rel', '-KotvaEdison', $kotva1, '-KotvaEdison2', $kotva2, '-BezFetch', '-BezBaliku', '-Nastaveni', $nast)
+    $sp = [IO.File]::ReadAllText(@($r.Vystup | Where-Object { $_ -match 'seznam-rel-.*\.json$' })[-1], $utf8) | ConvertFrom-Json
+    Test-Plati ($r.Kod -eq 0 -and $sp.cil.chyba -match 'BezBaliku') "REL bez baliku: stav cile neovereny ($($r.Vystup | Select-Object -Last 3))"
+    Test-Plati ($sp.shell.td.stav -eq 'cil neovereny' -and @($sp.shell.legacyApi | Where-Object { $_.dll -eq 'LEG.dll' -and $_.stav -eq 'cil neovereny' }).Count -eq 1) 'REL bez baliku: TD a legacy API shellu neoverene, ne prazdne'
 
     # Clenove projektu na DEV: clen mimo git, rozdelany v hlavni kopii, test NEPRIDAVAT, trida ze seznamu mimo projekt.
     $clenove = Join-Path $koren 'clenove'; Set-Text (Join-Path $clenove 'ALVA_MOD.txt') "ALVA.MOD.A|CLS`nALVA.MOD.Tests.T|CLS`nALVA.MOD.Ghost|CLS`n"
@@ -282,6 +312,10 @@ try {
     Set-Text (Join-Path $tridy 'ALVA.MOD.A.cls') "Class ALVA.MOD.A`n{`n/// cizi`n}`n"
     $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-PorovnejTridy', $tridy, '-Nastaveni', $nast)
     Test-Plati ($r.Kod -eq 1) 'jina trida na DEV se ohlasi'
+    $repo = "Class X Extends %RegisteredObject`nInclude (ALVA.Makra)`n{`nParameter VERZE = `"12`";`nParameter TEXT = `"12a`";`n}"
+    $server = "Class X Extends %RegisteredObject`nInclude ALVA.Makra`n{`nParameter VERZE = 12;`nParameter TEXT = `"12a`";`n}"
+    Test-Plati ((ConvertTo-PorovnatelnaTrida $repo -BezPrazdnych) -eq (ConvertTo-PorovnatelnaTrida $server -BezPrazdnych)) 'trida: include bez zavorek a ciselny parametr bez uvozovek je tataz trida'
+    Test-Plati ((ConvertTo-PorovnatelnaTrida 'Include (A, B)' -BezPrazdnych) -eq 'Include (A, B)') 'trida: vic includu zustava v zavorce'
 
     Add-Commit $e2 'EDControls odebira typ' @{ 'EDControls/PublicAPI.Unshipped.txt' = "*REMOVED*Ns.Stary`n" } | Out-Null
     $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-Faze', 'dev', '-KotvaEdison', $kotva1, '-KotvaEdison2', $poShellu, '-BezFetch', '-Nastaveni', $nast)
@@ -351,14 +385,32 @@ try {
 
     $test.odpovedi = @{ 'E2ETests' = @([pscustomobject]@{ Kod = 0; Vystup = @('Passed!  - Failed:     0, Passed:     0, Skipped:     4, Total:     4') }) }
     Test-Vyhodi { & $sestav -Shell -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast } 'preskocily' 'preskoceny test zastavi'
+    $test.odpovedi = @{ 'run-cache-tests' = @([pscustomobject]@{ Kod = 0; Vystup = @('  Total: 3 passed, 0 failed, 1 skipped') }) }
+    $vystupSestaveni = & $sestav -CacheTesty 'ALVA.MOD.Tests' -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast
+    $sd = [IO.File]::ReadAllText(@($vystupSestaveni)[-1], $utf8) | ConvertFrom-Json
+    Test-Plati (@($sd.testy) -contains 'cache1 3, preskoceno 1') 'preskoceny test Cache nezastavi a je v souhrnu'
     $test.odpovedi = @{}
 
     try { & $sestav -Legacy 'APP\APP.csproj' -Shell -Seznam $seznamAktualni -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast | Out-Null; Test-Plati $true 'build na commitech inventury projde' }
     catch { Test-Plati $false "build na commitech inventury projde ($($_.Exception.Message))" }
     $posunuty = Join-Path $koren 'seznam-posunuty.json'
-    $sp = [IO.File]::ReadAllText($seznamAktualni, $utf8) | ConvertFrom-Json; $sp.repa.EDISON2.head = 'jiny'
+    $sp = [IO.File]::ReadAllText($seznamAktualni, $utf8) | ConvertFrom-Json; $sp.repa.EDISON.head = Invoke-G $e1 @('rev-parse', 'HEAD~1')
     Write-Json $posunuty $sp
-    Test-Vyhodi { & $sestav -Shell -Seznam $posunuty -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast } 'EDISON2 se od inventury posunul' 'build odmitne HEAD posunuty od inventury'
+    Test-Vyhodi { & $sestav -Legacy 'APP\APP.csproj' -Seznam $posunuty -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast } 'meni stavene projekty' 'build odmitne HEAD EDISON posunuty ve slozce staveneho projektu'
+    try { & $sestav -Legacy 'EXT\EXT.csproj' -Seznam $posunuty -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast | Out-Null; Test-Plati $true 'posun HEAD EDISON mimo stavene projekty build nezastavi' }
+    catch { Test-Plati $false "posun HEAD EDISON mimo stavene projekty build nezastavi ($($_.Exception.Message))" }
+    Set-Text (Join-Path $e1 'REF\REF.csproj') '<Project><ItemGroup><ProjectReference Include="..\DIA\DIA.csproj" /></ItemGroup></Project>'
+    try {
+        Test-Vyhodi { & $sestav -Legacy 'REF\REF.csproj' -Seznam $posunuty -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast } 'meni stavene projekty' 'posun HEAD v ProjectReference staveneho projektu build zastavi'
+        try { & $sestav -Legacy 'REF\REF.csproj' -BezZavislosti -Seznam $posunuty -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast | Out-Null; Test-Plati $true 'bez zavislosti se ProjectReference nehlida' }
+        catch { Test-Plati $false "bez zavislosti se ProjectReference nehlida ($($_.Exception.Message))" }
+    } finally { Remove-Item -LiteralPath (Join-Path $e1 'REF') -Recurse -Force }
+
+    $test.volani.Clear()
+    $vystupSestaveni = & $sestav -Legacy 'APP\APP.csproj' -Shell -CacheTesty 'ALVA.MOD.Tests' -BezTestu -BezZavislosti -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast
+    $sd = [IO.File]::ReadAllText(@($vystupSestaveni)[-1], $utf8) | ConvertFrom-Json
+    Test-Plati (@($test.volani | Where-Object { $_ -match '^dotnet test|run-cache-tests' }).Count -eq 0 -and @($sd.testy) -contains 'testy vynechany na pokyn uzivatele') 'bez testu se nic nepusti a sestaveni to zapise'
+    Test-Plati (@($test.volani | Where-Object { $_ -match '^msbuild' -and $_ -match 'BuildProjectReferences=false' }).Count -ge 1) 'bez zavislosti msbuild nestavi ProjectReference'
     Test-Vyhodi { & $sestav -Legacy 'APP\APP.csproj' -Spoustec $spoustec -Nastaveni $nast } 'Chybi -Seznam' 'build bez inventury odmitne'
     $test.akce = { Add-Commit $e1 'pull behem buildu' @{ 'APP/b.cs' = 'class B {}' } | Out-Null }
     Test-Vyhodi { & $sestav -Legacy 'APP\APP.csproj' -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast } 'behem buildu posunul' 'posun HEAD EDISON behem legacy buildu zastavi'
@@ -425,6 +477,22 @@ try {
     $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $nahraj, '-Sestaveni', $sestaveni, '-Seznam', $seznam, '-Nastaveni', $nast)
     Test-Plati ($r.Kod -eq 0 -and (Read-NasazeniStav (Get-Nastaveni $nast)).dev.commity.EDISON -eq $hE1) "bez kopie se souborem uz na DEV share se kotva DEV posune ($($r.Vystup -join ' '))"
 
+    # Na DEV share lezi build kolegy s jinym MD5: -UzNaCili ho necha a kotvu posune.
+    Set-Text (Join-Path $share 'Y.exe') 'build kolegy'; Write-NasazeniStav (Get-Nastaveni $nast) 'dev' $null
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $nahraj, '-Sestaveni', $sestaveni, '-Seznam', $seznam, '-UzNaCili', 'Y.exe', '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -ne 0 -and ($r.Vystup -join ' ') -match 'cilPoZmene') 'bez kopie jen soubor, ktery inventura hlasi jako build po zmene'
+    $sz = [IO.File]::ReadAllText($seznam, $utf8) | ConvertFrom-Json
+    $sz.buildLegacy[0] | Add-Member -NotePropertyName cilPoZmene -NotePropertyValue $true -Force
+    $sz.cil.soubory | Add-Member -NotePropertyName 'Y.exe' -NotePropertyValue ([pscustomobject]@{ md5 = 'jiny' }) -Force
+    Write-Json $seznam $sz
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $nahraj, '-Sestaveni', $sestaveni, '-Seznam', $seznam, '-UzNaCili', 'Y.exe', '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -ne 0 -and ($r.Vystup -join ' ') -match 'od inventury zmenil') 'bez kopie jen soubor, ktery na DEV share od inventury nikdo neprepsal'
+    $sz.cil.soubory.'Y.exe'.md5 = Get-Md5 (Join-Path $share 'Y.exe'); Write-Json $seznam $sz
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $nahraj, '-Sestaveni', $sestaveni, '-Seznam', $seznam, '-UzNaCili', 'Y.exe', '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -eq 0 -and [IO.File]::ReadAllText((Join-Path $share 'Y.exe')) -eq 'build kolegy' -and (Read-NasazeniStav (Get-Nastaveni $nast)).dev.commity.EDISON -eq $hE1) "soubor uz na cili se nekopiruje a kotva DEV se posune ($($r.Vystup -join ' '))"
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $nahraj, '-Sestaveni', $sestaveni, '-Seznam', $seznam, '-UzNaCili', 'Z.exe', '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -ne 0 -and ($r.Vystup -join ' ') -match 'neni v sestaveni') 'soubor mimo sestaveni v -UzNaCili zastavi'
+
     # --- over-test-verzi.ps1 -------------------------------------------------------------------------
     $over = Join-Path $nasazeni 'over-test-verzi.ps1'
     $balik = Join-Path $koren 'stav\balik'
@@ -454,9 +522,12 @@ try {
     $tridyRel = @([ordered]@{ trida = 'ALVA.MOD.A'; cacheProjekty = @('ALVA_MOD') }, [ordered]@{ trida = 'ALVA.Y.B'; cacheProjekty = @('ALVA_Y') })
     $novySeznamRel = { param($tridy, $faze = 'rel') Write-Json $seznamRel ([ordered]@{ faze = $faze; kotva = [ordered]@{ EDISON = 'stara1'; EDISON2 = 'stara2' }
         repa = [ordered]@{ EDISON = [ordered]@{ head = 'h1' }; EDISON2 = [ordered]@{ head = 'h2' } }; buildLegacy = @(); shell = [ordered]@{ zmena = $false; souboryPriZmene = @() }; tridy = $tridy }) }
-    & $novySeznamRel $tridyRel 'dev'
+    & $novySeznamRel @($tridyRel[0]) 'dev'
     $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $over, '-Verze', '1.2', '-Predchozi', '1.1', '-Sestaveni', $sestaveniVerze, '-Seznam', $seznamRel, '-Zapis', '-Nastaveni', $nast)
-    Test-Plati ($r.Kod -ne 0 -and ($r.Vystup -join ' ') -match 'neni inventura faze rel') 'zapis REL odmitne inventuru DEV'
+    Test-Plati ($r.Kod -ne 0 -and ($r.Vystup -join ' ') -match 'kotvu REL posune jen') 'zapis REL odmitne inventuru DEV, ktera zacina za kotvou REL'
+    Write-NasazeniStav (Get-Nastaveni $nast) 'rel' ([ordered]@{ commity = [ordered]@{ EDISON = 'stara1'; EDISON2 = 'stara2' } })
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $over, '-Verze', '1.2', '-Predchozi', '1.1', '-Sestaveni', $sestaveniVerze, '-Seznam', $seznamRel, '-Zapis', '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -eq 0 -and (Read-NasazeniStav (Get-Nastaveni $nast)).rel.commity.EDISON -eq 'h1') 'zapis REL prijme inventuru DEV a posune kotvu na jeji commity'
     & $novySeznamRel $tridyRel
     $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $over, '-Verze', '1.2', '-Predchozi', '1.1', '-Sestaveni', $sestaveniVerze, '-Seznam', $seznamRel, '-Zapis', '-Nastaveni', $nast)
     $stavRel = (Read-NasazeniStav (Get-Nastaveni $nast)).rel

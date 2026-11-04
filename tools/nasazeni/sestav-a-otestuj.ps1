@@ -1,15 +1,18 @@
 # Postavi a otestuje, co se bude nasazovat. Na DEV ani REL nic nenahraje.
 #
-# Stavi jen commity, ktere videla inventura (-Seznam): kdyz se HEAD od ni posunul, odmitne.
+# Stavi commity, ktere videla inventura (-Seznam). Shell vzdy na commitu inventury. Legacy z hlavni kopie: kdyz se
+# HEAD EDISON od inventury posunul, odmitne jen pri zmene ve slozce stavenych projektu, jinak zapise novy commit.
 # Legacy projekty z EDISON postavi do C:\Edison: nejdriv zastarale DLL (-Predem, z co-nasadit.ps1), pak
 # zmenene projekty (-Legacy). Shell z EDISON2 (-Shell) postavi v docasnem worktree na commitu, ktery
 # zaznamena na zacatku behu, pusti vsechny testy (unit s okny, integracni, Cache vcetne -CacheTesty, E2E)
 # a publikuje do C:\Edison, s -Navic i EDUPDATE2.exe nebo EDISONRUNTIME.zip. Bez -Shell pusti jen -CacheTesty.
-# Neprosly nebo preskoceny test zastavi.
+# Neprosly test zastavi, preskoceny jen v .NET. Preskoceny test Cache ($$$AssertSkipped) se zapise do souhrnu testu.
 # Zapise seznam postavenych souboru s MD5 a commitem, ze ktereho nahraj-na-dev.ps1 a over-test-verzi.ps1
 # poznaji, ze nasazuji a overuji prave tyhle soubory.
 #
 #   powershell -NoProfile -File tools/nasazeni/sestav-a-otestuj.ps1 -Seznam <seznam-dev.json> -Predem MZDY2APICIS\MZDY2APICIS.csproj -Legacy MHD2Ridici\MHD2Ridici.csproj -Shell -CacheTesty ALVA.MHD2.Ridici.Tests
+#   -BezTestu      na pokyn uzivatele nepusti zadne testy, sestaveni to zapise do pole testy
+#   -BezZavislosti legacy bez stavby ProjectReference (rozbity projekt kolegy), bere jeho DLL z C:\Edison
 #
 # Vystup: %LOCALAPPDATA%\edison-nasad\sestaveni-<cas>.json (cesta na poslednim radku), logy krok po kroku vedle.
 # Legacy vzdy Build, nikdy Rebuild: Rebuild nejdriv smaze DLL v C:\Edison, na ktere ostatni projekty odkazuji
@@ -26,7 +29,9 @@ param(
     [string]$Seznam,
     [string]$Nastaveni,
     [scriptblock]$Spoustec,
-    [switch]$BezKontrolSouboru
+    [switch]$BezKontrolSouboru,
+    [switch]$BezTestu,
+    [switch]$BezZavislosti
 )
 
 $ErrorActionPreference = 'Stop'
@@ -84,8 +89,8 @@ function Invoke-CacheTesty([string]$Repo, [bool]$Vychozi) {
             if ($_ -match 'Total:\s+(\d+) passed,\s+(\d+) failed,\s+(\d+) skipped') { , [int[]]@($Matches[1], $Matches[2], $Matches[3]) }
         })
         if ($r.Kod -ne 0 -or $celkem.Count -eq 0 -or $celkem[-1][1] -gt 0) { throw "Cache testy ($i) neprosly, log v $script:logy" }
-        if ($celkem[-1][2] -gt 0) { throw "Cache testy ($i) preskocily $($celkem[-1][2]) testu, log v $script:logy" }
-        $vysledky += "cache$i $($celkem[-1][0])"
+        # $$$AssertSkipped hlasi chybejici data na DEV, ne neovereny kod: pre-push na nem take nestoji.
+        $vysledky += if ($celkem[-1][2] -gt 0) { "cache$i $($celkem[-1][0]), preskoceno $($celkem[-1][2])" } else { "cache$i $($celkem[-1][0])" }
     }
     return $vysledky
 }
@@ -108,12 +113,31 @@ $commity = [ordered]@{
     EDISON = ((Invoke-Git $k.repoEdison @('rev-parse', 'HEAD')).Vystup -join '').Trim()
     EDISON2 = ((Invoke-Git $k.repoEdison2 @('rev-parse', 'HEAD')).Vystup -join '').Trim()
 }
-# Stavi se jen commity, ktere videla inventura: novejsi by na DEV dostal build, ktery tabulka neukazala.
+# Stavi se commity, ktere videla inventura: novejsi by na DEV dostal build, ktery tabulka neukazala. Shell se stavi
+# ve worktree, proto vzdy na commitu inventury. Legacy se stavi z hlavni kopie: posun HEAD (pull, commit kolegy)
+# vadi, jen kdyz meni slozku nektereho staveneho projektu.
 if ($Seznam) {
     $seznamData = [IO.File]::ReadAllText($Seznam) | ConvertFrom-Json
-    foreach ($r in @($commity.Keys)) {
-        $videla = $seznamData.repa.$r.head
-        if ($videla -ne $commity[$r]) { throw "HEAD $r se od inventury posunul ($videla -> $($commity[$r])), pust co-nasadit.ps1 znovu." }
+    $commity.EDISON2 = $seznamData.repa.EDISON2.head
+    $videla = $seznamData.repa.EDISON.head
+    if ($videla -ne $commity.EDISON -and ($Predem.Count + $Legacy.Count) -gt 0) {
+        # Msbuild stavi i ProjectReference z HEAD, proto se hlida cely jejich uzaver (bez -BezZavislosti).
+        $koren = [IO.Path]::GetFullPath($k.repoEdison).TrimEnd('\') + '\'
+        $projekty = @{}
+        $fronta = New-Object System.Collections.Queue
+        foreach ($p in @($Predem) + @($Legacy)) { $fronta.Enqueue([IO.Path]::GetFullPath((Join-Path $k.repoEdison $p))) }
+        while ($fronta.Count -gt 0) {
+            $p = $fronta.Dequeue()
+            if ($projekty.ContainsKey($p) -or -not (Test-Path -LiteralPath $p)) { continue }
+            $projekty[$p] = $true
+            if (-not $BezZavislosti) { foreach ($o in (Get-ProjektInfo $p).ProjectReference) { $fronta.Enqueue($o) } }
+        }
+        $slozky = @($projekty.Keys | Where-Object { $_.StartsWith($koren, [StringComparison]::OrdinalIgnoreCase) } |
+            ForEach-Object { ((Split-Path -Parent $_.Substring($koren.Length)) -replace '\\', '/') + '/' } | Sort-Object -Unique)
+        $zmenene = @((Invoke-Git $k.repoEdison @('diff', '--name-only', $videla, $commity.EDISON)).Vystup | Where-Object { $_ })
+        $kolize = @($zmenene | Where-Object { $f = $_; @($slozky | Where-Object { $f.StartsWith($_, [StringComparison]::OrdinalIgnoreCase) }).Count -gt 0 })
+        if ($kolize.Count -gt 0) { throw "HEAD EDISON se od inventury posunul ($videla -> $($commity.EDISON)) a meni stavene projekty ($($kolize -join ', ')), pust co-nasadit.ps1 znovu." }
+        Write-Host "HEAD EDISON se od inventury posunul ($videla -> $($commity.EDISON)), stavene projekty se nezmenily."
     }
 } elseif (-not $BezKontrolSouboru) { throw 'Chybi -Seznam: build musi stavet commity, ktere videla inventura.' }
 
@@ -135,13 +159,15 @@ if ($Predem.Count + $Legacy.Count -gt 0) {
         if (-not $msbuild) { throw 'MSBuild nenalezen (vswhere).' }
     }
     $poradi = @($Predem | ForEach-Object { [pscustomobject]@{ Projekt = $_; Nasadit = $false } }) + @($Legacy | ForEach-Object { [pscustomobject]@{ Projekt = $_; Nasadit = $true } })
-    # Projekty na sebe odkazuji pres HintPath do C:\Edison, ne ProjectReference: projekt, ktery spadne na DLL
-    # jineho projektu ze seznamu, projde v dalsim pruchodu, az ji ten postavi.
+    # Projekt, ktery spadne na DLL jineho projektu ze seznamu (HintPath do C:\Edison), projde v dalsim pruchodu,
+    # az ji ten postavi.
     $zbyva = $poradi
     for ($pruchod = 1; $pruchod -le 3 -and $zbyva.Count -gt 0; $pruchod++) {
         $zbyva = @($zbyva | Where-Object {
             $nazev = [IO.Path]::GetFileNameWithoutExtension($_.Projekt)
-            $r = Invoke-Krok "msbuild-$nazev-$pruchod" $msbuild @((Join-Path $k.repoEdison $_.Projekt), '-t:Build', '-p:Configuration=Release', '-p:ResolveNuGetPackages=false', '-m:1', '-nologo', '-v:q') $k.repoEdison
+            $argumenty = @((Join-Path $k.repoEdison $_.Projekt), '-t:Build', '-p:Configuration=Release', '-p:ResolveNuGetPackages=false', '-m:1', '-nologo', '-v:q')
+            if ($BezZavislosti) { $argumenty += '-p:BuildProjectReferences=false' }
+            $r = Invoke-Krok "msbuild-$nazev-$pruchod" $msbuild $argumenty $k.repoEdison
             $r.Kod -ne 0
         })
     }
@@ -170,7 +196,8 @@ if ($Predem.Count + $Legacy.Count -gt 0) {
 }
 
 # Bez shellu bezi jen testy Cache dotcenych modulu, z hlavni kopie EDISON2 (skript testu je tam).
-if (-not $Shell -and $CacheTesty.Count -gt 0) { $souhrnTestu += Invoke-CacheTesty $k.repoEdison2 $false }
+if ($BezTestu) { $souhrnTestu += 'testy vynechany na pokyn uzivatele' }
+elseif (-not $Shell -and $CacheTesty.Count -gt 0) { $souhrnTestu += Invoke-CacheTesty $k.repoEdison2 $false }
 
 # --- Shell ------------------------------------------------------------------------------------------
 if ($Shell) {
@@ -198,10 +225,12 @@ if ($Shell) {
         }
         if ($r.Kod -ne 0) { throw "dotnet build selhal, testy se nepousti. Log v $logy" }
 
-        $souhrnTestu += Assert-Testy 'unit+okna' (Invoke-Krok 'testy-unit' 'dotnet' @('test', 'EDISON2.sln', '--no-build', '-nologo', '-v', 'q', '--filter', 'Category!=Integration&Category!=E2E') $repo @{ EDISON_WINDOW_TESTS = '1'; EDISON_LEGACY_ROOT = $legacyRoot })
-        $souhrnTestu += Assert-Testy 'integracni' (Invoke-Krok 'testy-integracni' 'dotnet' @('test', 'EDISON2.IntegrationTests', '--no-build', '-nologo', '-v', 'q') $repo @{ EDISON_IT_REQUIRED = '1' })
-        $souhrnTestu += Invoke-CacheTesty $repo $true
-        $souhrnTestu += Assert-Testy 'e2e' (Invoke-Krok 'testy-e2e' 'dotnet' @('test', 'EDISON2.E2ETests', '--no-build', '-nologo', '-v', 'q') $repo @{ EDISON_E2E = '1' })
+        if (-not $BezTestu) {
+            $souhrnTestu += Assert-Testy 'unit+okna' (Invoke-Krok 'testy-unit' 'dotnet' @('test', 'EDISON2.sln', '--no-build', '-nologo', '-v', 'q', '--filter', 'Category!=Integration&Category!=E2E') $repo @{ EDISON_WINDOW_TESTS = '1'; EDISON_LEGACY_ROOT = $legacyRoot })
+            $souhrnTestu += Assert-Testy 'integracni' (Invoke-Krok 'testy-integracni' 'dotnet' @('test', 'EDISON2.IntegrationTests', '--no-build', '-nologo', '-v', 'q') $repo @{ EDISON_IT_REQUIRED = '1' })
+            $souhrnTestu += Invoke-CacheTesty $repo $true
+            $souhrnTestu += Assert-Testy 'e2e' (Invoke-Krok 'testy-e2e' 'dotnet' @('test', 'EDISON2.E2ETests', '--no-build', '-nologo', '-v', 'q') $repo @{ EDISON_E2E = '1' })
+        }
 
         $r = Invoke-Krok 'dotnet-publish' 'dotnet' @('publish', $k.shell.publikovat, "-p:PublishProfile=$($k.shell.publishProfil)", '-nologo', '-v', 'q') $repo
         if ($r.Kod -ne 0) { throw "dotnet publish selhal, log v $logy" }

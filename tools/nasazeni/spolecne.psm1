@@ -124,6 +124,8 @@ function Invoke-Git([string]$Repo, [string[]]$Argumenty, [switch]$PovolChybu) {
     try { $r = Invoke-Prikaz 'git' (@('-C', $Repo, '-c', 'core.quotePath=false') + $Argumenty) }
     finally { [Console]::OutputEncoding = $kodovani }
     if (-not $PovolChybu -and $r.Kod -ne 0) { throw "git $($Argumenty -join ' ') v $Repo skoncil s kodem $($r.Kod): $($r.Vystup -join ' ')" }
+    # Varovani gitu (napr. poskozeny commit-graph) jdou na stderr a vystup by rozbila pro parsovani.
+    $r.Vystup = @($r.Vystup | Where-Object { $_ -notmatch '^warning: ' })
     return $r
 }
 
@@ -460,10 +462,49 @@ function Get-UzlyStromu([string]$Text) {
 
 # Cache pri ulozeni tridy vklada prazdne radky mezi // komentare mimo metody a mezeru za ///. Prazdne radky
 # vynechava jen u tridy (-BezPrazdnych): v rutine je cte $t(label+i) a prazdny radek meni chovani.
+# U tridy server take pise jeden include bez zavorek a ciselny parametr bez uvozovek.
 function ConvertTo-PorovnatelnaTrida([string]$Text, [switch]$BezPrazdnych) {
-    $radky = ($Text.TrimStart([char]0xFEFF) -split "`r?`n") | ForEach-Object { ($_ -replace '^(\s*///)\s+', '$1 ').TrimEnd() } |
-        Where-Object { $_ -or -not $BezPrazdnych }
+    $radky = ($Text.TrimStart([char]0xFEFF) -split "`r?`n") | ForEach-Object {
+        $r = ($_ -replace '^(\s*///)\s+', '$1 ').TrimEnd()
+        if ($BezPrazdnych) { $r = $r -replace '^Include \(\s*([\w.%]+)\s*\)$', 'Include $1' -replace '^(Parameter \w+ = )"(-?\d+(\.\d+)?)";$', '$1$2;' }
+        $r
+    } | Where-Object { $_ -or -not $BezPrazdnych }
     return (($radky -join "`n").TrimEnd())
+}
+
+# --- Atelier REST na DEV Cache -------------------------------------------------------------------
+
+# Prihlaseni bere z promennych, ktere nastavuje ~/.claude/settings.json pro hook kompilace (CACHE_*).
+# WebClient s UTF-8: Invoke-RestMethod ve WinPS 5.1 cte odpoved bez charsetu jako Latin-1 a rozbije diakritiku.
+function Invoke-Atelier([string]$Cesta, [string]$Telo) {
+    $server = if ($env:CACHE_SERVER) { $env:CACHE_SERVER.TrimEnd('/') } else { 'http://192.168.16.1:57770' }
+    $ns = if ($env:CACHE_NAMESPACE) { $env:CACHE_NAMESPACE } else { 'MLINE' }
+    if (-not $env:CACHE_USER -or -not $env:CACHE_PASSWORD) { throw 'Chybi CACHE_USER nebo CACHE_PASSWORD (nastavuje je ~/.claude/settings.json).' }
+    $wc = New-Object Net.WebClient
+    $wc.Encoding = $script:Utf8
+    $wc.Headers['Authorization'] = 'Basic ' + [Convert]::ToBase64String($script:Utf8.GetBytes("$($env:CACHE_USER):$($env:CACHE_PASSWORD)"))
+    try {
+        $url = "$server/api/atelier/v1/$ns/$Cesta"
+        if ($Telo) { $wc.Headers['Content-Type'] = 'application/json'; $json = $wc.UploadString($url, 'POST', $Telo) } else { $json = $wc.DownloadString($url) }
+    } finally { $wc.Dispose() }
+    return $json | ConvertFrom-Json
+}
+
+# Zdrojak dokumentu z DEV jako text; $null, kdyz na serveru neni.
+function Get-AtelierDokument([string]$Dokument) {
+    try { $o = Invoke-Atelier "doc/$Dokument" }
+    catch {
+        $we = $_.Exception
+        while ($we -and $we -isnot [Net.WebException]) { $we = $we.InnerException }
+        if ($we -and $we.Response -and [int]$we.Response.StatusCode -eq 404) { return $null }
+        throw
+    }
+    return (@($o.result.content) -join "`n")
+}
+
+function Invoke-AtelierSql([string]$Sql, [object[]]$Parametry = @()) {
+    $o = Invoke-Atelier 'action/query' (@{ query = $Sql; parameters = $Parametry } | ConvertTo-Json -Compress)
+    return @($o.result.content)
 }
 
 Export-ModuleMember -Function *

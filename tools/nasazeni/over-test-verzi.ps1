@@ -42,7 +42,19 @@ $seznamData = $null
 $projektySeznamu = @()
 if ($Seznam) {
     $seznamData = [IO.File]::ReadAllText($Seznam, $utf8) | ConvertFrom-Json
-    if ($Zapis -and $seznamData.faze -ne 'rel') { throw "$Seznam neni inventura faze rel, kotvu REL podle nej posouvat nejde." }
+    # Staci i inventura DEV, kdyz zacina nejpozdeji na kotve REL. Jinak by kotva REL preskocila zmeny, ktere sly
+    # na DEV pred kotvou DEV a na REL nikdy.
+    if ($Zapis -and $seznamData.faze -ne 'rel') {
+        $rel = (Read-NasazeniStav $k).rel
+        foreach ($r in 'EDISON', 'EDISON2') {
+            $od = $seznamData.kotva.$r
+            $relKotva = if ($rel -and $rel.commity) { $rel.commity.$r } else { $null }
+            $repo = if ($r -eq 'EDISON') { $k.repoEdison } else { $k.repoEdison2 }
+            if (-not $relKotva -or ($od -ne $relKotva -and (Invoke-Git $repo @('merge-base', '--is-ancestor', $od, $relKotva) -PovolChybu).Kod -ne 0)) {
+                throw "Inventura DEV zacina v $r na $od, kotva REL je $($relKotva): kotvu REL posune jen inventura -Faze rel."
+            }
+        }
+    }
     $projektySeznamu = @(Get-ProjektyTrid $seznamData)
     $Projekty = @($Projekty + $projektySeznamu | Sort-Object -Unique)
 }

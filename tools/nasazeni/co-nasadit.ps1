@@ -10,10 +10,13 @@
 # Z vystupu skill /edison-nasad sestavi tabulku ke schvaleni.
 #
 #   powershell -NoProfile -File tools/nasazeni/co-nasadit.ps1 -Faze dev
-#   powershell -NoProfile -File tools/nasazeni/co-nasadit.ps1 -Faze rel
+#   powershell -NoProfile -File tools/nasazeni/co-nasadit.ps1 -Faze rel [-BezBaliku]
+#     -BezBaliku: TEST balik (stovky MB) se nestahuje, stav REL je pak neznamy a nasazuje se vse ze sestaveni
 #   powershell -NoProfile -File tools/nasazeni/co-nasadit.ps1 -PorovnejTridy <slozka>   tridy z DEV proti gitu
 #   powershell -NoProfile -File tools/nasazeni/co-nasadit.ps1 -ClenoveProjektu <slozka> [-Seznam <seznam.json>]
 #     clenove projektu z DEV (<projekt>.txt, radky "Jmeno|Typ" z cache_project_info) proti gitu
+#   powershell -NoProfile -File tools/nasazeni/co-nasadit.ps1 -OverDev -Seznam <seznam.json>
+#     oboji naraz: tridy ze seznamu a cleny jejich projektu stahne z DEV pres Atelier (prihlaseni CACHE_*)
 #
 # Vystup: %LOCALAPPDATA%\edison-nasad\seznam-<faze>-<cas>.json (cesta na poslednim radku) a prehled.
 # "Posledni nasazeni" je ve stav.json, ktery zapisuji nahraj-na-dev.ps1 a over-test-verzi.ps1. Prvni beh
@@ -27,8 +30,10 @@ param(
     [string]$KotvaEdison2,
     [string]$PorovnejTridy,
     [string]$ClenoveProjektu,
+    [switch]$OverDev,
     [string]$Seznam,
     [switch]$BezFetch,
+    [switch]$BezBaliku,
     [string]$Nastaveni,
     [string]$Cil
 )
@@ -46,8 +51,8 @@ function Get-JmenoTridy([string]$Soubor) {
 }
 
 # --- Porovnani trid z DEV (cache_get_source) s HEAD ---------------------------------------------
-if ($PorovnejTridy) {
-    $vysledek = foreach ($f in Get-ChildItem -LiteralPath $PorovnejTridy -File) {
+function Compare-TridySGitem([string]$Slozka) {
+    return @(foreach ($f in Get-ChildItem -LiteralPath $Slozka -File) {
         $jeTrida = $f.Extension -ieq '.cls'
         $trida = if ($jeTrida) { [IO.Path]::GetFileNameWithoutExtension($f.Name) } else { $f.Name }
         $cesta = $null; $repoTridy = $null
@@ -68,7 +73,10 @@ if ($PorovnejTridy) {
             $duvod = "prvni rozdil v gitu u radku: $($radek.Substring(0, [Math]::Min(80, $radek.Length)))"
         }
         [pscustomobject]@{ trida = $trida; repo = $repoTridy; cesta = $cesta; shoda = ($git -eq $dev); duvod = $duvod }
-    }
+    })
+}
+if ($PorovnejTridy) {
+    $vysledek = Compare-TridySGitem $PorovnejTridy
     $vysledek | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
     $vystup = Join-Path $k.stavDir "porovnani-trid-$(New-CasovaZnacka).json"
     Write-Json $vystup @($vysledek)
@@ -81,7 +89,7 @@ if ($PorovnejTridy) {
 # Import z DEV na REL posle cely projekt. Clen, ktery v gitu neni, nebo je v hlavni kopii rozdelany (hook ho
 # nasadil bez commitu), by na REL dostal necommitovanou praci. Hlasi i testy NEPRIDAVAT v projektu a s -Seznam
 # tridy ze seznamu mimo projekt (import by je vynechal).
-if ($ClenoveProjektu) {
+function Get-ClenoveProjektu([string]$Slozka, $SeznamData) {
     $vGitu = @{}; $rozdelane = @{}
     foreach ($r in $repa.Keys) {
         foreach ($f in (Invoke-Git $repa[$r] @('ls-files', '--', '*/CACHE/*')).Vystup) { $t = Get-JmenoTridy $f; if ($t) { $vGitu[$t] = $r } }
@@ -91,10 +99,9 @@ if ($ClenoveProjektu) {
             if ($t) { $rozdelane[$t] = $r }
         }
     }
-    $seznamData = if ($Seznam) { [IO.File]::ReadAllText($Seznam, (New-Object Text.UTF8Encoding($false))) | ConvertFrom-Json } else { $null }
     # Testy hleda v celem gitu: seznam.nepridavat zna jen moduly, ve kterych se od kotvy commitovalo.
     $nepridavat = @(foreach ($r in $repa.Keys) { Get-NepridavatTridy $repa[$r] })
-    $vysledek = foreach ($f in Get-ChildItem -LiteralPath $ClenoveProjektu -File -Filter '*.txt') {
+    return @(foreach ($f in Get-ChildItem -LiteralPath $Slozka -File -Filter '*.txt') {
         $projekt = $f.BaseName
         $clenove = @{}; $baliky = @(); $mimoGit = @(); $necommit = @(); $testy = @(); $neovereno = @()
         foreach ($radek in [IO.File]::ReadAllLines($f.FullName)) {
@@ -110,9 +117,13 @@ if ($ClenoveProjektu) {
         }
         $jeClen = { param($t) $clenove.ContainsKey($t) -or @($baliky | Where-Object { $t -like "$_.*" }).Count -gt 0 }
         $chybi = @()
-        if ($seznamData) { $chybi = @(Get-TridyKNasazeni $seznamData | Where-Object { @($_.cacheProjekty) -contains $projekt -and -not (& $jeClen $_.trida) } | ForEach-Object { $_.trida }) }
+        if ($SeznamData) { $chybi = @(Get-TridyKNasazeni $SeznamData | Where-Object { @($_.cacheProjekty) -contains $projekt -and -not (& $jeClen $_.trida) } | ForEach-Object { $_.trida }) }
         [pscustomobject]@{ projekt = $projekt; clenu = $clenove.Count; mimoGit = $mimoGit; necommitovane = $necommit; testy = $testy; chybiVProjektu = $chybi; neovereno = $neovereno }
-    }
+    })
+}
+if ($ClenoveProjektu) {
+    $seznamData = if ($Seznam) { [IO.File]::ReadAllText($Seznam, (New-Object Text.UTF8Encoding($false))) | ConvertFrom-Json } else { $null }
+    $vysledek = Get-ClenoveProjektu $ClenoveProjektu $seznamData
     foreach ($v in $vysledek) {
         Write-Host ("{0}: clenu {1}, mimo git {2}, necommitovane {3}, testy {4}, chybi v projektu {5}{6}" -f $v.projekt, $v.clenu,
             ($v.mimoGit -join ', '), ($v.necommitovane -join ', '), ($v.testy -join ', '), ($v.chybiVProjektu -join ', '),
@@ -122,6 +133,63 @@ if ($ClenoveProjektu) {
     Write-Json $vystup @($vysledek)
     $vystup
     if (@($vysledek | Where-Object { $_.mimoGit.Count + $_.necommitovane.Count + $_.testy.Count + $_.chybiVProjektu.Count -gt 0 }).Count -gt 0) { exit 1 }
+    exit 0
+}
+
+# --- Oboji z DEV pres Atelier -----------------------------------------------------------------------
+# Studio projekt tridy hleda primo na DEV (%Studio.ProjectItem), takze nezavisi na konfiguraci MCP.
+# Exit 1 jen pro to, co ohrozi DEV: trida chybi, nesedi s HEAD, neni v zadnem projektu, rozdelana nebo test
+# v projektu. Clen mimo git hlasi, ale nezastavuje: vadi az pri importu na REL.
+if ($OverDev) {
+    if (-not $Seznam) { throw '-OverDev potrebuje -Seznam.' }
+    $seznamData = [IO.File]::ReadAllText($Seznam, (New-Object Text.UTF8Encoding($false))) | ConvertFrom-Json
+    $koren = Join-Path $k.stavDir "dev-$(New-CasovaZnacka)"
+    $slozkaTrid = Join-Path $koren 'tridy'; $slozkaProjektu = Join-Path $koren 'projekty'
+    New-Item -ItemType Directory -Force -Path $slozkaTrid, $slozkaProjektu | Out-Null
+    $polozky = @(Invoke-AtelierSql 'SELECT Project, Name, Type FROM %Studio.ProjectItem')
+    $projektyClenu = @{}
+    foreach ($p in $polozky) { $n = "$($p.Name)".ToUpperInvariant(); if (-not $projektyClenu.ContainsKey($n)) { $projektyClenu[$n] = @() }; $projektyClenu[$n] += "$($p.Project)" }
+    $balikyDev = @($polozky | Where-Object { "$($_.Type)" -ieq 'PKG' })
+    $chybiNaDev = @(); $bezProjektu = @(); $projekty = @{}
+    foreach ($t in Get-TridyKNasazeni $seznamData) {
+        $jeTrida = $t.cesta -match '\.cls$'
+        $soubor = if ($jeTrida) { "$($t.trida).cls" } else { $t.trida }
+        $text = Get-AtelierDokument $soubor
+        # Include ve vnorene slozce ma na serveru jmeno s cestou (ALVA.ISY.ISYZastavky.ALVAISYZastavky.inc).
+        if ($null -eq $text -and -not $jeTrida -and $t.cesta -match '/CACHE/(.+)$') { $text = Get-AtelierDokument ($Matches[1] -replace '/', '.') }
+        if ($null -eq $text) { $chybiNaDev += $t.trida; continue }
+        [IO.File]::WriteAllText((Join-Path $slozkaTrid $soubor), $text, (New-Object Text.UTF8Encoding($false)))
+        $kde = @($projektyClenu[$t.trida.ToUpperInvariant()])
+        # Clen muze byt i cely balik (PKG ALVA.EDTesting): trida patri projektu, jehoz balik je jejim prefixem.
+        $kde += @($balikyDev | Where-Object { $t.trida -like "$($_.Name).*" } | ForEach-Object { "$($_.Project)" })
+        $kde += @($t.cacheProjekty | Where-Object { $_ })
+        $kde = @($kde | Where-Object { $_ } | Sort-Object -Unique)
+        if ($kde.Count -eq 0) { $bezProjektu += $t.trida }
+        foreach ($p in $kde) { $projekty[$p] = $true }
+    }
+    foreach ($p in $projekty.Keys) {
+        $radky = @($polozky | Where-Object { "$($_.Project)" -eq $p } | ForEach-Object { "$($_.Name)|$($_.Type)" })
+        [IO.File]::WriteAllLines((Join-Path $slozkaProjektu "$p.txt"), [string[]]$radky)
+    }
+    $tridy = @(Compare-TridySGitem $slozkaTrid)
+    $clenove = @(Get-ClenoveProjektu $slozkaProjektu $seznamData)
+    $nesedi = @($tridy | Where-Object { -not $_.shoda })
+    $vysledek = [ordered]@{
+        slozka = $koren; tridu = $tridy.Count; nesedi = $nesedi; chybiNaDev = $chybiNaDev; bezProjektu = $bezProjektu
+        projekty = $clenove
+    }
+    Write-Host ("Tridy: {0} na DEV, nesedi {1}, chybi {2}, bez projektu {3}" -f $tridy.Count, $nesedi.Count, $chybiNaDev.Count, $bezProjektu.Count)
+    foreach ($t in $nesedi) { Write-Host ("  nesedi {0}: {1}" -f $t.trida, $t.duvod) }
+    foreach ($v in $clenove) {
+        $text = @()
+        foreach ($pole in 'mimoGit', 'necommitovane', 'testy', 'chybiVProjektu') { if (@($v.$pole).Count) { $text += "$pole $(@($v.$pole) -join ', ')" } }
+        if ($text.Count) { Write-Host ("  {0}: {1}" -f $v.projekt, ($text -join '; ')) }
+    }
+    $vystup = Join-Path $k.stavDir "over-dev-$(New-CasovaZnacka).json"
+    Write-Json $vystup $vysledek
+    $vystup
+    $vadi = $nesedi.Count + $chybiNaDev.Count + $bezProjektu.Count + @($clenove | Where-Object { $_.necommitovane.Count + $_.testy.Count + $_.chybiVProjektu.Count -gt 0 }).Count
+    if ($vadi -gt 0) { exit 1 }
     exit 0
 }
 
@@ -315,6 +383,8 @@ if ($Faze -eq 'dev') {
             $cilSoubory[$n] = [ordered]@{ md5 = Get-Md5 $p; verze = Get-ProduktVerze $p; cas = (Get-Item -LiteralPath $p).LastWriteTime.ToString('s') }
         } else { $cilSoubory[$n] = $null }
     }
+} elseif ($BezBaliku) {
+    $cilChyba = 'stav REL neovereny (-BezBaliku)'
 } else {
     $verzeCile = $kanaly[$k.kanalTest]['LAST']
     if (-not $verzeCile -or $verzeCile -eq '0.0.0.0') {
@@ -331,6 +401,40 @@ if ($Faze -eq 'dev') {
             $cilSoubory[$e.Jmeno] = [ordered]@{ md5 = Get-Md5Bajtu $e.Data; verze = Get-ProduktVerze $p; podepsany = Test-PodepsanyPe $e.Data }
         }
     }
+}
+
+# Cas, kdy commit dorazil do originu: prvni zaznam reflogu upstreamu (push, fetch), ktery ho obsahuje. Kolega
+# muze stavet s nasi zmenou az od pushe, cas commitu je drivejsi. Nepushnuty commit: $null.
+$reflogUpstreamu = $null
+function Get-CasVOriginu([string]$Commit) {
+    if ($null -eq $script:reflogUpstreamu) {
+        $radky = @((Invoke-Git $k.repoEdison @('log', '-g', '--date=iso-strict', '--format=%H|%gd', '@{u}') -PovolChybu).Vystup | Where-Object { $_ -match '\|' })
+        [array]::Reverse($radky)
+        $script:reflogUpstreamu = $radky
+    }
+    $r = $script:reflogUpstreamu
+    $obsahuje = { param($i) (Invoke-Git $k.repoEdison @('merge-base', '--is-ancestor', $Commit, ($r[$i] -split '\|')[0]) -PovolChybu).Kod -eq 0 }
+    if ($r.Count -eq 0 -or -not (& $obsahuje ($r.Count - 1))) { return $null }
+    $od = 0; $do = $r.Count - 1
+    while ($od -lt $do) { $s = [int][Math]::Floor(($od + $do) / 2); if (& $obsahuje $s) { $do = $s } else { $od = $s + 1 } }
+    if ($r[$od] -match '@\{([^}]+)\}$') { return $Matches[1] }
+    return $null
+}
+
+# Soubor na DEV share mladsi nez push posledni vlastni zmeny projektu postavil nekdo jiny (kolega, jiny chat) az
+# po nem. Nas build by mel stejny kod a jine MD5 (legacy build neni deterministicky), tabulka ho proto nabidne
+# jen jako volitelny a nahraj-na-dev.ps1 -UzNaCili ho zapocte bez kopie.
+$nahraneDev = @{}
+if ($stav.dev -and $stav.dev.soubory) { foreach ($pr in $stav.dev.soubory.PSObject.Properties) { $nahraneDev[$pr.Name] = $pr.Value } }
+foreach ($b in $buildLegacy) {
+    $b['vlastniZmena'] = $null; $b['cilPoZmene'] = $false
+    $c = $cilSoubory[$b.vystup]
+    if ($Faze -ne 'dev' -or -not $c -or -not $c.cas -or $nahraneDev[$b.vystup] -eq $c.md5) { continue }
+    $slozka = (Split-Path -Parent $b.projekt) -replace '\\', '/'
+    $posledni = ((Invoke-Git $k.repoEdison (@('log', '-1', '--no-merges', "--author=$autor", '--format=%H', "$($kotva.EDISON)..HEAD", '--', $slozka) + (Get-MimoBinarky))).Vystup -join '').Trim()
+    if (-not $posledni) { continue }
+    $b['vlastniZmena'] = Get-CasVOriginu $posledni
+    $b['cilPoZmene'] = [bool]($b['vlastniZmena'] -and ([datetime]$c.cas) -gt ([datetimeoffset]$b['vlastniZmena']).LocalDateTime)
 }
 
 # --- 8. Shell ---------------------------------------------------------------------------------------
@@ -371,6 +475,11 @@ if ($cilSoubory[$k.td.soubor]) {
     }
 }
 $legacyApi = @()
+# Bez cile (-BezBaliku, stavba verze) nejde TD ani legacy DLL overit: prazdny vysledek by vypadal jako "sedi".
+if (-not $cilSlozka) {
+    $td.stav = 'cil neovereny'
+    $legacyApi = @($legacyShellu.Keys | Where-Object { Test-Path -LiteralPath (Join-Path $k.edisonDir $_) } | ForEach-Object { [ordered]@{ dll = $_; stav = 'cil neovereny'; chybiClenu = $null } })
+}
 foreach ($dll in $(if ($cilSlozka) { @($legacyShellu.Keys) } else { @() })) {
     $mistni = Join-Path $k.edisonDir $dll
     $cilova = Join-Path $cilSlozka $dll
