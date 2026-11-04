@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-11-04 (2) - Otázka na přepsání převzaté šablony s tlačítky Přepsat / Uložit jako novou (`B189`)
+
+Převzetí šablony, kterou firma už má, se ptalo Ano / Ne / Storno a význam tlačítek vysvětlovala věta („Ano - přepsat…").
+Teď tlačítka říkají, co se stane: **Přepsat** / **Uložit jako novou** / Storno. Sdílené hlášky (EDControls) na to dostaly
+`IPopupDisplayer.ConfirmChoice` s popisky akcí (výchozí implementace Ano/Ne/Storno pro konzumenty bez rebuildu) a tlačítka
+hlášek se rozšíří podle textu.
+Ověřeno: .NET testy návrháře 2777/2777 (nový test tlačítek), EDControls 1294/1294.
+
 ## 2026-11-04 - Sdílení šablon mezi firmami zapnuté všem, pruh přijatých si pamatuje zavření (`B189`)
 
 Akce Odeslat jiné firmě… a Přijaté šablony se nabízejí všem firmám (`SdileniSablon.JeZapnute`, Jan 4. 11.); firma bez povoleného sdílení v ISYCloudu po kliknutí dostane důvod. Vydává se s příští verzí návrháře; do té doby musí být typ `SABLONA` v ostrém ISYCloudu.

@@ -30,9 +30,9 @@
   pro tisk", tučně; výchozí M-line mají všechny agendy JŘ. Okno ji ukazuje jen se zapnutým přepínačem - při vydání ho
   zapnout nebo zrušit. Zbývá zastávkový JŘ z okna JŘ. [`R4`](architektonicka-rozhodnuti-agendy.md)
 
-- **`B189` Sdílení šablon - zbytek** [S + ?] (mezi firmami hotové 4. 11., archiv). **Dodělat:** otázka na přepsání převzaté
-  šablony s tlačítky Přepsat / Uložit jako novou / Storno (dnes Ano / Ne / Storno); příručka a Novinky s vydáním. Typ `SABLONA`
-  do ostrého ISYCloudu nasadí David s vydáním ISYCloudu (domluveno 4. 11.). **Otevřené:** sdílení uvnitř firmy (práva, osobní šablony).
+- **`B189` Sdílení šablon - po vydání** [?] (mezi firmami hotové 4. 11., archiv). **Čeká** na zpětnou vazbu zákazníků,
+  kteří ho s příští verzí vyzkouší (Jan 4. 11.); příručka a Novinky s vydáním. Typ `SABLONA` do ostrého ISYCloudu nasadí
+  David s vydáním ISYCloudu. **Otevřené:** sdílení uvnitř firmy (práva, osobní šablony).
 
 - **Vyhledávač odjezdů pro cestující** [M] (zadání Jan 13. 10.). QR u sloupku (zastávka a stanoviště)
   otevře aplikaci v ISYCloud: cestující zadá cíl a dozví se nejbližší přímé spoje odsud, data z CIS.
