@@ -71,7 +71,19 @@ public partial class TemplateDesignerViewModel
         OnPropertyChanged(nameof(CurrentFirmIdfa));
         StatusText = $"[DEV] Přepnuto na firmu {code}.";
         _receivedNoticeClosed = false;            // zásilky šablon jsou per-firma
-        _ = CheckReceivedTemplatesAsync();
+        _ = CheckReceivedAfterFirmSwitchAsync();
+    }
+
+    /// <summary>Nastavení je pro uživatele a firmu: bez nového načtení by pruh přijatých šablon porovnával s viděnou
+    /// zásilkou výchozí firmy a zavřený se po přepnutí ukázal znovu (nález Jan 4. 11.).</summary>
+    private async Task CheckReceivedAfterFirmSwitchAsync()
+    {
+        if (Preferences is { } prefs)
+        {
+            try { await prefs.LoadAsync(); }
+            catch (Exception) { }
+        }
+        await CheckReceivedTemplatesAsync();
     }
 
     /// <summary>Najde v nových stránkách tu odpovídající aktuálně zobrazené - dle zastávky×směru
