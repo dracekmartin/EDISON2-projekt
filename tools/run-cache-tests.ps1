@@ -7,7 +7,7 @@
 # lane and run one after another: their tests write the same CB_DP data inside
 # transactions, and Cache does not isolate uncommitted data between processes.
 # Wall time = slowest package instead of the sum - TemplateDesigner is the expensive
-# one (~45 s, gold digests). -Sequential is a troubleshooting fallback.
+# one (~2 min, gold digests and legacy parity). -Sequential is a troubleshooting fallback.
 #
 # Usage:
 #   pwsh -File tools/run-cache-tests.ps1
@@ -92,14 +92,32 @@ $runOne = {
         # Skipped ($$$AssertSkipped) does not fail the run; an older runner without the key reports 0.
         $skipped = [int]$result["skipped"].Value
 
+        # tests(i, class/method/status/duration); Cache writes .25 for 0.25, hence the invariant parse.
+        $tests = @()
+        $total = [int]$result["total"].Value
+        if ($result["tests"]) {
+            for ($i = 1; $i -le $total; $i++) {
+                $t = $result["tests"][[string]$i]
+                if ($null -eq $t) { continue }
+                $d = 0.0
+                [void][double]::TryParse([string]$t["duration"].Value, [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$d)
+                $tests += [PSCustomObject]@{
+                    Class = $t["class"].Value; Method = $t["method"].Value
+                    Status = $t["status"].Value; Seconds = $d
+                }
+            }
+        }
+
         return [PSCustomObject]@{
             Package = $pkg; Ok = $true; Error = $null; Seconds = $sw.Elapsed.TotalSeconds
             Passed = [int]$result["passed"].Value
             Failed = $failed
             Skipped = $skipped
-            Total  = [int]$result["total"].Value
+            Total  = $total
             Failures = & $readEntries "failures" $failed
             Skips = & $readEntries "skips" $skipped
+            Tests = $tests
+            Suite = [string]$result["suite"].Value
         }
     } catch {
         return [PSCustomObject]@{
@@ -182,6 +200,18 @@ foreach ($pkg in $pkgs) {
     $color = if ($r.Failed -eq 0) { 'Green' } else { 'Red' }
     $skipNote = if ($r.Skipped -gt 0) { ", {0} skipped" -f $r.Skipped } else { "" }
     Write-Host ("  {0}/{1} passed{2} ({3:N1} s)" -f $r.Passed, $r.Total, $skipNote, $r.Seconds) -ForegroundColor $color
+    # Empty suite = the runner fell back to all folders under the test root: every test ran many times.
+    if ($r.Tests.Count -gt 0 -and -not $r.Suite) {
+        Write-Host "  [WARN] fallback run over all suites, every test ran several times" -ForegroundColor DarkYellow
+    }
+    # Sum far below the wall time = the request waited (server load, a lock), not the tests.
+    $sum = [double]($r.Tests | Measure-Object Seconds -Sum).Sum
+    if ($sum -ge 1 -or ($r.Seconds - $sum) -ge 5) {
+        Write-Host ("  test methods {0:N1} s in total, slowest:" -f $sum) -ForegroundColor DarkGray
+        foreach ($t in @($r.Tests | Sort-Object Seconds -Descending | Select-Object -First 5)) {
+            Write-Host ("    {0,6:N1} s  {1}.{2}" -f $t.Seconds, $t.Class, $t.Method) -ForegroundColor DarkGray
+        }
+    }
     foreach ($f in $r.Failures) { $allFailures.Add($f) }
     foreach ($s in $r.Skips) { $allSkips.Add($s) }
 }

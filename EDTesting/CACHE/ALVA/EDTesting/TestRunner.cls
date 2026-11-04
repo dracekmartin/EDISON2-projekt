@@ -8,7 +8,9 @@ Class ALVA.EDTesting.TestRunner Extends %RegisteredObject
 /// IN:  package — name nebo prefix (např. "ALVA.EDISONMAIN2.Tests")
 /// OUT: passed (count), failed (count), skipped (count), total (count),
 ///      failures(i, "class"/"method"/"message") pro každý failing test,
-///      skips(i, "class"/"method"/"message") pro každý přeskočený ($$$AssertSkipped, message = důvod)
+///      skips(i, "class"/"method"/"message") pro každý přeskočený ($$$AssertSkipped, message = důvod),
+///      tests(i, "class"/"method"/"status"/"duration") pro každou metodu (duration v sekundách),
+///      suite (jméno sady, se kterou běh prošel; prázdné = záložní běh přes všechny složky)
 ClassMethod RunPackage(ByRef sys As %String) As %Status
 {
 	$$$Init
@@ -44,13 +46,13 @@ ClassMethod RunPackage(ByRef sys As %String) As %Status
 		// všechny složky: pomalý, ale správný, takže runner nikdy neskončí tichým 0/0.
 		set kandidati = ..Sady($get(^UnitTestRoot))_$listbuild("")
 		set (passed, failed, skipped) = 0
-		kill selhani, preskoceno
+		kill selhani, preskoceno, testy
 		set kptr = 0
 		while $listnext(kandidati, kptr, sada) {
 			set sada = $get(sada)
-			kill selhani, preskoceno
+			kill selhani, preskoceno, testy
 			set (passed, failed, skipped) = 0
-			do ..SpustSadu(classList, sada, .nase, .passed, .failed, .skipped, .selhani, .preskoceno)
+			do ..SpustSadu(classList, sada, .nase, .passed, .failed, .skipped, .selhani, .preskoceno, .testy)
 			quit:(passed+failed+skipped)>0
 		}
 
@@ -60,6 +62,9 @@ ClassMethod RunPackage(ByRef sys As %String) As %Status
 		set ^||ML("OUT","total") = (passed + failed + skipped)
 		do ..ZapisVysledky("failures", .selhani)
 		do ..ZapisVysledky("skips", .preskoceno)
+		do ..ZapisTesty(.testy)
+		// Prázdná sada = záložní běh přes všechny složky, každý test běžel mnohokrát.
+		set ^||ML("OUT","suite") = $get(sada)
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret ret
@@ -78,9 +83,23 @@ ClassMethod ZapisVysledky(uzel As %String, ByRef vysledky) [ Internal ]
 	}
 }
 
+/// OUT("tests", i, "class"/"method"/"status"/"duration") z $listbuild(třída, metoda, stav, doba).
+ClassMethod ZapisTesty(ByRef testy) [ Internal ]
+{
+	set i = ""
+	for {
+		set i = $order(testy(i))
+		quit:i=""
+		set ^||ML("OUT","tests",i,"class") = $listget(testy(i), 1)
+		set ^||ML("OUT","tests",i,"method") = $listget(testy(i), 2)
+		set ^||ML("OUT","tests",i,"status") = $listget(testy(i), 3)
+		set ^||ML("OUT","tests",i,"duration") = $listget(testy(i), 4)
+	}
+}
+
 /// Spustí všechny třídy v jedné %UnitTest sadě a sečte výsledky, které tím vznikly.
 /// Prázdná `sada` = běh přes všechny složky pod kořenem (původní, mnohonásobně dražší chování).
-ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef passed, ByRef failed, ByRef skipped, ByRef selhani, ByRef preskoceno) [ Internal ]
+ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef passed, ByRef failed, ByRef skipped, ByRef selhani, ByRef preskoceno, ByRef testy) [ Internal ]
 {
 	set baseIndex = +$order(^UnitTest.Result(""), -1)
 
@@ -106,7 +125,7 @@ ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef pas
 	// Pojistka: kdyby RunTest přesto něco do ^||ML zapsal.
 	kill ^||ML
 
-	set (failIdx, skipIdx) = 0
+	set (failIdx, skipIdx, testIdx) = 0
 	kill seen
 
 	// Iteruj všechny TestInstance indexy vytvořené naším batch.
@@ -141,6 +160,8 @@ ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef pas
 					set seen(key) = ""
 
 					set vysledek = ..Vysledek(method.Status)
+					set testIdx = testIdx + 1
+					set testy(testIdx) = $listbuild(case.Name, method.Name, vysledek, +method.Duration)
 					if (vysledek = "passed") {
 						set passed = passed + 1
 					} elseif (vysledek = "skipped") {

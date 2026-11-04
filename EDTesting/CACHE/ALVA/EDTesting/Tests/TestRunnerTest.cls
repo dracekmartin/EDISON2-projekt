@@ -47,6 +47,22 @@ Method TestAssertMessageWithoutMatchingAssertIsEmpty()
 	do $$$AssertEquals(##class(ALVA.EDTesting.TestRunner).AssertMessage(method, 0), "")
 }
 
+/// Doba každé metody jde na wire, aby klient mohl hlásit nejpomalejší testy a vést jejich historii.
+Method TestZapisTestyWritesEveryMethodWithDuration()
+{
+	kill ^||ML
+	set testy(1) = $lb("A.Test", "TestJedna", "passed", 0.25)
+	set testy(2) = $lb("A.Test", "TestDva", "failed", 12.5)
+	do ##class(ALVA.EDTesting.TestRunner).ZapisTesty(.testy)
+	do $$$AssertEquals($g(^||ML("OUT","tests",1,"method")), "TestJedna")
+	do $$$AssertEquals($g(^||ML("OUT","tests",1,"duration")), 0.25)
+	do $$$AssertEquals($g(^||ML("OUT","tests",2,"class")), "A.Test")
+	do $$$AssertEquals($g(^||ML("OUT","tests",2,"status")), "failed")
+	do $$$AssertEquals($g(^||ML("OUT","tests",2,"duration")), 12.5)
+	do $$$AssertEquals($o(^||ML("OUT","tests",2)), "", "jen zapsané metody")
+	kill ^||ML
+}
+
 /// TestMethod s asserty v paměti (neukládá se), každý assert = $lb(stav, popis).
 ClassMethod Method(status As %Integer, asserts... As %List) As %UnitTest.Result.TestMethod [ Private ]
 {

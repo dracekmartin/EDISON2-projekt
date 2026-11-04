@@ -135,7 +135,7 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
   (bez `Category=Integration`/`E2E`), `.cls`→Caché zúžená na dotčené package, `.cs/.cls/.inc`→integrační
   sada (při `.cls/.inc` povinná), změna shellu→E2E (cesty `EDISON2.E2ETests/CLAUDE.md`), `tools/nasazeni/`→jeho testy. Produkční `.cls`
   ve sdíleném `EDControls`/`EDTesting` spustí všechny Caché balíčky, testovací `.cls` (EDControls/EDTesting
-  `Tests/`) jen svůj - TD sada je nejdražší (~45 s). Souhrn selhání `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
+  `Tests/`) jen svůj - TD sada je nejdražší (~2 min, nejpomalejší metody vypíše `run-cache-tests.ps1`). Souhrn selhání `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
 
 ## Commity
 
