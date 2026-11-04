@@ -56,11 +56,14 @@ public partial class EDPopup : Window
         return popup.ShowDialog() == true;
     }
 
-    /// <summary>3-button popup (AnoNeStorno) - vrátí true (Ano) / false (Ne) / null (Storno nebo Esc). Title volitelný.</summary>
-    internal static bool? ShowYesNoCancel(Window? owner, string message, string? title = null)
+    /// <summary>3-button popup (AnoNeStorno) - vrátí true (Ano) / false (Ne) / null (Storno nebo Esc). Title volitelný,
+    /// <paramref name="first"/> a <paramref name="second"/> nahradí popisky Ano a Ne akcemi („Přepsat").</summary>
+    internal static bool? ShowYesNoCancel(Window? owner, string message, string? title = null, string? first = null, string? second = null)
     {
         if (!PopupGuard.CanOpen()) return null;
         var popup = new EDPopup(message, EDPopupButtons.AnoNeStorno, title);
+        if (first is not null) popup.PositiveBtn.Content = first;
+        if (second is not null) popup.NegativeBtn.Content = second;
         PopupGuard.SetOwner(popup, owner);
         popup.ShowDialog();
         return popup._result;

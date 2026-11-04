@@ -9,3 +9,5 @@ static readonly EDControls.EDViewModel.EDAction.Separator -> EDControls.EDViewMo
 EDControls.EDViewModel.EDViewModel.StandardActionsAccessor.Custom(string label, System.Windows.Input.ICommand command, string iconKey, System.Windows.Input.Key key = System.Windows.Input.Key.None, System.Windows.Input.ModifierKeys modifiers = System.Windows.Input.ModifierKeys.None) -> EDControls.EDViewModel.EDAction
 EDControls.EDList.ListColumn.TrailingIconKey.get -> string
 EDControls.EDList.ListColumn.TrailingIconKey.set -> void
+EDControls.EDViewModel.IPopupDisplayer.ConfirmChoice(string message, string firstAction, string secondAction, string title = null, System.Windows.Window owner = null) -> bool?
+EDControls.EDViewModel.PopupDisplayer.ConfirmChoice(string message, string firstAction, string secondAction, string title = null, System.Windows.Window owner = null) -> bool?

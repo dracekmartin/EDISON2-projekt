@@ -29,6 +29,9 @@ public class PopupDisplayer(Window? defaultOwner = null) : IPopupDisplayer
     public bool? ConfirmYesNoCancel(string message, string? title = null, Window? owner = null) =>
         EDPopup.ShowYesNoCancel(owner ?? DefaultOwner, message, title);
 
+    public bool? ConfirmChoice(string message, string firstAction, string secondAction, string? title = null, Window? owner = null) =>
+        EDPopup.ShowYesNoCancel(owner ?? DefaultOwner, message, title, firstAction, secondAction);
+
     public void Error(Exception ex, Window? owner = null)
     {
         // Nahlásit PŘED zobrazením dialogu - snímek okna má zachytit stav v okamžiku chyby,

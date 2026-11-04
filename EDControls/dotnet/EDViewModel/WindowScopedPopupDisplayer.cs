@@ -28,6 +28,9 @@ internal sealed class WindowScopedPopupDisplayer(IPopupDisplayer inner, Window s
     public bool? ConfirmYesNoCancel(string message, string? title = null, Window? owner = null) =>
         inner.ConfirmYesNoCancel(message, title, owner ?? scopedOwner);
 
+    public bool? ConfirmChoice(string message, string firstAction, string secondAction, string? title = null, Window? owner = null) =>
+        inner.ConfirmChoice(message, firstAction, secondAction, title, owner ?? scopedOwner);
+
     public void Error(Exception ex, Window? owner = null) =>
         inner.Error(ex, owner ?? scopedOwner);
 }

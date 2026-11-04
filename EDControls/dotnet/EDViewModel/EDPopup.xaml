@@ -36,17 +36,18 @@
 
             <StackPanel Grid.Row="1" Grid.ColumnSpan="2"
                         Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- MinWidth, ne Width: akční popisky (ConfirmChoice, „Uložit jako novou") jsou delší než Ano/Ne. -->
                 <Button x:Name="PositiveBtn"
-                        Width="80" IsDefault="True"
-                        Padding="0,4" Margin="0,0,6,0"
+                        MinWidth="80" IsDefault="True"
+                        Padding="12,4" Margin="0,0,6,0"
                         Click="PositiveBtn_Click"/>
                 <Button x:Name="NegativeBtn"
-                        Width="80"
-                        Padding="0,4" Margin="0,0,6,0"
+                        MinWidth="80"
+                        Padding="12,4" Margin="0,0,6,0"
                         Click="NegativeBtn_Click"/>
                 <Button x:Name="CancelBtn"
-                        Width="80" IsCancel="True"
-                        Padding="0,4"
+                        MinWidth="80" IsCancel="True"
+                        Padding="12,4"
                         Visibility="Collapsed"
                         Click="CancelBtn_Click"/>
             </StackPanel>

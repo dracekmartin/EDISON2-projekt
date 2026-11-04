@@ -32,6 +32,14 @@ public interface IPopupDisplayer
     bool? ConfirmYesNoCancel(string message, string? title = null, Window? owner = null);
 
     /// <summary>
+    /// Volba ze dvou akcí a Storna s popisky, které říkají, co se stane („Přepsat" / „Uložit jako novou" / Storno):
+    /// true = první akce, false = druhá, null = Storno nebo Esc. U Ano/Ne by uživatel musel význam vyčíst z textu.
+    /// Výchozí implementace je Ano/Ne/Storno, kvůli implementacím v nepřebuildovaných konzumentech.
+    /// </summary>
+    bool? ConfirmChoice(string message, string firstAction, string secondAction, string? title = null, Window? owner = null)
+        => ConfirmYesNoCancel(message, title, owner);
+
+    /// <summary>
     /// Scrollovatelný error dialog s plným textem výjimky. Implementace musí chybu nejdřív nahlásit přes
     /// <see cref="ErrorReporting.ErrorReports.Report"/> (před dialogem kvůli snímku okna) a vrácené číslo ukázat
     /// v dialogu: <c>RelayCommand</c>/<c>AsyncRelayCommand</c> chytají výjimky jen přes displayer, jinak se hlášení ztratí.
