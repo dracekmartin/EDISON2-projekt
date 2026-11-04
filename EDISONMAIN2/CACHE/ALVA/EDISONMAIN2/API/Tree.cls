@@ -352,6 +352,7 @@ ClassMethod FillMain() [ Private ]
 			d ..AddExe("Jízdní řády", "ISYJR2.exe", "ALVA.ISY.ISYJR2.formISYJR2HlavniOkno", "276001", 1, "", 0, "", 0, "ISYBUS Jízdní řády")
 			d ..AddExe("Jízdní řády - Koš", "ISYJR2.exe", "ALVA.ISY.ISYJR2.formISYJR2Kos", "276006", 0, "", 1, "", 0, "ISYBUS Jízdní řády - Koš")
 			d ..AddExe("Jízdní řády - Archiv platných linek", "ISYJR2.exe", "ALVA.ISY.ISYJR2.formISYJR2ArchivPlatnychLinekList", "276007", 0, "", 1, "", 0, "ISYBUS Jízdní řády - Archiv platných linek")
+			d ..AddExe("Jízdní řády - Události", "UDALOSTI.exe", "ALVA.UDALOSTI.formUDALOSTIHistorieZmen", "154005", 0, "agd=ISYJR2", 0, "", 0, "ISYBUS Jízdní řády - Události")
 			d ..AddExe("Oběhy a optimalizace", "ISYObehy.exe", "ALVA.ISY.ISYObehy.formISYOBEHYSkupinyObehuList", "165001", 1, "", 0, "", 0, "ISYBUS Oběhy a optimalizace")
 			d ..AddExe("Návaznosti", "ISYNavaznosti.exe", "ALVA.ISY.ISYNavaznosti.formISYNavaznostiMain", "167001", 1, "", 0, "", 0, "ISYBUS Návaznosti")
 			d ..AddExe("Vlaky", "ISYVlaky.exe", "ALVA.ISY.ISYVlaky.formISYVlakyMain", "172001", 1, "", 0, "", 0, "ISYBUS Vlaky")
