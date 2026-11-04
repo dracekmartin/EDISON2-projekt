@@ -418,7 +418,7 @@ firmy CB_CSADAD a CB_DP jsou v testu založené přes správní API (test MLWebu
 Příjem si o šablonách zásilky drží název, agendu, verzi a Id u odesílatele (`PRIJATE`), ať se soubory nestahují při
 každém zobrazení seznamu.
 
-Mimo R9 zůstává sdílení uvnitř firmy (práva k šablonám, osobní šablony) - otevřené v `B189`.
+Sdílení uvnitř firmy (práva k šablonám, osobní šablony) se zatím neřeší (Jan 4. 11.).
 
 ---
 

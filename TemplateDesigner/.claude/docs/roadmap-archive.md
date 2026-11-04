@@ -7,6 +7,8 @@ se zaškrtáváním šablon a příjemců, příjem v uzlu Přijaté šablony (p
 převzatá šablona si pamatuje původ a nabídne aktualizaci, pruh v hlavním okně si pro uživatele a firmu pamatuje zavření.
 Klient ISYCloudu běží v Caché, klíč firmy v `^["MLINE"]ALVA.SdileniDat`. Ověřeno na DEV proti testu na Railway, zapnuté
 všem; vydání s příští verzí návrháře, typ do ostrého ISYCloudu nasadí David. Pravidla v R9.
+Zbytek uzavřený 4. 11. (Jan): vydání domluvené, zpětnou vazbu dají zákazníci; sdílení uvnitř firmy (práva, osobní
+šablony) se zatím neřeší.
 
 ## Vyřazení a oprava šablon M-line u zákazníků (hotovo 3. 11. 2026)
 
