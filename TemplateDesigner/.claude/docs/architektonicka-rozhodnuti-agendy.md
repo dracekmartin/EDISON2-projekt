@@ -251,7 +251,11 @@ Později: licence (varianta ponese modul a strom firmě skryje agendy bez licenc
 
 **Parametr sestavy × nastavení prvku (Jan 2. 11.):** parametr je volba, která se smí lišit tisk od tisku. Šablona nese jeho výchozí hodnotu (firma ji nastaví v návrháři a uloží se šablonou), formulář před tiskem ji ukáže a uživatel ji smí změnit jen pro tento tisk, šablonu nepřepíše.
 Nastavení prvku je vzhled a obsah výtisku a ve formuláři před tiskem není. Formulář proto ukazuje všechny parametry agendy jako tiskové okno návrháře.
-Paměť poslední volby uživatele formulář zatím nemá - jednorázová změna by tiše platila i příště a dva lidé by ze stejné šablony tiskli jinak; přidat jde kdykoli.
+**Paměť formuláře (Jan 4. 11.):** formulář si pamatuje poslední volby uživatele (složka, parametry) sdílenou pamětí
+formulářů EDISONu (`FormFilterBig`), protože uživatelé tisknou většinou stejně. Šablona je výjimka (položka menu
+v `ISYJR2/.../TEMPLATES/Tisk.cls`, seznam „vždy výchozí"): je vždy výchozí šablona firmy, jinak by změna výchozí
+nedošla k nikomu, kdo už tiskl, a výchozí by platila jen pro první tisk. Vědomě nevyřešené: parametry se pamatují
+bez ohledu na šablonu, po přepnutí výchozí šablony dostane uživatel svoje staré parametry, ne ty z nové šablony.
 BIG i EDInputForm (`AgendaParams.cls`) jsou tenké převody téže definice parametrů z agendy (`SablonyProTisk.ParametryProTisk`), nový parametr se objeví v obou.
 Parametr jen pro určitý sloupec (`visibleWhenColumn`) a jen pro některé linky (`visibleWhenListedIn`) BIG ukazuje vždy, jako tiskové okno návrháře při tisku víc linek.
 
