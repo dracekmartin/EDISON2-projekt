@@ -3,7 +3,9 @@
 # Called from pre-push hook or interactively.
 #
 # Packages run IN PARALLEL (one runspace + own MLRest instance each; server side
-# every request is its own Cache process with private ^||ML, so runs don't collide).
+# every request is its own Cache process with private ^||ML). MHD2 packages share one
+# lane and run one after another: their tests write the same CB_DP data inside
+# transactions, and Cache does not isolate uncommitted data between processes.
 # Wall time = slowest package instead of the sum - TemplateDesigner is the expensive
 # one (~45 s, gold digests). -Sequential is a troubleshooting fallback.
 #
@@ -115,21 +117,32 @@ if ($Sequential -or $pkgs.Count -le 1) {
     }
 } else {
     Write-Host ("==> Running {0} Cache test packages in parallel: {1}" -f $pkgs.Count, ($pkgs -join ', ')) -ForegroundColor Cyan
-    $pool = [runspacefactory]::CreateRunspacePool(1, $pkgs.Count)
+    $lanes = [ordered]@{}
+    foreach ($pkg in $pkgs) {
+        $lane = if ($pkg -match '^ALVA\.MHD2\.') { 'MHD2' } else { $pkg }
+        if (-not $lanes.Contains($lane)) { $lanes[$lane] = @() }
+        $lanes[$lane] += $pkg
+    }
+    $runLane = {
+        param($runOneSrc, $lanePkgs, $Server, $Port, $Idfa, $DataNamespace, $user, $MLRestDll)
+        $one = [scriptblock]::Create($runOneSrc)
+        foreach ($p in $lanePkgs) { & $one $p $Server $Port $Idfa $DataNamespace $user $MLRestDll }
+    }
+    $pool = [runspacefactory]::CreateRunspacePool(1, $lanes.Count)
     $pool.Open()
     try {
-        $jobs = foreach ($pkg in $pkgs) {
+        $jobs = foreach ($lane in $lanes.Keys) {
             $ps = [powershell]::Create()
             $ps.RunspacePool = $pool
-            [void]$ps.AddScript($runOne.ToString()).
-                AddArgument($pkg).AddArgument($Server).AddArgument($Port).
+            [void]$ps.AddScript($runLane.ToString()).
+                AddArgument($runOne.ToString()).AddArgument([string[]]$lanes[$lane]).AddArgument($Server).AddArgument($Port).
                 AddArgument($Idfa).AddArgument($DataNamespace).AddArgument($user).AddArgument($MLRestDll)
-            [PSCustomObject]@{ Pkg = $pkg; PS = $ps; Handle = $ps.BeginInvoke() }
+            [PSCustomObject]@{ Pkg = ($lanes[$lane] -join ', '); PS = $ps; Handle = $ps.BeginInvoke() }
         }
         foreach ($j in $jobs) {
             $out = $j.PS.EndInvoke($j.Handle)
             if ($out.Count -gt 0) {
-                $results += $out[0]
+                $results += @($out)
             } else {
                 $err = ($j.PS.Streams.Error | Select-Object -First 1 | ForEach-Object { $_.ToString() })
                 $results += [PSCustomObject]@{ Package = $j.Pkg; Ok = $false; Seconds = 0; Error = "no result ($err)" }
