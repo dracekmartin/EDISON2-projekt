@@ -55,6 +55,8 @@ ClassMethod RunPackage(ByRef sys As %String) As %Status
 			do ..SpustSadu(classList, sada, .nase, .passed, .failed, .skipped, .selhani, .preskoceno, .testy)
 			quit:(passed+failed+skipped)>0
 		}
+		// Třídy existují, ale žádný výsledek s naší značkou: zelené 0/0 by schovalo, že se nic nespustilo.
+		if ((passed+failed+skipped) = 0) { throw ##class(%Exception.General).%New("RunPackage",,,"No test result of this run found for "_package) }
 
 		set ^||ML("OUT","passed") = passed
 		set ^||ML("OUT","failed") = failed
@@ -102,6 +104,8 @@ ClassMethod ZapisTesty(ByRef testy) [ Internal ]
 ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef passed, ByRef failed, ByRef skipped, ByRef selhani, ByRef preskoceno, ByRef testy) [ Internal ]
 {
 	set baseIndex = +$order(^UnitTest.Result(""), -1)
+	// Horní uzel userparam uloží %UnitTest do TestInstance.UserParam: značka odliší výsledky tohoto běhu.
+	set znacka = "EDTesting:"_$system.Util.CreateGUID()
 
 	// %UnitTest.Manager.RunTest píše log do current device. V MLRest contextu by
 	// to skončilo v HTTP response streamu před naším OUT a polutovalo CVar parse.
@@ -114,7 +118,7 @@ ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef pas
 	// Spustit každou třídu jednotlivě (":ClassName" = compiled class only).
 	set ptr = 0
 	while $listnext(classList, ptr, className) {
-		do ##class(%UnitTest.Manager).RunTest(sada_":"_className, "/noload/nodelete/display=none")
+		do ##class(%UnitTest.Manager).RunTest(sada_":"_className, "/noload/nodelete/display=none", znacka)
 	}
 
 	// Restore device + cleanup
@@ -125,28 +129,28 @@ ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef pas
 	// Pojistka: kdyby RunTest přesto něco do ^||ML zapsal.
 	kill ^||ML
 
+	do ..Sesbirej(baseIndex, znacka, .nase, .passed, .failed, .skipped, .selhani, .preskoceno, .testy)
+	quit
+}
+
+/// Sečte výsledky TestInstance za `baseIndex` se značkou `znacka`, jen pro třídy v `nase`.
+///
+/// ⚠️ **Počítají se jen výsledky se značkou tohoto běhu.** ^UnitTest.Result je sdílený pro celý
+/// server a souběžně do něj píše kolegův pre-push, úloha tree-sync i jiné týmy. Bez značky si běh
+/// přičetl cizí výsledky téže třídy: selhání, které není naše, a hlavně cizí zelený výsledek
+/// místo vlastního, takže sada skončila zeleně, i když se skoro nic nespustilo.
+/// Dedupe na (třída, metoda) drží počty při běhu přes všechny složky (výsledky téže metody víckrát).
+ClassMethod Sesbirej(baseIndex As %Integer, znacka As %String, ByRef nase, ByRef passed, ByRef failed, ByRef skipped, ByRef selhani, ByRef preskoceno, ByRef testy) [ Internal ]
+{
 	set (failIdx, skipIdx, testIdx) = 0
 	kill seen
-
-	// Iteruj všechny TestInstance indexy vytvořené naším batch.
-	// Dedupe na (className, methodName) - drží počty i tehdy, kdyby výsledky téže metody
-	// přišly víckrát (běh přes všechny složky, nebo souběžný běh kolegy).
-	//
-	// ⚠️ **Počítají se jen třídy, které tenhle běh sám spustil.** ^UnitTest.Result je sdílený
-	// pro celý server, takže sem spadnou i výsledky, které mezitím vyrobil někdo jiný (kolegův
-	// pre-push na témže dev serveru). Bez filtru si běh cizí testy přičetl - dva běhy hlásily
-	// 186/186 místo 128 - a hlavně si mohl přivlastnit i **cizí selhání**, takže se pak hledá
-	// chyba, která není naše.
-	//
-	// Zbytkové riziko, které tím nezmizí: když někdo souběžně pustí **tutéž** třídu, filtr ho
-	// neodliší. Počty to nerozhodí (dedupe na třídu+metodu), ale jeho selhání by se ukázalo
-	// jako naše. Na to by bylo potřeba oddělit běhy už na úrovni %UnitTest, ne až ve výsledcích.
 	set idx = baseIndex
 	for {
 		set idx = $order(^UnitTest.Result(idx))
 		quit:idx=""
 		set instance = ##class(%UnitTest.Result.TestInstance).%OpenId(idx)
 		if ('$isobject(instance)) { continue }
+		continue:instance.UserParam'=znacka
 
 		for s = 1:1:instance.TestSuites.Count() {
 			set suite = instance.TestSuites.GetAt(s)

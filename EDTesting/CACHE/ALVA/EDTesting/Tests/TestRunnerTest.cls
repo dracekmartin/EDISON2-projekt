@@ -63,6 +63,49 @@ Method TestZapisTestyWritesEveryMethodWithDuration()
 	kill ^||ML
 }
 
+/// Souběžný běh téže třídy jinde (kolega, tree-sync) zapíše do sdíleného ^UnitTest.Result vlastní výsledek.
+/// Runner ho dřív přičetl: cizí zelený výsledek nahradil vlastní a sada skončila zeleně bez spuštění.
+Method TestSesbirejCountsOnlyResultsWithOwnTag()
+{
+	set trida = "ALVA.EDTesting.Tests.Fiktivni"
+	set nase(trida) = ""
+	set base = +$order(^UnitTest.Result(""), -1)
+	set (cizi, vlastni) = ""
+	try {
+		set cizi = ..UlozInstanci("cizi-"_$job, trida, "TestCizi", 0)
+		set vlastni = ..UlozInstanci("nase-"_$job, trida, "TestNase", 1)
+		set (passed, failed, skipped) = 0
+		do ##class(ALVA.EDTesting.TestRunner).Sesbirej(base, "nase-"_$job, .nase, .passed, .failed, .skipped, .selhani, .preskoceno, .testy)
+		do $$$AssertEquals(passed, 1, "vlastní výsledek se počítá")
+		do $$$AssertEquals(failed, 0, "cizí selhání téže třídy se nepočítá")
+		do $$$AssertEquals($lg($g(testy(1)), 2), "TestNase")
+		do $$$AssertEquals($d(testy(2)), 0, "jen metody vlastního běhu")
+	}
+	catch ex { do $$$AssertFailure(ex.DisplayString()) }
+	do:cizi'="" ##class(%UnitTest.Result.TestInstance).%DeleteId(cizi)
+	do:vlastni'="" ##class(%UnitTest.Result.TestInstance).%DeleteId(vlastni)
+}
+
+/// Uloží do ^UnitTest.Result instanci s jednou metodou, jako ji zapíše %UnitTest.Manager; vrátí její index.
+ClassMethod UlozInstanci(znacka As %String, trida As %String, metoda As %String, stav As %Integer) As %Integer [ Private ]
+{
+	set instance = ##class(%UnitTest.Result.TestInstance).%New()
+	set instance.InstanceIndex = $increment(^UnitTest.Result)
+	set instance.UserParam = znacka
+	set suite = ##class(%UnitTest.Result.TestSuite).%New()
+	set suite.Name = "Fiktivni"
+	set case = ##class(%UnitTest.Result.TestCase).%New()
+	set case.Name = trida
+	set method = ##class(%UnitTest.Result.TestMethod).%New()
+	set method.Name = metoda
+	set method.Status = stav
+	do case.TestMethods.Insert(method)
+	do suite.TestCases.Insert(case)
+	do instance.TestSuites.Insert(suite)
+	$$$ThrowOnError(instance.%Save())
+	quit instance.InstanceIndex
+}
+
 /// TestMethod s asserty v paměti (neukládá se), každý assert = $lb(stav, popis).
 ClassMethod Method(status As %Integer, asserts... As %List) As %UnitTest.Result.TestMethod [ Private ]
 {
