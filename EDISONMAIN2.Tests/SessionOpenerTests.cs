@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using EDControls;
 using EDControls.EDViewModel;
 using EDTesting;
@@ -27,14 +28,21 @@ public class SessionOpenerTests
         return (new TestableSessionOpener(services, _ => calls.Add("wire"), calls), services);
     }
 
-    /// <summary>Kroky volajícího zapisuje do týchž <see cref="TestableSessionOpener.Calls"/>.</summary>
+    /// <summary>Kroky volajícího zapisuje do týchž <see cref="TestableSessionOpener.Calls"/>.
+    /// <paramref name="pick"/> = volba ve výběru jiné firmy (dostane nabídku), bez něj uživatel výběr zruší.</summary>
     private static SessionOpenSteps Steps(TestableSessionOpener opener, bool passwordChanged = true,
-                                          bool establish = true) => new()
+                                          bool establish = true,
+                                          Func<IReadOnlyList<CompanyStruct>, CompanyStruct?>? pick = null) => new()
     {
         ChangePassword = _ =>
         {
             opener.Calls.Add("password");
             return passwordChanged;
+        },
+        PickOtherCompany = (refused, offered) =>
+        {
+            opener.Calls.Add($"pick {refused.Id}");
+            return pick?.Invoke(offered);
         },
         BeforeEstablish = () =>
         {
@@ -113,8 +121,9 @@ public class SessionOpenerTests
     [Theory]
     [InlineData(LicenceAcquireOutcome.Refused, SessionOpenOutcome.LicenceRefused)]
     [InlineData(LicenceAcquireOutcome.Cancelled, SessionOpenOutcome.LicenceCancelled)]
-    public void Open_LicenceNotAccepted_NoUpdateCheckNoLogLogin(LicenceAcquireOutcome licence, SessionOpenOutcome expected)
+    public void Open_LicenceNotAccepted_SingleCompany_NoOfferNoUpdateCheckNoLogLogin(LicenceAcquireOutcome licence, SessionOpenOutcome expected)
     {
+        // Jediná povolená firma: není co nabídnout, hlášku a konec volí volající jako dřív.
         var (opener, _) = Create();
         opener.LicenceOutcome = licence;
 
@@ -122,6 +131,109 @@ public class SessionOpenerTests
 
         Assert.Equal(expected, result.Outcome);
         Assert.Equal(["allowed", "before", "establish", "wire", "acquire"], opener.Calls);
+        AssertLogLogin(opener.NewSessionMLRest, 0);
+    }
+
+    private static readonly CompanyStruct Cb = new() { Id = "CB_DP", Database = "CB_DP" };
+    private static readonly CompanyStruct Ji = new() { Id = "JI_DP", Database = "JI_DB" };
+    private static readonly CompanyStruct Pi = new() { Id = "PI_DP", Database = "PI_DB" };
+
+    [Theory]
+    [InlineData(LicenceAcquireOutcome.Refused)]
+    [InlineData(LicenceAcquireOutcome.Cancelled)]   // admin odmítl okno aktivity
+    public void Open_LicenceNotAccepted_OtherCompanyPicked_SessionThere(LicenceAcquireOutcome first)
+    {
+        // Legacy admin po odmítnutí licence přepnul firmu z prázdného shellu (frmNoMDI.vb:4926), nový shell ji nabídne.
+        var (opener, _) = Create();
+        opener.AllowedCompanies = [Cb, Ji];
+        opener.LicenceOutcomes.Enqueue(first);
+
+        var result = opener.Open(Login(), Query, "CB_DP", Steps(opener, pick: offered => offered[0]));
+
+        Assert.Equal(SessionOpenOutcome.Opened, result.Outcome);
+        Assert.Equal(["allowed", "before", "establish", "wire", "acquire", "pick CB_DP", "allowed",
+                      "establish", "wire", "acquire", "accepted", "update"], opener.Calls);
+        Assert.Equal(new ConnectionInfo("test-host", 9999, "JI_DB", "JI_DP"), opener.EstablishedConnection);
+        AssertLogLogin(opener.NewSessionMLRest, 1);
+    }
+
+    [Fact]
+    public void Open_LicenceRefused_OfferExcludesRefusedCompany()
+    {
+        var (opener, _) = Create();
+        opener.AllowedCompanies = [Cb, Ji, Pi];
+        opener.LicenceOutcome = LicenceAcquireOutcome.Refused;
+        IReadOnlyList<CompanyStruct>? offer = null;
+
+        opener.Open(Login(), Query, "CB_DP", Steps(opener, pick: offered => { offer = offered; return null; }));
+
+        Assert.Equal(["JI_DP", "PI_DP"], offer?.Select(c => c.Id));
+    }
+
+    [Fact]
+    public void Open_OtherCompanyPicked_AllowedCompaniesReloadedThere()
+    {
+        // Funkční omezení DB je per IDFa, přepínač nové session musí nést seznam ze zvolené firmy.
+        var (opener, _) = Create();
+        opener.AllowedCompanies = [Cb, Ji];
+        IReadOnlyList<CompanyStruct> inJi = [Ji, Pi];
+        opener.AllowedByIdfa["JI_DP"] = inJi;
+        opener.LicenceOutcomes.Enqueue(LicenceAcquireOutcome.Refused);
+
+        var result = opener.Open(Login(), Query, "CB_DP", Steps(opener, pick: _ => Ji));
+
+        Assert.Equal(new ConnectionInfo("test-host", 9999, "JI_DB", "JI_DP"), opener.AllowedQueries[^1]);
+        Assert.Same(inJi, result.Companies);
+    }
+
+    [Fact]
+    public void Open_PickedCompanyMissingInItsOwnList_SessionStillThere_AndAdded()
+    {
+        // PickForSession by tu vzal první povolenou, tedy zase odmítnutou firmu.
+        var (opener, _) = Create();
+        opener.AllowedCompanies = [Cb, Ji];
+        opener.AllowedByIdfa["JI_DP"] = [Cb];
+        opener.LicenceOutcomes.Enqueue(LicenceAcquireOutcome.Refused);
+
+        var result = opener.Open(Login(), Query, "CB_DP", Steps(opener, pick: _ => Ji));
+
+        Assert.Equal(SessionOpenOutcome.Opened, result.Outcome);
+        Assert.Equal("JI_DP", opener.EstablishedConnection?.Idfa);
+        Assert.Equal(["CB_DP", "JI_DP"], result.Companies?.Select(c => c.Id));
+    }
+
+    [Fact]
+    public void Open_RefusedCompaniesNotOfferedAgain_NothingLeft_RefusedWithoutOffer()
+    {
+        // Dvě obsazené firmy se nesmí střídat dokola (každé kolo ukazuje hlášky licence).
+        var (opener, _) = Create();
+        opener.AllowedCompanies = [Cb, Ji, Pi];
+        opener.LicenceOutcome = LicenceAcquireOutcome.Refused;
+        var offers = new List<string[]>();
+
+        var result = opener.Open(Login(), Query, "CB_DP", Steps(opener, pick: offered =>
+        {
+            offers.Add([.. offered.Select(c => c.Id)]);
+            return offered[0];
+        }));
+
+        Assert.Equal(SessionOpenOutcome.LicenceRefused, result.Outcome);
+        Assert.Equal([["JI_DP", "PI_DP"], ["PI_DP"]], offers);
+        Assert.Equal(["CB_DP", "JI_DP", "PI_DP"], opener.EstablishedConnections.Select(c => c.Idfa));
+    }
+
+    [Fact]
+    public void Open_OtherCompanyNotPicked_CancelledWithoutUpdateCheck()
+    {
+        // Dialog už důvod řekl, volající končí bez další hlášky.
+        var (opener, _) = Create();
+        opener.AllowedCompanies = [Cb, Ji];
+        opener.LicenceOutcome = LicenceAcquireOutcome.Refused;
+
+        var result = opener.Open(Login(), Query, "CB_DP", Steps(opener));
+
+        Assert.Equal(SessionOpenOutcome.LicenceCancelled, result.Outcome);
+        Assert.Equal(["allowed", "before", "establish", "wire", "acquire", "pick CB_DP"], opener.Calls);
         AssertLogLogin(opener.NewSessionMLRest, 0);
     }
 

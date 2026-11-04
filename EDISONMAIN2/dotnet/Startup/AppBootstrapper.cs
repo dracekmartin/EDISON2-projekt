@@ -124,6 +124,7 @@ public class AppBootstrapper
             new SessionOpenSteps
             {
                 ChangePassword = l => _host.ShowChangePassword(prep.LoginRest, l.UserName),
+                PickOtherCompany = _host.PickOtherCompany,
                 BeforeEstablish = () =>
                 {
                     ShowStartupProgress("Ověřuji licenci…");

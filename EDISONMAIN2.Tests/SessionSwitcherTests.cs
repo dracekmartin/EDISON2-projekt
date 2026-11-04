@@ -68,6 +68,14 @@ public class SessionSwitcherTests
             return PasswordChanged;
         }
 
+        public Func<IReadOnlyList<CompanyStruct>, CompanyStruct?> OtherCompany { get; set; } = _ => null;
+
+        protected override CompanyStruct? PickOtherCompany(CompanyStruct refused, IReadOnlyList<CompanyStruct> offered)
+        {
+            Calls.Add($"pick {refused.Id}");
+            return OtherCompany(offered);
+        }
+
         protected override void FlushTelemetry(IMLRest? mlRest)
         {
             Calls.Add("flush");
@@ -255,6 +263,24 @@ public class SessionSwitcherTests
 
         Assert.Equal(expected, outcome.Outcome);
         shutdown.DidNotReceive().Invoke();   // hlášku a ukončení volí VM
+    }
+
+    [Fact]
+    public void Switch_LicenceRefused_OtherCompanyPicked_Success()
+    {
+        var shutdown = Substitute.For<Action>();
+        var s = TestableSessionSwitcher.Create(Services(), () => true, shutdown);
+        s.PromptResult = ReauthLogin();
+        s.Opener.AllowedCompanies = [new() { Id = "CB_DP", Database = "CB_DP" }, new() { Id = "JI_DP", Database = "JI_DB" }];
+        s.Opener.LicenceOutcomes.Enqueue(LicenceAcquireOutcome.Refused);
+        s.OtherCompany = offered => offered[0];
+
+        var outcome = s.Switch();
+
+        Assert.Equal(SwitchUserResult.Success, outcome.Outcome);
+        Assert.Contains("pick CB_DP", s.Calls);
+        Assert.Equal("JI_DP", s.Opener.EstablishedConnection?.Idfa);
+        shutdown.DidNotReceive().Invoke();
     }
 
     [Fact]

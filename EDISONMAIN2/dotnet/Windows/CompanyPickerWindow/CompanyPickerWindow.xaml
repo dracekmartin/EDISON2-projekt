@@ -1,0 +1,20 @@
+<Window x:Class="EDISONMAIN2.Windows.CompanyPickerWindow.CompanyPickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ef="clr-namespace:EDControls.EDFooter;assembly=EDControls"
+        xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox;assembly=EDControls"
+        Title="Výběr firmy"
+        Width="480" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource EDTheme.Bg.Base}"
+        Icon="{StaticResource EDIcons.Molecule}">
+    <DockPanel>
+        <ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel"/>
+        <StackPanel Margin="12,12,12,8">
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+            <edfc:EDFilterComboBox x:Name="CompanyCombo" StrictSelection="True"
+                                   Suggestions="{Binding Suggestions}"
+                                   SelectedKey="{Binding SelectedCompanyId, Mode=TwoWay}"/>
+        </StackPanel>
+    </DockPanel>
+</Window>

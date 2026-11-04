@@ -4,6 +4,7 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.LoginWindow;
 using EDISONMAIN2.Windows.SetupWindow;
+using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Tests;
 
@@ -56,6 +57,15 @@ internal sealed class FakeStartupHost(List<string>? calls = null) : IStartupHost
         Calls.Add("password");
         PasswordChange = (rest, userName);
         return PasswordChanged;
+    }
+
+    /// <summary>Volba ve výběru jiné firmy; null = uživatel zrušil.</summary>
+    public Func<IReadOnlyList<CompanyStruct>, CompanyStruct?> OtherCompany { get; set; } = _ => null;
+
+    public CompanyStruct? PickOtherCompany(CompanyStruct refused, IReadOnlyList<CompanyStruct> offered)
+    {
+        Calls.Add($"pick company {refused.Id}");
+        return OtherCompany(offered);
     }
 
     public void RenderNow() { }

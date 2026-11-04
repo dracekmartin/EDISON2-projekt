@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Threading;
 using EDControls;
@@ -6,6 +7,7 @@ using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
 using EDISONMAIN2.Windows.LoginWindow;
 using EDISONMAIN2.Windows.SetupWindow;
+using static ALVA.EDISONAPI.Database;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using Application = System.Windows.Application;
 
@@ -31,6 +33,9 @@ internal interface IStartupHost
 
     /// <summary>Dialog vynucené změny hesla nad login oknem; false = uživatel zrušil.</summary>
     bool ShowChangePassword(IMLRest rest, string userName);
+
+    /// <summary>Výběr jiné firmy po odmítnuté licenci nad login oknem; null = uživatel zrušil.</summary>
+    CompanyStruct? PickOtherCompany(CompanyStruct refused, IReadOnlyList<CompanyStruct> offered);
 
     /// <summary>Vykreslí čekající změny hned, další krok zablokuje UI thread.</summary>
     void RenderNow();
@@ -100,6 +105,9 @@ internal sealed class ApplicationStartupHost(Application application) : IStartup
 
     public bool ShowChangePassword(IMLRest rest, string userName) =>
         new ChangePasswordWindow(rest, userName) { Owner = _loginWindow }.ShowDialog() == true;
+
+    public CompanyStruct? PickOtherCompany(CompanyStruct refused, IReadOnlyList<CompanyStruct> offered) =>
+        Windows.CompanyPickerWindow.CompanyPickerWindow.Pick(_loginWindow, refused, offered);
 
     public void RenderNow() => application.Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
 

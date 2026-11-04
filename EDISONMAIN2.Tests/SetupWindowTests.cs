@@ -62,7 +62,7 @@ public class SetupWindowTests
         });
     }
 
-    private static IEnumerable<BindingExpression> BindingsOf(DependencyObject root)
+    internal static IEnumerable<BindingExpression> BindingsOf(DependencyObject root)
     {
         var local = root.GetLocalValueEnumerator();
         while (local.MoveNext())
@@ -73,7 +73,7 @@ public class SetupWindowTests
                 yield return expression;
     }
 
-    private static void EnsureApplication()
+    internal static void EnsureApplication()
     {
         if (Application.Current is not null) return;
 

@@ -153,7 +153,10 @@ public class AppBootstrapperTests
                 AcquireThrows = AcquireSessionThrows,
                 UpdateRequired = UpdateTriggered,
                 UpdateCheckThrows = UpdateCheckThrows,
-            };
+            }.WithLicenceOutcomes(FirstSessionOutcomes);
+
+        /// <summary>Výsledky licence prvních pokusů, potom platí <see cref="SessionOutcome"/>.</summary>
+        public List<LicenceAcquireOutcome> FirstSessionOutcomes { get; } = [];
 
         public bool AcquireSessionCalled => Calls.Contains("acquire");
         public ConnectionInfo? EstablishedConnection => Opener?.EstablishedConnection;
@@ -420,6 +423,42 @@ public class AppBootstrapperTests
         Assert.Null(result);
         Assert.True(b.ShutdownCalled);
         b.Popup.Received(1).InfoSystem("Nelze se přihlásit, byl překročen počet licencí.");
+    }
+
+    [Fact]
+    public void Run_LicenceRefused_OtherCompanyPicked_ShellStartsThere()
+    {
+        var b = new TestableBootstrapper
+        {
+            AllowedCompanies = [new() { Id = "CB_DP", Database = "CB_DP" }, new() { Id = "JI_DP", Database = "JI_DB" }],
+        };
+        b.FirstSessionOutcomes.Add(LicenceAcquireOutcome.Refused);
+        b.Host.OtherCompany = offered => offered[0];
+
+        b.Run();
+
+        Assert.Contains("pick company CB_DP", b.Calls);
+        Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
+        Assert.True(b.BuildShellCalled);
+        b.Popup.DidNotReceive().InfoSystem(Arg.Any<string>());
+    }
+
+    [Fact]
+    public void Run_LicenceRefused_OtherCompanyNotPicked_ShutdownWithoutPopup()
+    {
+        // Výběr firmy už důvod řekl, druhá hláška by ho jen opakovala.
+        var b = new TestableBootstrapper
+        {
+            SessionOutcome = LicenceAcquireOutcome.Refused,
+            AllowedCompanies = [new() { Id = "CB_DP", Database = "CB_DP" }, new() { Id = "JI_DP", Database = "JI_DB" }],
+        };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        Assert.False(b.BuildShellCalled);
+        b.Popup.DidNotReceive().InfoSystem(Arg.Any<string>());
     }
 
     [Fact]

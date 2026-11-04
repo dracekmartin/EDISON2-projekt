@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using EDControls;
 using EDControls.EDViewModel;
@@ -16,7 +17,7 @@ public enum SessionOpenOutcome
     Cancelled,
     /// <summary>Licence přesáhla limit (non-admin), nebo server vrátil neznámou chybu.</summary>
     LicenceRefused,
-    /// <summary>Admin v licenčním retry zvolil Storno.</summary>
+    /// <summary>Admin v licenčním retry zvolil Storno, nebo uživatel po odmítnutí licence nevybral jinou firmu.</summary>
     LicenceCancelled,
     /// <summary>Spustila se aktualizace (nebo je instalace rozbitá), hlášku už uživatel viděl. Aplikace má skončit.</summary>
     UpdateRequired,
@@ -37,6 +38,9 @@ public sealed record SessionOpenSteps
     /// <summary>Dialog vynucené změny hesla; false = uživatel zrušil.</summary>
     public required Func<LoginResult, bool> ChangePassword { get; init; }
 
+    /// <summary>Výběr jiné firmy po odmítnuté licenci (odmítnutá firma, nabídka); null = uživatel zrušil.</summary>
+    public required Func<CompanyStruct, IReadOnlyList<CompanyStruct>, CompanyStruct?> PickOtherCompany { get; init; }
+
     /// <summary>Po výběru firmy, před založením session; false = zrušit (veto okna při přepnutí uživatele).</summary>
     public Func<bool> BeforeEstablish { get; init; } = () => true;
 
@@ -50,7 +54,8 @@ public sealed record SessionOpenSteps
 /// <summary>
 /// Cesta od přihlášení k běžící session, společná pro start (<see cref="AppBootstrapper"/>) i přihlášení
 /// jiného uživatele (<see cref="SessionSwitcher"/>): vynucená změna hesla → výběr firmy → session →
-/// licence → update check → zápis přihlášení. Nový krok po loginu patří sem, jinak ho jedna cesta nedostane.
+/// licence (odmítnutá nabídne jinou povolenou firmu) → update check → zápis přihlášení. Nový krok po loginu
+/// patří sem, jinak ho jedna cesta nedostane.
 /// Kroky sahající na server jsou <c>protected virtual</c> kvůli testům.
 /// </summary>
 /// <param name="wireActivityFailed">Napojení force-logout / version gate handlerů na nový MLRest.</param>
@@ -76,12 +81,31 @@ public class SessionOpener(EDServices services, StartupOptions options, Action<I
         }
         if (!steps.BeforeEstablish()) return new(SessionOpenOutcome.Cancelled);
 
-        var session = EstablishSession(query with { Database = picked.Company.Database, Idfa = picked.Company.Id }, login);
-        wireActivityFailed(session.MLRest);
-        switch (AcquireSession(session))
+        var (company, allowed) = picked;
+        // Odmítnuté firmy se už nenabízejí, jinak by se dvě obsazené střídaly dokola (s hláškami licence a okna aktivity).
+        var refused = new HashSet<string>();
+        SessionContext session;
+        while (true)
         {
-            case LicenceAcquireOutcome.Refused: return new(SessionOpenOutcome.LicenceRefused, session);
-            case LicenceAcquireOutcome.Cancelled: return new(SessionOpenOutcome.LicenceCancelled, session);
+            session = EstablishSession(query with { Database = company.Database, Idfa = company.Id }, login);
+            wireActivityFailed(session.MLRest);
+            var licence = AcquireSession(session);
+            if (licence == LicenceAcquireOutcome.Accepted) break;
+
+            refused.Add(company.Id);
+            var offered = allowed.Where(c => !refused.Contains(c.Id)).ToList();
+            if (offered.Count == 0)
+                return new(licence == LicenceAcquireOutcome.Refused
+                    ? SessionOpenOutcome.LicenceRefused : SessionOpenOutcome.LicenceCancelled, session);
+            // Odmítnutá session zámek nemá (VerifyLic ho nezaložil), není co odhlašovat.
+            if (steps.PickOtherCompany(company, offered) is not { } next)
+                return new(SessionOpenOutcome.LicenceCancelled, session);
+
+            // Session vzniká ve zvolené firmě, i když ve svém seznamu chybí (PickForSession by vzal první povolenou).
+            company = next;
+            allowed = LoadAllowedCompanies(query with { Database = next.Database, Idfa = next.Id }, login);
+            if (!allowed.Any(c => c.Id == next.Id))
+                allowed = [.. allowed, next];
         }
 
         steps.AfterAccepted(session);
@@ -89,7 +113,7 @@ public class SessionOpener(EDServices services, StartupOptions options, Action<I
         if (update.ShouldExit) return new(SessionOpenOutcome.UpdateRequired, session);
         // Až po update checku: legacy start ukončený updatem přihlášení nezapsal (frmNoMDI.vb:4917 před :4948).
         LicenceVerifier.LogLogin(session.MLRest);
-        return new(SessionOpenOutcome.Opened, session, picked.Allowed, update.Notice);
+        return new(SessionOpenOutcome.Opened, session, allowed, update.Notice);
     }
 
     protected virtual IReadOnlyList<CompanyStruct> LoadAllowedCompanies(ConnectionInfo conn, LoginResult login)

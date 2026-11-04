@@ -20,9 +20,9 @@ public enum SwitchUserResult
     /// <summary>Uživatel zrušil login dialog nebo vynucenou změnu hesla, nesmí do žádné firmy, nebo okno
     /// s neuloženými daty odmítlo zavření. Shell pokračuje s původním session beze změny.</summary>
     Cancelled,
-    /// <summary>Licence pro nového uživatele přesáhla limit (admin retry / non-admin). Caller obvykle ukončí app.</summary>
+    /// <summary>Licence pro nového uživatele přesáhla limit a jiná povolená firma nezbyla. Caller obvykle ukončí app.</summary>
     LicenceRefused,
-    /// <summary>Admin v LicenceVerifier retry loop zvolil Storno. Caller obvykle ukončí app.</summary>
+    /// <summary>Admin v LicenceVerifier retry loop zvolil Storno, nebo uživatel nevybral jinou firmu. Caller obvykle ukončí app.</summary>
     LicenceCancelled,
     /// <summary>Nový uživatel přihlášen, MLRest swapnut, licence platná.</summary>
     Success,
@@ -54,8 +54,9 @@ public class SessionSwitcher(
 {
     /// <summary>
     /// Prompt → <see cref="SessionOpener.Open"/>, který před založením session zavře okna a odhlásí starou
-    /// session. Při zrušení v login dialogu, změně hesla nebo vetu okna nic neudělá; při selhání licence
-    /// je MLRest už swapnut, caller obvykle volí shutdown (rollback nelze: closeAllWindows už proběhlo).
+    /// session. Při zrušení v login dialogu, změně hesla nebo vetu okna nic neudělá. Odmítnutá licence nabídne
+    /// jinou povolenou firmu. Když žádná nezbude nebo uživatel zruší, je MLRest už swapnut a caller obvykle
+    /// volí shutdown (rollback nelze, closeAllWindows už proběhlo).
     /// Výjimka po odhlášení staré session aplikaci ukončí a projde dál k hlášení chyby.
     /// </summary>
     public SwitchUserOutcome Switch()
@@ -74,6 +75,7 @@ public class SessionSwitcher(
                 new SessionOpenSteps
                 {
                     ChangePassword = l => ForcePasswordChange(current, l.UserName),
+                    PickOtherCompany = PickOtherCompany,
                     BeforeEstablish = () => oldSessionClosed = CloseOldSession(),
                 });
         }
@@ -129,6 +131,10 @@ public class SessionSwitcher(
         => new Windows.LoginWindow.ChangePasswordWindow(connection, userName)
             { Owner = ownerWindow() }
             .ShowDialog() == true;
+
+    /// <summary>Výběr jiné firmy po odmítnuté licenci, owner je shell okno; null = uživatel zrušil.</summary>
+    protected virtual CompanyStruct? PickOtherCompany(CompanyStruct refused, IReadOnlyList<CompanyStruct> offered)
+        => Windows.CompanyPickerWindow.CompanyPickerWindow.Pick(ownerWindow(), refused, offered);
 
     protected virtual void FlushTelemetry(IMLRest? mlRest) => EDUsageTelemetry.Flush(mlRest);
 

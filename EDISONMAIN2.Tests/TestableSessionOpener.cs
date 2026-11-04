@@ -19,29 +19,43 @@ internal sealed class TestableSessionOpener(EDServices services, Action<IMLRest>
     public List<string> Calls { get; } = calls ?? [];
 
     public IReadOnlyList<CompanyStruct> AllowedCompanies { get; set; } = [new() { Id = "CB_DP", Database = "CB_DP" }];
+    /// <summary>Povolené firmy pro dotaz v dané firmě (Idfa); firma mimo slovník dostane <see cref="AllowedCompanies"/>.</summary>
+    public Dictionary<string, IReadOnlyList<CompanyStruct>> AllowedByIdfa { get; } = [];
     public (ConnectionInfo Conn, LoginResult Login)? AllowedQuery { get; private set; }
+    public List<ConnectionInfo> AllowedQueries { get; } = [];
     public ConnectionInfo? EstablishedConnection { get; private set; }
+    public List<ConnectionInfo> EstablishedConnections { get; } = [];
     public IMLRest NewSessionMLRest { get; set; } = MLRestMocks.Create();
     public LicenceAcquireOutcome LicenceOutcome { get; set; } = LicenceAcquireOutcome.Accepted;
+    /// <summary>Výsledky licence pro jednotlivé pokusy; po vyčerpání platí <see cref="LicenceOutcome"/>.</summary>
+    public Queue<LicenceAcquireOutcome> LicenceOutcomes { get; } = new();
     public Exception? AcquireThrows { get; set; }
     public bool UpdateRequired { get; set; }
     public Exception? UpdateCheckThrows { get; set; }
     public Task<ReleaseNoticeResult>? ReleaseNotice { get; set; }
 
+    public TestableSessionOpener WithLicenceOutcomes(IEnumerable<LicenceAcquireOutcome> outcomes)
+    {
+        foreach (var outcome in outcomes) LicenceOutcomes.Enqueue(outcome);
+        return this;
+    }
+
     public SessionContext CallEstablish(ConnectionInfo conn, LoginResult login) => base.EstablishSession(conn, login);
 
     protected override IReadOnlyList<CompanyStruct> LoadAllowedCompanies(ConnectionInfo conn, LoginResult login)
     {
-        // Jen první dotaz: druhý (po volbě jiné firmy) se ptá v ní a výsledek je tentýž seznam.
+        // AllowedQuery jen první dotaz, další (po volbě jiné firmy) jsou v AllowedQueries.
         AllowedQuery ??= (conn, login);
+        AllowedQueries.Add(conn);
         Calls.Add("allowed");
-        return AllowedCompanies;
+        return AllowedByIdfa.TryGetValue(conn.Idfa, out var allowed) ? allowed : AllowedCompanies;
     }
 
     protected override SessionContext EstablishSession(ConnectionInfo conn, LoginResult login)
     {
         Calls.Add("establish");
         EstablishedConnection = conn;
+        EstablishedConnections.Add(conn);
         return new SessionContext(NewSessionMLRest, login);
     }
 
@@ -49,7 +63,7 @@ internal sealed class TestableSessionOpener(EDServices services, Action<IMLRest>
     {
         Calls.Add("acquire");
         if (AcquireThrows is not null) throw AcquireThrows;
-        return LicenceOutcome;
+        return LicenceOutcomes.TryDequeue(out var outcome) ? outcome : LicenceOutcome;
     }
 
     public bool? NoticeRequested { get; private set; }
