@@ -101,8 +101,15 @@ public class LaunchPdfWindowViewModel : EDViewModel
                 PopupDisplayer.Info(vysledek.Duvod ?? "PDF se nepodařilo vytvořit.");
                 return;
             }
-            OpenPdf(vysledek.Path);
-            if (vysledek.Upozorneni is { } upozorneni) PopupDisplayer.Info(upozorneni);
+            // Víc souborů se neotevírá ani se neotevírá složka (Jan 4. 11.): uživatel dostane, kolik jich je a kde.
+            if (vysledek.Souboru > 1)
+                PopupDisplayer.Info(UlozenoText(vysledek.Souboru, vysledek.Path)
+                    + (vysledek.Upozorneni is { } chybi ? "\n\n" + chybi : ""));
+            else
+            {
+                OpenPdf(vysledek.Path);
+                if (vysledek.Upozorneni is { } upozorneni) PopupDisplayer.Info(upozorneni);
+            }
         }
         catch (Serialization.CacheAgendaDataException ex)
         {
@@ -118,6 +125,10 @@ public class LaunchPdfWindowViewModel : EDViewModel
             CloseDialog(true);
         }
     }
+
+    /// <summary>Potvrzení tisku do souboru pro každou linku.</summary>
+    internal static string UlozenoText(int souboru, string slozka) =>
+        $"Uloženo {souboru} {(souboru is >= 2 and <= 4 ? "soubory" : "souborů")} PDF do složky {slozka}.";
 
     /// <summary>Složka ze spuštění s rozbalenými proměnnými prostředí, bez ní <paramref name="fallback"/>.</summary>
     internal static string OutputFolder(LaunchInput input, string fallback) =>

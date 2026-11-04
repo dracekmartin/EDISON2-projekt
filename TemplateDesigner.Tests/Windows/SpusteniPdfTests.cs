@@ -134,6 +134,25 @@ public class SpusteniPdfTests : IDisposable
             Arg.Any<System.Windows.Window?>());
     }
 
+    /// <summary>Formulář tisku okna JŘ posílá členění a název souboru pod klíči tiskového okna návrháře (Jan 4. 11.);
+    /// vzor se složenými závorkami projde beze změny.</summary>
+    [Fact]
+    public void CleneniANazevSouboruZeSpusteni()
+    {
+        var vstup = LaunchInput.Parse("Agenda=LINKOVY_JR_AD;LINKA_ID=1,2;__EXPORT_SPLIT=PER_LINE;__EXPORT_FILENAME={CISLO_LINKY}_JR;Vystup=PDF");
+
+        Assert.Equal("PER_LINE", vstup.Get(LaunchInput.SplitKey));
+        Assert.Equal("{CISLO_LINKY}_JR", vstup.Get(LaunchInput.FileNameKey));
+        Assert.Null(LaunchInput.Parse("Agenda=LINKOVY_JR_AD;LINKA_ID=1;Vystup=PDF").Get(LaunchInput.SplitKey));
+    }
+
+    /// <summary>Soubory po linkách se neotevírají, uživatel dostane počet a složku.</summary>
+    [Theory]
+    [InlineData(3, "Uloženo 3 soubory PDF do složky JR.")]
+    [InlineData(12, "Uloženo 12 souborů PDF do složky JR.")]
+    public void SouboryPoLinkach_PotvrzeniSPoctemASlozkou(int souboru, string text) =>
+        Assert.Equal(text, LaunchPdfWindowViewModel.UlozenoText(souboru, "JR"));
+
     [Fact]
     public void LinkyZeSpusteni_CarkouVPoradiVolajiciho_BezPrazdnychAOpakovanych()
     {

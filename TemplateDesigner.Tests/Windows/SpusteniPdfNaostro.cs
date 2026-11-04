@@ -55,7 +55,7 @@ public class SpusteniPdfNaostro(ITestOutputHelper output)
         var sablona = EmbeddedTemplates.ForAgenda(EmbeddedTemplates.LaunchFolder, input.AgendaCode!)
                       ?? (await vm.ResolvePrintTemplateAsync(input.AgendaCode!, input.Get(LaunchInput.TemplateKey))).Template;
         Assert.True(sablona is not null, "agenda nemá šablonu pro tisk");
-        var (cesta, duvod, upozorneni) = await vm.ExportLaunchPdfAsync(input, sablona!, slozka);
+        var (cesta, duvod, upozorneni, _) = await vm.ExportLaunchPdfAsync(input, sablona!, slozka);
         if (upozorneni is not null) output.WriteLine(upozorneni);
 
         Assert.True(cesta is not null, duvod);

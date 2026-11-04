@@ -31,12 +31,13 @@ public static class AgendaCapabilities
     /// druh agendy posílá. Prázdný = agenda bez polí JŘ, soubor dostane jméno vybrané instance.
     /// </summary>
     /// <remarks>Číslo linky je i u MHD licenční, ne veřejné: je vždy vyplněné a jednoznačné
-    /// (rozhodnutí Jan 24. 10.), dával ho tak i starý tisk MHD (`TiskMHD/.../Linka.cls:99`).</remarks>
+    /// (rozhodnutí Jan 24. 10.), dával ho tak i starý tisk MHD (`TiskMHD/.../Linka.cls:99`).
+    /// Linkový JŘ jen číslem linky, jako export všech dokladů starého tisku JŘ (Jan 4. 11.).</remarks>
     public static string VychoziNazevSouboru(string? elementKind) =>
         elementKind?.ToUpperInvariant() switch
         {
             "STOP" => "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}",
-            "LINE" => "{CISLO_LINKY}_{VYCHOZI_ZASTAVKA}_{KONECNA_ZASTAVKA}",
+            "LINE" => "{CISLO_LINKY}",
             _      => "",
         };
 

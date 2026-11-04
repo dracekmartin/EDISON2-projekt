@@ -175,13 +175,36 @@ public partial class TemplateDesignerViewModel
                 : $"{NazevInstance.SVelkym(nazev.Jednotne)} {linka} nemá data.");
         }
 
-        stav?.Report("Kreslím PDF…");
-        var path = LaunchPdfPath(folder, hodnoty.Count == 1 ? $"{template.Name} - {linka}" : $"{template.Name} - {nazev.Pocet(hodnoty.Count)}");
         var snapshot = TemplateSerializer.DeepClone(template);
-        await Task.Run(() => new PreviewCanvas(State).RenderMultiDataToPdf(path, pages, template: snapshot));
-        return new LaunchPdfResult(path, null, vynechane.Count > 0
+        var upozorneni = vynechane.Count > 0
             ? $"V PDF chybí {nazev.Pocet(vynechane.Count)} bez dat:\n{SeznamVynechanych(vynechane)}"
-            : null);
+            : null;
+        var nazevSouboru = input.Get(LaunchInput.FileNameKey)?.Trim();
+
+        if (input.Get(LaunchInput.SplitKey) != "PER_LINE")
+        {
+            stav?.Report("Kreslím PDF…");
+            var path = LaunchPdfPath(folder, nazevSouboru is { Length: > 0 } ? nazevSouboru
+                : hodnoty.Count == 1 ? $"{template.Name} - {linka}" : $"{template.Name} - {nazev.Pocet(hodnoty.Count)}");
+            await Task.Run(() => new PreviewCanvas(State).RenderMultiDataToPdf(path, pages, template: snapshot));
+            return new LaunchPdfResult(path, null, upozorneni);
+        }
+
+        // Soubor pro každou linku se jménem ze vzoru, týmiž funkcemi jako tiskové okno návrháře.
+        var vzor = PrintDialogViewModel.NazevSouboruVzor(nazevSouboru, AgendaEntry(agenda)?.ElementKind);
+        var skupiny = PrintDialogViewModel.GroupForExport(pages, ExportSplitMode.PerLine).ToList();
+        var pouzite = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var soubory = new List<string>();
+        foreach (var skupina in skupiny)
+        {
+            stav?.Report($"Kreslím PDF {soubory.Count + 1} z {skupiny.Count}…");
+            var cesta = LaunchPdfPath(folder, PrintDialogViewModel.BuildFileName(skupina[0], vzor, pouzite));
+            await Task.Run(() => new PreviewCanvas(State).RenderMultiDataToPdf(cesta, skupina, template: snapshot));
+            soubory.Add(cesta);
+        }
+        return soubory.Count == 1
+            ? new LaunchPdfResult(soubory[0], null, upozorneni)
+            : new LaunchPdfResult(folder, null, upozorneni, soubory.Count);
     }
 
     /// <summary>Instance bez dat po řádcích s důvodem od agendy; dlouhý seznam se zkrátí, okno s hláškou by přeteklo.</summary>
@@ -469,8 +492,9 @@ public partial class TemplateDesignerViewModel
 /// <summary>
 /// Výsledek PDF ze spuštění: cesta k PDF, nebo důvod pro uživatele, proč nevzniklo. <see cref="Upozorneni"/> = PDF
 /// vzniklo, ale některé instance v něm chybějí (nemají data) - uživatel to má vědět, ne hledat v PDF.
+/// <see cref="Souboru"/> větší než 1 = soubor pro každou linku, <see cref="Path"/> je pak složka.
 /// </summary>
-public record LaunchPdfResult(string? Path, string? Duvod, string? Upozorneni = null)
+public record LaunchPdfResult(string? Path, string? Duvod, string? Upozorneni = null, int Souboru = 1)
 {
     public static LaunchPdfResult Nevzniklo(string duvod) => new(null, duvod);
 }

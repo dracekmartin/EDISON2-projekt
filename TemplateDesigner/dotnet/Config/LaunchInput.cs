@@ -30,6 +30,14 @@ public sealed record LaunchInput(string? AgendaCode, IReadOnlyDictionary<string,
     /// </summary>
     public const string TemplateKey = "Sablona";
 
+    /// <summary>Členění PDF ze spuštění, týž klíč a hodnoty jako v tiskovém okně (<c>SINGLE</c> / <c>PER_LINE</c>);
+    /// chybí = jeden soubor. Posílá ho formulář tisku okna JŘ (Jan 4. 11.).</summary>
+    public const string SplitKey = PrintDialogViewModel.ExportSplitKey;
+
+    /// <summary>Název souboru ze spuštění: u jednoho souboru obyčejný název, který zadal uživatel, u souborů po linkách
+    /// vzor s údaji z dat (<c>{CISLO_LINKY}</c>); prázdný = automatický název, resp. výchozí vzor agendy.</summary>
+    public const string FileNameKey = PrintDialogViewModel.ExportFileNameKey;
+
     public static readonly LaunchInput Empty = new(null, new Dictionary<string, string>());
 
     /// <summary>Hodnota klíče, null když ve vstupu není (prázdná hodnota je hodnota).</summary>

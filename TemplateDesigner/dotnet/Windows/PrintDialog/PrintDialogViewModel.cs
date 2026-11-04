@@ -33,6 +33,10 @@ public class PrintDialogViewModel : EDViewModel
     /// takže v názvu stálo doslova „POPIS_ZASTAVKA"; uložený beze změny se bere jako nezadaný.</summary>
     private const string PuvodniVychoziNazev = "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}";
 
+    /// <summary>Do 4. 11. výchozí název linkového JŘ; okno ho ukládalo i nezměněný, proto se taky bere jako nezadaný
+    /// a platí nový výchozí (jen číslo linky).</summary>
+    private const string PuvodniVychoziNazevLinky = "{CISLO_LINKY}_{VYCHOZI_ZASTAVKA}_{KONECNA_ZASTAVKA}";
+
     private readonly string? _elementKind;
 
     /// <summary>Klíče universálních export polí v EDInputformu (AgendaParams) - NEjsou agenda
@@ -598,7 +602,7 @@ public class PrintDialogViewModel : EDViewModel
 
     /// <summary>Vzor názvu souboru: uložený vlastní vzor uživatele, jinak výchozí podle druhu agendy.</summary>
     internal static string NazevSouboruVzor(string? ulozeny, string? elementKind) =>
-        string.IsNullOrWhiteSpace(ulozeny) || ulozeny == PuvodniVychoziNazev
+        string.IsNullOrWhiteSpace(ulozeny) || ulozeny == PuvodniVychoziNazev || ulozeny == PuvodniVychoziNazevLinky
             ? AgendaCapabilities.VychoziNazevSouboru(elementKind)
             : ulozeny;
 

@@ -27,9 +27,9 @@ public class ExportPoLinkachTests
         Assert.Equal([2, 1], skupiny.Select(s => s.Count));
     }
 
-    /// <summary>Linkový JŘ aktuální zastávku nemá - výchozí název ji nesmí chtít.</summary>
+    /// <summary>Linkový JŘ se jmenuje jen číslem linky, jako export všech dokladů starého tisku JŘ (Jan 4. 11.).</summary>
     [Fact]
-    public void LinkovyJr_VychoziNazevJeCisloVychoziAKonecna()
+    public void LinkovyJr_VychoziNazevJeCisloLinky()
     {
         var stranka = Stranka("380724 - Opava - Ostrava", new()
         {
@@ -38,7 +38,7 @@ public class ExportPoLinkachTests
 
         var nazev = PrintDialogViewModel.BuildFileName(stranka, PrintDialogViewModel.NazevSouboruVzor(null, "LINE"), []);
 
-        Assert.Equal("380724_Opava_Ostrava", nazev);
+        Assert.Equal("380724", nazev);
     }
 
     [Fact]
@@ -54,10 +54,11 @@ public class ExportPoLinkachTests
         Assert.Equal("380724_Opava, nádraží_Ostrava", nazev);
     }
 
-    /// <summary>Dřívější výchozí název uložený beze změny u linkového JŘ nefungoval - platí nový.
-    /// Vlastní vzor uživatele zůstává.</summary>
+    /// <summary>Dřívější výchozí názvy uložené beze změny (okno je ukládalo i nezměněné) platí jako nezadané, takže
+    /// platí nový výchozí. Vlastní vzor uživatele zůstává.</summary>
     [Theory]
-    [InlineData("{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}", "{CISLO_LINKY}_{VYCHOZI_ZASTAVKA}_{KONECNA_ZASTAVKA}")]
+    [InlineData("{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}", "{CISLO_LINKY}")]
+    [InlineData("{CISLO_LINKY}_{VYCHOZI_ZASTAVKA}_{KONECNA_ZASTAVKA}", "{CISLO_LINKY}")]
     [InlineData("JR_{CISLO_LINKY}", "JR_{CISLO_LINKY}")]
     public void UlozenyVzor(string ulozeny, string ocekavany) =>
         Assert.Equal(ocekavany, PrintDialogViewModel.NazevSouboruVzor(ulozeny, "LINE"));
